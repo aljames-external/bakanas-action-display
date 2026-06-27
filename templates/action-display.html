@@ -1,13 +1,37 @@
 <div class="bakanas-action-display-container">
-    <!-- Top Tabs (Item Types: Weapon, Spell, Feat, etc.) -->
-    <div class="bad-tabs bad-top-tabs">
+    <!-- Left-side Slide-out Accordion Tabs (Item Types: Weapon, Spell, Feat, etc.) -->
+    <div class="bad-left-tabs">
         {{#each itemTypes}}
-        <button class="bad-tab-btn {{#if this.active}}active{{/if}}" data-action="changeItemType" data-type="{{this.id}}" title="{{this.label}}">
-            {{this.label}}
-        </button>
+        <div class="bad-left-tab-group {{#if this.expanded}}expanded{{/if}}">
+            <!-- Parent Tab -->
+            <div class="bad-left-tab {{#if this.active}}active{{/if}} {{#if this.activeParent}}active-parent{{/if}}" 
+                 data-action="changeLeftItemType" 
+                 data-type="{{this.id}}" 
+                 data-has-sub-tabs="{{#if this.subTabs.length}}true{{else}}false{{/if}}"
+                 title="{{this.label}}">
+                <span class="bad-left-tab-text">{{this.label}}</span>
+                <div class="bad-left-tab-icon">
+                    <i class="{{this.icon}}"></i>
+                </div>
+            </div>
+            
+            <!-- Sub-tabs (Spell Levels - revealed when Spells is expanded) -->
+            {{#if this.subTabs.length}}
+            <div class="bad-left-sub-tabs">
+                {{#each this.subTabs}}
+                <button class="bad-left-sub-tab {{#if this.active}}active{{/if}}" 
+                        data-action="changeLeftSubItemType" 
+                        data-type="{{this.id}}">
+                    {{this.label}}
+                </button>
+                {{/each}}
+            </div>
+            {{/if}}
+        </div>
         {{/each}}
     </div>
-    
+
+    <!-- Main Layout (Center content + Right-side tabs) -->
     <div class="bad-main-layout">
         <!-- Main Content Area (Flat list of filtered items) -->
         <div class="bad-tab-content">
@@ -52,7 +76,7 @@
                     <span class="bad-right-tab-text">{{this.label}}</span>
                 </div>
                 
-                <!-- Sub-tabs (Revealed when parent is expanded) -->
+                <!-- Sub-tabs (Action/Bonus/Reaction - revealed when parent is expanded) -->
                 {{#if this.subTabs.length}}
                 <div class="bad-right-sub-tabs">
                     {{#each this.subTabs}}

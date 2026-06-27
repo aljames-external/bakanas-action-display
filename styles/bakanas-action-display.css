@@ -40,51 +40,8 @@
     gap: 10px;
     user-select: none;
     max-height: 500px;
-    overflow: visible; /* CRITICAL: Allows right-side tabs to stick out */
+    overflow: visible; /* CRITICAL: Allows left/right-side tabs to stick out */
     position: relative;
-}
-
-/* Top Tab Bar */
-.bad-tabs {
-    display: flex;
-    gap: 5px;
-    overflow-x: auto;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    scrollbar-width: none; /* Hide scrollbar in Firefox */
-}
-
-.bad-tabs::-webkit-scrollbar {
-    display: none; /* Hide scrollbar in Chrome/Safari */
-}
-
-/* Individual Tab Button */
-.bad-tab-btn {
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 6px !important;
-    color: #cbd5e1 !important;
-    padding: 6px 12px !important;
-    font-size: 0.8rem !important;
-    font-weight: 600 !important;
-    cursor: pointer;
-    transition: all 0.2s ease !important;
-    white-space: nowrap;
-    height: auto !important;
-    line-height: normal !important;
-}
-
-.bad-tab-btn:hover {
-    background: rgba(167, 139, 250, 0.1) !important;
-    border-color: rgba(167, 139, 250, 0.3) !important;
-    color: #ffffff !important;
-}
-
-.bad-tab-btn.active {
-    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%) !important;
-    border-color: #8b5cf6 !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 10px rgba(124, 58, 237, 0.4);
 }
 
 /* Main Layout Wrapper */
@@ -214,7 +171,155 @@
     color: #475569;
 }
 
-/* Right-side Slide-out Tabs (Action Types Accordion) */
+
+/* ==========================================================================
+   LEFT-SIDE SLIDE-OUT TABS (Item Types Accordion)
+   ========================================================================== */
+
+.bad-left-tabs {
+    position: absolute;
+    right: 100%; /* Anchor to the left edge of the main container */
+    top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: -1; /* Placed behind the container so the seam is hidden */
+}
+
+/* Tab Group (Parent + Sub-tabs) */
+.bad-left-tab-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Align tabs to the right of the left-side area */
+}
+
+/* Parent Tab */
+.bad-left-tab {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Align content to the right (next to container) */
+    width: 40px; /* Collapsed width (icon only) */
+    height: 40px;
+    background: rgba(22, 22, 29, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    border-right: none; /* Merges visually with the main container */
+    border-radius: 8px 0 0 8px; /* Rounded on the left */
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease, color 0.2s ease;
+    overflow: hidden;
+    white-space: nowrap;
+    box-shadow: -3px 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Icon container inside left tab */
+.bad-left-tab-icon {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    order: 2; /* Force icon to the right side of the tab */
+}
+
+/* Text label inside left tab */
+.bad-left-tab-text {
+    padding-left: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    order: 1; /* Force text to the left of the icon */
+}
+
+/* Hover State - Slide out to show text */
+.bad-left-tab:hover {
+    width: 140px; /* Expanded width (icon + text) */
+    color: #ffffff;
+    background: rgba(30, 30, 41, 0.95);
+}
+
+.bad-left-tab:hover .bad-left-tab-text {
+    opacity: 1;
+    transition-delay: 0.1s; /* Fade in text after expansion starts */
+}
+
+/* Selected/Active Parent Tab State (when no sub-tab is active) */
+.bad-left-tab.active {
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%) !important;
+    border-color: #8b5cf6 !important;
+    color: #ffffff !important;
+    box-shadow: -3px 3px 12px rgba(124, 58, 237, 0.4);
+}
+
+.bad-left-tab.active .bad-left-tab-icon {
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+/* Selected Parent Tab State (when a sub-tab IS active) - subtle highlight */
+.bad-left-tab.active-parent {
+    background: rgba(124, 58, 237, 0.15) !important;
+    border-color: rgba(124, 58, 237, 0.4) !important;
+    color: #a78bfa !important;
+}
+
+/* Sub-tabs Container */
+.bad-left-sub-tabs {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    align-items: flex-end; /* Align sub-tabs to the right */
+    gap: 4px;
+    margin-top: 4px;
+    width: 100%;
+}
+
+/* Show sub-tabs with a subtle fade-in animation when expanded */
+.bad-left-tab-group.expanded .bad-left-sub-tabs {
+    display: flex;
+    animation: bad-fade-in-slide 0.2s ease-out;
+}
+
+/* Sub-tab Button */
+.bad-left-sub-tab {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: none;
+    border-radius: 6px 0 0 6px; /* Rounded on the left */
+    color: #cbd5e1;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    width: fit-content;
+    box-shadow: -2px 2px 6px rgba(0, 0, 0, 0.2);
+    height: auto !important;
+    line-height: normal !important;
+}
+
+.bad-left-sub-tab:hover {
+    background: rgba(167, 139, 250, 0.1);
+    color: #ffffff;
+    border-color: rgba(167, 139, 250, 0.3);
+}
+
+.bad-left-sub-tab.active {
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%) !important;
+    border-color: #8b5cf6 !important;
+    color: #ffffff !important;
+    box-shadow: -2px 2px 8px rgba(124, 58, 237, 0.4);
+}
+
+
+/* ==========================================================================
+   RIGHT-SIDE SLIDE-OUT TABS (Action Types Accordion)
+   ========================================================================= */
+
 .bad-right-tabs {
     position: absolute;
     left: 100%; /* Anchor to the right edge of the main container */
@@ -222,7 +327,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    z-index: -1; /* Placed behind the container so the seam is hidden underneath */
+    z-index: -1; /* Placed behind the container so the seam is hidden */
 }
 
 /* Tab Group (Parent + Sub-tabs) */
@@ -350,7 +455,11 @@
     box-shadow: 2px 2px 8px rgba(124, 58, 237, 0.4);
 }
 
-/* Micro-animations */
+
+/* ==========================================================================
+   COMMON ANIMATIONS
+   ========================================================================== */
+
 @keyframes bad-fade-in-slide {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }

@@ -3,7 +3,7 @@ import { BaseSystemAdapter } from './base-system-adapter.js';
 /**
  * System adapter for the DnD5e system.
  * Modifies the base actions list by filtering, calculating resource uses,
- * and sorting them into hierarchical action tabs and item types.
+ * and sorting them into hierarchical action tabs (right) and item types (left).
  */
 export class Dnd5eSystemAdapter extends BaseSystemAdapter {
     constructor() {
@@ -29,7 +29,6 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             const activationType = item.system?.activation?.type;
 
             // 2. Filter out unequipped items for weapons, equipment, consumables, and tools
-            // (Containers and Loot don't have equipped states and are always allowed if owned)
             const isEquipped = item.system.equipped !== false;
             if (['weapon', 'equipment', 'consumable', 'tool'].includes(item.type) && !isEquipped) {
                 continue;
@@ -45,7 +44,7 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             // 4. Calculate resource uses
             action.uses = this._calculateUses(item, actor);
 
-            // 5. Assign to hierarchical tabs: [parentTab, subTab]
+            // 5. Assign to hierarchical action tabs: [parentTab, subTab] (for right-side tabs)
             const parentTab = this._getParentTab(activationType);
             const subTab = this._getSubTab(activationType);
             
@@ -53,6 +52,14 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
                 action.tabs = [parentTab, subTab];
             } else {
                 action.tabs = [parentTab];
+            }
+
+            // 6. Assign to hierarchical item types: [parentType, subType] (for left-side tabs)
+            if (item.type === 'spell') {
+                const level = item.system.level ?? 0;
+                action.itemTypes = ['spell', level.toString()];
+            } else {
+                action.itemTypes = [item.type];
             }
 
             // Maintain system-specific data
@@ -75,7 +82,9 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             const subSort = this._getSubSort(aParent, aSub) - this._getSubSort(bParent, bSub);
             if (subSort !== 0) return subSort;
 
-            const typeSort = this._getTypeSort(a.type) - this._getTypeSort(b.type);
+            const aItemParent = a.itemTypes[0];
+            const bItemParent = b.itemTypes[0];
+            const typeSort = this._getTypeSort(aItemParent) - this._getTypeSort(bItemParent);
             if (typeSort !== 0) return typeSort;
 
             return a.name.localeCompare(b.name);

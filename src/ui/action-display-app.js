@@ -4,7 +4,7 @@ import { log } from '../lib/logger.js';
 /**
  * Modern ApplicationV2-based HUD overlay for Bakana's Action Display.
  * Uses HandlebarsApplicationMixin for rendering and the Actions API for event handling.
- * Positions itself dynamically relative to the selected token, with hierarchical slide-out tabs.
+ * Positions itself dynamically relative to the selected token, with symmetrical slide-out tabs on both sides.
  */
 export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
     constructor(token, options = {}) {
@@ -12,10 +12,13 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.token = token;
         this.actor = token.actor;
         
-        // Active filter states
-        this.activeItemType = 'all';       // Top tabs (spell, weapon, feat, etc.)
-        this.activeParentType = 'standard'; // Right-side parent tabs (standard, time, monster, etc.)
-        this.activeSubType = 'all';         // Right-side sub-tabs (action, bonus, reaction, etc.)
+        // Active filter states - Left Side (Item Types)
+        this.activeLeftParentType = 'all'; // Default to show all item types
+        this.activeLeftSubType = null;     // Default to no sub-type (unless 'spell' is selected)
+
+        // Active filter states - Right Side (Action Types)
+        this.activeParentType = 'standard'; // Default to Standard actions
+        this.activeSubType = 'all';         // Default to show all Standard (Action, Bonus, Reaction)
     }
 
     /**
@@ -35,7 +38,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         },
         // Declarative Actions API - maps data-action attributes in HTML to static handlers
         actions: {
-            changeItemType: ActionDisplayApp._onChangeItemType,
+            changeLeftItemType: ActionDisplayApp._onChangeLeftItemType,
+            changeLeftSubItemType: ActionDisplayApp._onChangeLeftSubItemType,
             changeActionType: ActionDisplayApp._onChangeActionType,
             changeSubActionType: ActionDisplayApp._onChangeSubActionType,
             rollAction: ActionDisplayApp._onRollAction
@@ -58,18 +62,21 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const context = await super._prepareContext(options);
         const rawActions = actionDisplay.getActions(this.actor);
 
-        // 1. Extract unique Item Types (for Top Tabs)
-        const uniqueItemTypes = new Set();
+        // 1. Extract unique Item Types (for Left-side Tabs)
+        // We build a hierarchy: Parent -> Sub-tabs (for spells) based on what actually exists
+        const existingItemCombinations = new Set();
         for (const action of rawActions) {
-            if (action.type) {
-                uniqueItemTypes.add(action.type);
-            } else {
-                uniqueItemTypes.add('other');
+            if (action.itemTypes && Array.isArray(action.itemTypes)) {
+                if (action.itemTypes.length === 2) {
+                    existingItemCombinations.add(`${action.itemTypes[0]}/${action.itemTypes[1]}`);
+                } else if (action.itemTypes.length === 1) {
+                    existingItemCombinations.add(action.itemTypes[0]);
+                }
             }
         }
 
-        const itemTypeLabels = {
-            'all': game.i18n.localize('BAD.tabs.all') || 'All',
+        const itemParentLabels = {
+            'all': 'All Items',
             'weapon': game.i18n.localize('DND5E.ItemTypeWeaponPl') || 'Weapons',
             'equipment': game.i18n.localize('DND5E.ItemTypeEquipmentPl') || 'Equipment',
             'consumable': game.i18n.localize('DND5E.ItemTypeConsumablePl') || 'Consumables',
@@ -81,34 +88,94 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             'other': game.i18n.localize('DND5E.Other') || 'Other'
         };
 
-        const itemTypes = Array.from(uniqueItemTypes).map(typeId => ({
-            id: typeId,
-            label: itemTypeLabels[typeId] ?? typeId.toUpperCase(),
-            active: typeId === this.activeItemType
-        }));
+        const itemParentIcons = {
+            'all': 'fas fa-border-all',
+            'weapon': 'fas fa-sword',
+            'spell': 'fas fa-wand-magic-sparkles',
+            'feat': 'fas fa-award',
+            'equipment': 'fas fa-shield',
+            'consumable': 'fas fa-flask',
+            'tool': 'fas fa-hammer',
+            'backpack': 'fas fa-sack',
+            'loot': 'fas fa-gem',
+            'other': 'fas fa-ellipsis'
+        };
 
-        // Sort item types by a predefined order
-        const itemTypeOrder = ['all', 'weapon', 'spell', 'feat', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'other'];
+        // Build the left-side hierarchy
+        const leftGroups = {};
         
-        // Ensure 'all' is always present if we have actions
-        if (!uniqueItemTypes.has('all') && rawActions.length > 0) {
-            itemTypes.unshift({
+        // Always ensure 'all' parent is present if we have actions
+        if (rawActions.length > 0) {
+            leftGroups['all'] = {
                 id: 'all',
-                label: itemTypeLabels['all'],
-                active: this.activeItemType === 'all'
+                label: itemParentLabels['all'],
+                icon: itemParentIcons['all'],
+                active: this.activeLeftParentType === 'all',
+                expanded: this.activeLeftParentType === 'all',
+                activeParent: false,
+                subTabs: []
+            };
+        }
+
+        for (const combo of existingItemCombinations) {
+            const parts = combo.split('/');
+            const parentId = parts[0];
+            const subId = parts[1]; // might be undefined (spell level)
+
+            if (!leftGroups[parentId]) {
+                leftGroups[parentId] = {
+                    id: parentId,
+                    label: itemParentLabels[parentId] ?? parentId.toUpperCase(),
+                    icon: itemParentIcons[parentId] ?? 'fas fa-question',
+                    active: parentId === this.activeLeftParentType,
+                    expanded: parentId === this.activeLeftParentType,
+                    activeParent: parentId === this.activeLeftParentType && this.activeLeftSubType && this.activeLeftSubType !== 'all',
+                    subTabs: []
+                };
+            }
+
+            if (parentId === 'spell' && subId) {
+                const levelLabel = subId === '0' 
+                    ? (game.i18n.localize('DND5E.SpellCantrip') || 'Cantrip')
+                    : (game.i18n.localize(`DND5E.SpellLevel${subId}`) || `${subId} Level`);
+                
+                leftGroups[parentId].subTabs.push({
+                    id: subId,
+                    label: levelLabel,
+                    active: this.activeLeftParentType === 'spell' && subId === this.activeLeftSubType
+                });
+            }
+        }
+
+        // Convert to array and sort by a predefined order
+        const leftOrder = ['all', 'weapon', 'spell', 'feat', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'other'];
+        const itemTypes = Object.values(leftGroups);
+        itemTypes.sort((a, b) => leftOrder.indexOf(a.id) - leftOrder.indexOf(b.id));
+
+        // Sort spell sub-tabs (levels 0 to 9) and add 'All Spells'
+        const spellParent = leftGroups['spell'];
+        if (spellParent && spellParent.subTabs.length > 0) {
+            spellParent.subTabs.sort((a, b) => parseInt(a.id, 10) - parseInt(b.id, 10));
+            spellParent.subTabs.unshift({
+                id: 'all',
+                label: 'All Spells',
+                active: this.activeLeftParentType === 'spell' && this.activeLeftSubType === 'all'
             });
         }
-        itemTypes.sort((a, b) => itemTypeOrder.indexOf(a.id) - itemTypeOrder.indexOf(b.id));
 
-        // If the active item type is no longer available, default to 'all'
-        if (itemTypes.length && !itemTypes.some(t => t.id === this.activeItemType)) {
-            this.activeItemType = 'all';
+        // If active left parent type is no longer available, default to 'all'
+        if (itemTypes.length && !itemTypes.some(p => p.id === this.activeLeftParentType)) {
+            this.activeLeftParentType = 'all';
             const allTab = itemTypes.find(t => t.id === 'all');
-            if (allTab) allTab.active = true;
+            if (allTab) {
+                allTab.active = true;
+                allTab.expanded = true;
+            }
+            this.activeLeftSubType = null;
         }
 
         // 2. Extract unique Action Types (for Right-side Tabs)
-        // We build a hierarchy: Parent -> Sub-tabs based on what actually exists in the actor's actions
+        // We build a hierarchy: Parent -> Sub-tabs based on what actually exists
         const existingCombinations = new Set();
         for (const action of rawActions) {
             if (action.tabs && Array.isArray(action.tabs)) {
@@ -151,7 +218,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             'crew': 'Crew'
         };
 
-        // Build the hierarchy dynamically
+        // Build the right-side hierarchy dynamically
         const parentGroups = {};
         for (const combo of existingCombinations) {
             const parts = combo.split('/');
@@ -184,7 +251,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const actionTypes = Object.values(parentGroups);
         actionTypes.sort((a, b) => parentOrder.indexOf(a.id) - parentOrder.indexOf(b.id));
 
-        // Sort sub-tabs within each parent and add 'All' if sub-tabs exist
+        // Sort sub-tabs within each parent and add 'All'
         const subOrder = {
             'standard': ['all', 'action', 'bonus', 'reaction'],
             'time': ['all', 'minute', 'hour', 'day'],
@@ -194,7 +261,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
         for (const parent of actionTypes) {
             if (parent.subTabs.length > 0) {
-                // Add an 'All' sub-tab
                 parent.subTabs.unshift({
                     id: 'all',
                     label: 'All',
@@ -217,27 +283,33 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             }
         }
 
-        // 3. Filter actions by both active Item Type (top) and active Action/Parent/Sub Type (right)
+        // 3. Filter actions by both active Left-side (Item Type/Spell Level) and active Right-side (Action/Sub-action)
         const filteredActions = rawActions.filter(action => {
-            // Filter by Item Type (Top Tab)
-            const matchesItemType = this.activeItemType === 'all' || 
-                                   (action.type === this.activeItemType) || 
-                                   (this.activeItemType === 'other' && !action.type);
-            
-            // Filter by Action Type (Right Tab)
-            if (!action.tabs || !Array.isArray(action.tabs)) return false;
-            
-            const parentId = action.tabs[0];
-            const subId = action.tabs[1]; // might be undefined
+            // Filter by Left Side (Item Type)
+            if (!action.itemTypes || !Array.isArray(action.itemTypes)) return false;
+            const itemParentId = action.itemTypes[0];
+            const itemSubId = action.itemTypes[1];
 
-            const matchesParent = parentId === this.activeParentType;
+            const matchesLeftParent = this.activeLeftParentType === 'all' || itemParentId === this.activeLeftParentType;
             
-            let matchesSub = true;
-            if (this.activeSubType && this.activeSubType !== 'all') {
-                matchesSub = subId === this.activeSubType;
+            let matchesLeftSub = true;
+            if (this.activeLeftParentType === 'spell' && this.activeLeftSubType && this.activeLeftSubType !== 'all') {
+                matchesLeftSub = itemSubId === this.activeLeftSubType;
             }
 
-            return matchesItemType && matchesParent && matchesSub;
+            // Filter by Right Side (Action Type)
+            if (!action.tabs || !Array.isArray(action.tabs)) return false;
+            const actionParentId = action.tabs[0];
+            const actionSubId = action.tabs[1];
+
+            const matchesRightParent = actionParentId === this.activeParentType;
+            
+            let matchesRightSub = true;
+            if (this.activeSubType && this.activeSubType !== 'all') {
+                matchesRightSub = actionSubId === this.activeSubType;
+            }
+
+            return matchesLeftParent && matchesLeftSub && matchesRightParent && matchesRightSub;
         });
 
         // Inject data into context
@@ -253,13 +325,29 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     /* -------------------------------------------- */
 
     /**
-     * Handle item type (top tab) selection clicks.
+     * Handle left-side item type (parent) selection clicks.
      * 'this' refers to the application instance.
      */
-    static async _onChangeItemType(event, target) {
+    static async _onChangeLeftItemType(event, target) {
         event.preventDefault();
-        this.activeItemType = target.dataset.type;
-        log.debug(`Changed item type filter to: ${this.activeItemType}`);
+        const parentId = target.dataset.type;
+        const hasSubTabs = target.dataset.hasSubTabs === 'true';
+        
+        this.activeLeftParentType = parentId;
+        this.activeLeftSubType = hasSubTabs ? 'all' : null;
+        
+        log.debug(`Changed item parent filter to: ${this.activeLeftParentType}, sub: ${this.activeLeftSubType}`);
+        this.render(); // Re-render the application reactively
+    }
+
+    /**
+     * Handle left-side sub-item type (spell level) selection clicks.
+     * 'this' refers to the application instance.
+     */
+    static async _onChangeLeftSubItemType(event, target) {
+        event.preventDefault();
+        this.activeLeftSubType = target.dataset.type;
+        log.debug(`Changed item sub filter to: ${this.activeLeftSubType}`);
         this.render(); // Re-render the application reactively
     }
 
@@ -353,10 +441,10 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const side = spaceAbove > spaceBelow ? 'above' : 'below';
 
         // Center horizontally and clamp to screen bounds.
-        // We leave 150px of extra margin on the right to prevent the slide-out tabs from going off-screen.
+        // We leave 150px of extra margin on BOTH sides to prevent the left/right slide-out tabs from going off-screen.
         const tabExtension = 150;
         let left = tokenLeft + (tokenWidth / 2) - (appWidth / 2);
-        left = Math.max(10, Math.min(window.innerWidth - appWidth - 10 - tabExtension, left));
+        left = Math.max(tabExtension, Math.min(window.innerWidth - appWidth - tabExtension, left));
 
         // Set width and left via super.setPosition, but handle top/bottom manually
         // to avoid layout thrashing (reading offsetHeight)
