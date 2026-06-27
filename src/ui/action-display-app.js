@@ -193,12 +193,17 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         super._onRender(context, options);
         this.setPosition();
 
-        // Register global right-click listener to close the HUD if clicking outside
-        this._externalRightClickListener = (event) => {
-            if (this.element && this.element.contains(event.target)) return;
-            this.close();
-        };
-        document.addEventListener('contextmenu', this._externalRightClickListener);
+        // Register global right-click listener on the next tick to prevent the opening
+        // right-click event from bubbling up and immediately triggering the close handler.
+        setTimeout(() => {
+            if (!this.element || !document.body.contains(this.element)) return;
+
+            this._externalRightClickListener = (event) => {
+                if (this.element && this.element.contains(event.target)) return;
+                this.close();
+            };
+            document.addEventListener('contextmenu', this._externalRightClickListener);
+        }, 0);
     }
 
     /**
