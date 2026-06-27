@@ -1,6 +1,17 @@
 {
     "BAD": {
         "title": "Bakana's Action Display",
-        "settings": {}
+        "settings": {
+            "logVerbosity": {
+                "name": "Log Verbosity Level",
+                "hint": "Controls the level of detail printed to the browser console.",
+                "choices": {
+                    "error": "Errors Only",
+                    "warn": "Warnings & Errors (Default)",
+                    "info": "Info, Warnings & Errors",
+                    "debug": "Debug (Everything)"
+                }
+            }
+        }
     }
 }

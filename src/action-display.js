@@ -1,5 +1,6 @@
 import { BaseSystemAdapter } from './adapters/base-system-adapter.js';
 import { BaseModuleAdapter } from './adapters/base-module-adapter.js';
+import { log } from './lib/logger.js';
 
 // Lists of systems and modules that have adapter implementations
 const SUPPORTED_SYSTEMS = ['dnd5e', 'pf2e'];
@@ -37,7 +38,7 @@ class ActionDisplay {
      * Initialize the coordinator by detecting the active system and registering adapters.
      */
     init() {
-        console.log("bakanas-action-display | Initializing ActionDisplay core");
+        log.info("Initializing ActionDisplay core");
         this._detectSystemAdapter();
     }
 
@@ -50,7 +51,7 @@ class ActionDisplay {
             throw new Error("System adapter must be an instance of BaseSystemAdapter");
         }
         this.systemAdapters.set(adapter.systemId, adapter);
-        console.log(`bakanas-action-display | Registered system adapter for: ${adapter.systemId}`);
+        log.info(`Registered system adapter for: ${adapter.systemId}`);
     }
 
     /**
@@ -62,7 +63,7 @@ class ActionDisplay {
             throw new Error("Module adapter must be an instance of BaseModuleAdapter");
         }
         this.moduleAdapters.set(adapter.moduleId, adapter);
-        console.log(`bakanas-action-display | Registered module adapter for: ${adapter.moduleId}`);
+        log.info(`Registered module adapter for: ${adapter.moduleId}`);
     }
 
     /**
@@ -73,9 +74,9 @@ class ActionDisplay {
         const adapter = this.systemAdapters.get(currentSystemId);
         if (adapter && adapter.isCompatible()) {
             this.activeSystemAdapter = adapter;
-            console.log(`bakanas-action-display | Activated system adapter: ${currentSystemId}`);
+            log.info(`Activated system adapter: ${currentSystemId}`);
         } else {
-            console.warn(`bakanas-action-display | No compatible system adapter found for system: ${currentSystemId}`);
+            log.warn(`No compatible system adapter found for system: ${currentSystemId}`);
         }
     }
 
@@ -94,7 +95,7 @@ class ActionDisplay {
         }
 
         if (!this.activeSystemAdapter) {
-            console.warn("bakanas-action-display | Cannot get actions: No active system adapter");
+            log.warn("Cannot get actions: No active system adapter");
             return [];
         }
 
@@ -103,7 +104,7 @@ class ActionDisplay {
         try {
             actions = this.activeSystemAdapter.getActions(actor);
         } catch (error) {
-            console.error(`bakanas-action-display | Error in system adapter "${this.activeSystemAdapter.systemId}":`, error);
+            log.error(`Error in system adapter "${this.activeSystemAdapter.systemId}":`, error);
         }
 
         // 3. Module Adapters: Run actions through all active module adapters
@@ -112,7 +113,7 @@ class ActionDisplay {
                 try {
                     actions = adapter.processActions(actions, actor);
                 } catch (error) {
-                    console.error(`bakanas-action-display | Error in module adapter "${moduleId}":`, error);
+                    log.error(`Error in module adapter "${moduleId}":`, error);
                 }
             }
         }

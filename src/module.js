@@ -1,8 +1,10 @@
 // Main entry point for Bakana's Action Display
+import './settings.js'; // Load settings
 import { actionDisplay } from './action-display.js';
 import { ActionDisplayApp } from './ui/action-display-app.js';
+import { log } from './lib/logger.js';
+import { MODULE_ID } from './constants.js';
 
-const MODULE_ID = 'bakanas-action-display';
 let activeApp = null;
 
 /**
@@ -33,13 +35,13 @@ async function registerAdapters() {
             if (AdapterClass) {
                 actionDisplay.registerSystemAdapter(new AdapterClass());
             } else {
-                console.error(`${MODULE_ID} | Class ${systemClassName} not found in ${systemPath}`);
+                log.error(`Class ${systemClassName} not found in ${systemPath}`);
             }
         } catch (error) {
-            console.error(`${MODULE_ID} | Failed to load system adapter for ${systemId} at ${systemPath}:`, error);
+            log.error(`Failed to load system adapter for ${systemId} at ${systemPath}`, error);
         }
     } else {
-        console.warn(`${MODULE_ID} | No system adapter configured for system: ${systemId}`);
+        log.warn(`No system adapter configured for system: ${systemId}`);
     }
 
     // 2. Load active supported module adapters
@@ -55,16 +57,16 @@ async function registerAdapters() {
             if (AdapterClass) {
                 actionDisplay.registerModuleAdapter(new AdapterClass());
             } else {
-                console.error(`${MODULE_ID} | Class ${moduleClassName} not found in ${modulePath}`);
+                log.error(`Class ${moduleClassName} not found in ${modulePath}`);
             }
         } catch (error) {
-            console.error(`${MODULE_ID} | Failed to load module adapter for ${moduleId} at ${modulePath}:`, error);
+            log.error(`Failed to load module adapter for ${moduleId} at ${modulePath}`, error);
         }
     }
 }
 
 Hooks.once('init', async () => {
-    console.log(`${MODULE_ID} | Initializing Bakana's Action Display`);
+    log.info("Initializing Bakana's Action Display");
 
     // Dynamically load and register active adapters
     await registerAdapters();
@@ -87,7 +89,7 @@ Hooks.once('init', async () => {
 });
 
 Hooks.once('ready', async () => {
-    console.log(`${MODULE_ID} | Ready`);
+    log.info("Ready");
 });
 
 // Hook into Token HUD rendering to display our overlay
