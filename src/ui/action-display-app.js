@@ -17,8 +17,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.activeLeftSubType = null;     // Default to no sub-type (unless 'spell' is selected)
 
         // Active filter states - Right Side (Action Types)
-        this.activeParentType = 'standard'; // Default to Standard actions
-        this.activeSubType = 'all';         // Default to show all Standard (Action, Bonus, Reaction)
+        this.activeParentType = 'all';     // Default to show all action types (no filter)
+        this.activeSubType = null;
     }
 
     /**
@@ -188,6 +188,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         const parentLabels = {
+            'all': 'All Actions',
             'standard': 'Standard',
             'time': 'Time',
             'monster': 'Monster',
@@ -197,6 +198,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         };
 
         const parentIcons = {
+            'all': 'fas fa-border-all',
             'standard': 'fas fa-hand-fist',
             'time': 'fas fa-clock',
             'monster': 'fas fa-dragon',
@@ -220,6 +222,20 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
         // Build the right-side hierarchy dynamically
         const parentGroups = {};
+        
+        // Always ensure 'all' parent is present if we have actions
+        if (rawActions.length > 0) {
+            parentGroups['all'] = {
+                id: 'all',
+                label: parentLabels['all'],
+                icon: parentIcons['all'],
+                active: this.activeParentType === 'all',
+                expanded: this.activeParentType === 'all',
+                activeParent: false,
+                subTabs: []
+            };
+        }
+
         for (const combo of existingCombinations) {
             const parts = combo.split('/');
             const parentId = parts[0];
@@ -247,7 +263,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         // Convert to array and sort by a predefined order
-        const parentOrder = ['standard', 'time', 'monster', 'vehicle', 'special', 'none'];
+        const parentOrder = ['all', 'standard', 'time', 'monster', 'vehicle', 'special', 'none'];
         const actionTypes = Object.values(parentGroups);
         actionTypes.sort((a, b) => parentOrder.indexOf(a.id) - parentOrder.indexOf(b.id));
 
@@ -302,10 +318,10 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             const actionParentId = action.tabs[0];
             const actionSubId = action.tabs[1];
 
-            const matchesRightParent = actionParentId === this.activeParentType;
+            const matchesRightParent = this.activeParentType === 'all' || actionParentId === this.activeParentType;
             
             let matchesRightSub = true;
-            if (this.activeSubType && this.activeSubType !== 'all') {
+            if (this.activeParentType !== 'all' && this.activeSubType && this.activeSubType !== 'all') {
                 matchesRightSub = actionSubId === this.activeSubType;
             }
 
