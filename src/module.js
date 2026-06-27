@@ -1,10 +1,14 @@
 // Main entry point for Bakana's Action Display
 import { actionDisplay } from './action-display.js';
+import { DnD5eSystemAdapter } from './adapters/dnd5e-system-adapter.js';
 
 const MODULE_ID = 'bakanas-action-display';
 
 Hooks.once('init', async () => {
     console.log(`${MODULE_ID} | Initializing Bakana's Action Display`);
+
+    // Register system adapters
+    actionDisplay.registerSystemAdapter(new DnD5eSystemAdapter());
 
     // Initialize the core coordinator
     actionDisplay.init();
