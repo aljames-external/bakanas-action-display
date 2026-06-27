@@ -4,11 +4,11 @@ import { log } from './lib/logger.js';
 
 // Lists of systems and modules that have adapter implementations
 const SUPPORTED_SYSTEMS = ['dnd5e', 'pf2e'];
-const SUPPORTED_MODULES = ['sequencer', 'midi-qol'];
+const SUPPORTED_MODULES = ['midi-qol']; // Sequencer removed as it doesn't modify items
 
 /**
  * Core coordinator class for Bakana's Action Display.
- * Manages the pipeline: System Adapters -> Module Adapters -> UI Display.
+ * Manages the pipeline: Core Extraction -> System Adapter Layer -> Module Adapter Layer -> UI.
  */
 class ActionDisplay {
     constructor() {
@@ -82,43 +82,83 @@ class ActionDisplay {
 
     /**
      * Run the pipeline to get actions for a given actor.
-     * Pipeline: Core Call -> System Adapter -> Module Adapters.
+     * Pipeline: Core Extraction -> System Adapter Layer -> Module Adapter Layer.
      * @param {Actor} actor 
      * @returns {Object[]} The processed actions
      */
     getActions(actor) {
         if (!actor) return [];
 
-        // 1. Core Call: Ensure we have an active system adapter
+        // 1. Core: Extract all items as base actions
+        let actions = this._extractBaseActions(actor);
+
+        // 2. System Adapter: Modify/Filter/Sort the base actions
         if (!this.activeSystemAdapter) {
             this._detectSystemAdapter(); // Try detecting again in case registration happened late
         }
 
-        if (!this.activeSystemAdapter) {
-            log.warn("Cannot get actions: No active system adapter");
-            return [];
+        if (this.activeSystemAdapter) {
+            try {
+                actions = this.activeSystemAdapter.modifyActions(actions, actor);
+            } catch (error) {
+                log.error(`Error in system adapter "${this.activeSystemAdapter.systemId}":`, error);
+            }
+        } else {
+            // Default system-agnostic fallback:
+            // Put all items in an 'all' tab so the HUD still works
+            actions = actions.map(a => {
+                a.tabs = ['all'];
+                return a;
+            });
         }
 
-        // 2. System Adapter: Extract initial actions
-        let actions = [];
-        try {
-            actions = this.activeSystemAdapter.getActions(actor);
-        } catch (error) {
-            log.error(`Error in system adapter "${this.activeSystemAdapter.systemId}":`, error);
-        }
-
-        // 3. Module Adapters: Run actions through all active module adapters
+        // 3. Module Adapters: Run through active module adapters
         for (const [moduleId, adapter] of this.moduleAdapters.entries()) {
             if (adapter.isActive()) {
                 try {
-                    actions = adapter.processActions(actions, actor);
+                    actions = adapter.modifyActions(actions, actor);
                 } catch (error) {
                     log.error(`Error in module adapter "${moduleId}":`, error);
                 }
             }
         }
 
-        return actions;
+        // Filter out hidden actions
+        return actions.filter(a => !a.hidden);
+    }
+
+    /**
+     * Extract a base list of actions from the actor's items.
+     * @param {Actor} actor 
+     * @returns {Object[]} Base action objects
+     */
+    _extractBaseActions(actor) {
+        const baseActions = [];
+        for (const item of actor.items) {
+            if (!item.name) continue;
+
+            baseActions.push({
+                id: item.id,
+                name: item.name,
+                type: item.type,
+                img: item.img,
+                tabs: ['all'], // Default tab
+                hidden: false,
+                uses: { available: null, max: null },
+                roll: (event) => {
+                    if (typeof item.use === 'function') {
+                        return item.use({ event });
+                    } else if (typeof item.roll === 'function') {
+                        return item.roll({ event });
+                    } else if (typeof item.toMessage === 'function') {
+                        return item.toMessage();
+                    }
+                },
+                originalItem: item,
+                extra: {}
+            });
+        }
+        return baseActions;
     }
 }
 

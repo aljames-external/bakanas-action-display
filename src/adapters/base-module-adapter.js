@@ -1,7 +1,7 @@
 /**
  * Base class for all module-specific adapters.
- * Module adapters can modify the actions extracted by the system adapter
- * (e.g., adding animation data, altering display names) or inject custom actions.
+ * Module adapters can modify the actions list after the system adapter has processed it,
+ * allowing them to hide actions, add new tabs, or inject custom action types.
  */
 export class BaseModuleAdapter {
     constructor(moduleId) {
@@ -17,12 +17,12 @@ export class BaseModuleAdapter {
     }
 
     /**
-     * Modify the list of actions.
+     * Modify the actions list.
      * @param {Object[]} actions The current list of actions
      * @param {Actor} actor The actor these actions belong to
      * @returns {Object[]} The modified list of actions
      */
-    processActions(actions, actor) {
+    modifyActions(actions, actor) {
         return actions;
     }
 }

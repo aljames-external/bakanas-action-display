@@ -2,7 +2,7 @@ import { BaseSystemAdapter } from './base-system-adapter.js';
 
 /**
  * System adapter for Pathfinder 2nd Edition (PF2e).
- * Extracts Strikes (attacks), Actions/Feats, and Spells, mapping them to the unified Action structure.
+ * Modifies the base actions list by mapping feats and spells, and injecting Strikes (attacks).
  */
 export class Pf2eSystemAdapter extends BaseSystemAdapter {
     constructor() {
@@ -10,100 +10,88 @@ export class Pf2eSystemAdapter extends BaseSystemAdapter {
     }
 
     /**
-     * Extract and sort actions from a PF2e actor.
+     * Filter, map, inject, and sort actions for PF2e.
+     * @param {Object[]} actions Base action list from the core
      * @param {Actor} actor 
-     * @returns {Object[]} Unified action objects
+     * @returns {Object[]} The modified actions list
      */
-    getActions(actor) {
-        if (!actor) return [];
+    modifyActions(actions, actor) {
+        const modified = [];
 
-        const actions = [];
+        // 1. Process existing items (Feats, Actions, Spells)
+        for (const action of actions) {
+            const item = action.originalItem;
 
-        // 1. Extract Strikes (attacks)
-        // In PF2e, strikes are dynamically calculated and stored on the actor's system actions
+            if (['action', 'feat'].includes(item.type)) {
+                const actionCost = item.system.actionCost;
+                const activationType = this._parseActivationType(actionCost);
+
+                // Skip passive feats/actions that don't have an active cost
+                if (!activationType) continue;
+
+                action.activationType = activationType; // Keep for sorting
+                action.tabs = [activationType];
+                action.uses = this._calculateUses(item);
+
+                // Override roll to post the action's chat card (standard PF2e behavior)
+                action.roll = (event) => {
+                    if (typeof item.toMessage === 'function') {
+                        item.toMessage();
+                    } else if (typeof item.use === 'function') {
+                        item.use({ event });
+                    }
+                };
+
+                modified.push(action);
+            } else if (item.type === 'spell') {
+                // Find the spellcasting entry this spell belongs to
+                const entry = actor.spellcasting?.find(e => e.spells?.has(item.id));
+                if (!entry) continue;
+
+                action.tabs = ['action']; // Spells are active actions
+                action.activationType = 'action';
+                action.roll = (event) => {
+                    if (typeof entry.cast === 'function') {
+                        entry.cast(item, { event });
+                    } else if (typeof item.toMessage === 'function') {
+                        item.toMessage();
+                    }
+                };
+                action.uses = this._calculateSpellUses(entry, item);
+                action.name = `${item.name} (${entry.name})`;
+
+                modified.push(action);
+            }
+        }
+
+        // 2. Inject Strikes (attacks)
+        // Strikes are dynamically calculated on the actor and are not standard inventory items
         const strikes = actor.system.actions ?? [];
         for (const strike of strikes) {
-            actions.push({
+            modified.push({
                 id: `strike-${strike.slug ?? strike.name}`,
                 name: strike.label ?? strike.name,
                 type: 'weapon',
                 img: strike.img ?? strike.imageUrl ?? 'systems/pf2e/icons/default-icons/melee.svg',
-                activationType: 'action', // Strikes cost 1 action in PF2e
+                activationType: 'action', // Strikes cost 1 action
+                tabs: ['action'],
+                hidden: false,
+                uses: { available: null, max: null },
                 roll: (event) => {
-                    // Roll the first variant (MAP 0) by default. Passes the click event.
                     if (strike.variants?.[0]?.roll) {
                         strike.variants[0].roll({ event });
                     } else if (typeof strike.roll === 'function') {
                         strike.roll({ event });
                     }
                 },
-                originalItem: strike.item,
-                uses: { available: null, max: null },
+                originalItem: strike.item, // Reference to the weapon item if available
                 extra: { pf2eStrike: strike }
             });
         }
 
-        // 2. Extract Feats and Actions
-        // In PF2e, these are items of type 'action' or 'feat' in actor.items
-        for (const item of actor.items) {
-            if (['action', 'feat'].includes(item.type)) {
-                const actionCost = item.system.actionCost;
-                const activationType = this._parseActivationType(actionCost);
-
-                // Skip passive feats/actions that don't have an activation cost
-                if (!activationType) continue;
-
-                actions.push({
-                    id: item.id,
-                    name: item.name,
-                    type: 'feat',
-                    img: item.img,
-                    activationType: activationType,
-                    roll: (event) => {
-                        // In PF2e, using an action/feat typically posts its chat card to the chat log
-                        if (typeof item.toMessage === 'function') {
-                            item.toMessage();
-                        } else if (typeof item.use === 'function') {
-                            item.use({ event });
-                        }
-                    },
-                    originalItem: item,
-                    uses: this._calculateUses(item),
-                    extra: {}
-                });
-            }
-        }
-
-        // 3. Extract Spells
-        // PF2e spells are cast from spellcasting entries (prepared, spontaneous, focus, etc.)
-        const spellcastingEntries = actor.spellcasting ?? [];
-        for (const entry of spellcastingEntries) {
-            if (!entry.spells) continue;
-
-            for (const spell of entry.spells) {
-                actions.push({
-                    id: spell.id,
-                    name: `${spell.name} (${entry.name})`,
-                    type: 'spell',
-                    img: spell.img,
-                    activationType: 'action', // Spells are active actions
-                    roll: (event) => {
-                        if (typeof entry.cast === 'function') {
-                            entry.cast(spell, { event });
-                        } else if (typeof spell.toMessage === 'function') {
-                            spell.toMessage();
-                        }
-                    },
-                    originalItem: spell,
-                    uses: this._calculateSpellUses(entry, spell),
-                    extra: { pf2eSpellcastingEntry: entry }
-                });
-            }
-        }
-
         // Sort actions: activation type first, then item type, then name
-        return actions.sort((a, b) => {
-            const actSort = this._getActivationSort(a.activationType) - this._getActivationSort(b.activationType);
+        return modified.sort((a, b) => {
+            const actSort = this._getActivationSort(a.activationType ?? a.tabs[0]) - this._getActivationSort(b.activationType ?? b.tabs[0]);
             if (actSort !== 0) return actSort;
 
             const typeSort = this._getTypeSort(a.type) - this._getTypeSort(b.type);
@@ -118,7 +106,7 @@ export class Pf2eSystemAdapter extends BaseSystemAdapter {
      */
     _parseActivationType(actionCost) {
         if (!actionCost) return null;
-        const type = actionCost.type; // 'action', 'reaction', 'free', etc.
+        const type = actionCost.type;
 
         if (type === 'reaction') return 'reaction';
         if (type === 'free') return 'other'; // Map free actions to 'other'
@@ -171,7 +159,6 @@ export class Pf2eSystemAdapter extends BaseSystemAdapter {
      * Calculate spell slot / focus pool uses for PF2e spells.
      */
     _calculateSpellUses(entry, spell) {
-        // Focus spells consume the actor's focus pool
         if (entry.isFocusPool) {
             const focus = entry.actor?.system?.resources?.focus;
             return {
@@ -180,7 +167,6 @@ export class Pf2eSystemAdapter extends BaseSystemAdapter {
             };
         }
 
-        // Spontaneous casting consumes slots per level
         const level = spell.level;
         if (entry.isSpontaneous && level > 0) {
             const slot = entry.system.slots?.[`slot${level}`];
@@ -190,8 +176,6 @@ export class Pf2eSystemAdapter extends BaseSystemAdapter {
             };
         }
 
-        // Prepared spellcasting is slot-specific (expended vs active).
-        // For a first pass, we return null and can expand on prepared slot tracking later.
         return { available: null, max: null };
     }
 }
