@@ -217,7 +217,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         
         // App dimensions
         const appWidth = this.options.position.width || 320;
-        const appHeight = el.offsetHeight || 150; // Current height of the active tab
 
         // 1. Calculate available space above and below the token
         const spaceAbove = tokenTop;
@@ -227,28 +226,32 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // This is 100% stable since the token's position doesn't change when switching tabs!
         const side = spaceAbove > spaceBelow ? 'above' : 'below';
 
-        // 3. Calculate the actual top coordinate based on the chosen side and current height.
-        let top;
-        if (side === 'above') {
-            // Anchored to the bottom (just above the token, growing/shrinking upwards)
-            top = tokenTop - appHeight - 10;
-        } else {
-            // Anchored to the top (just below the token, growing/shrinking downwards)
-            top = tokenTop + tokenHeight + 10;
-        }
-
         // Center horizontally and clamp to screen bounds
         let left = tokenLeft + (tokenWidth / 2) - (appWidth / 2);
         left = Math.max(10, Math.min(window.innerWidth - appWidth - 10, left));
 
-        // Merge our calculated coordinates and delegate to the base class.
+        // Set width and left via super.setPosition, but handle top/bottom manually
+        // to avoid layout thrashing (reading offsetHeight)
         const targetPosition = foundry.utils.mergeObject(position, {
             left,
-            top,
             width: appWidth,
             height: 'auto'
         });
 
-        return super.setPosition(targetPosition);
+        const result = super.setPosition(targetPosition);
+
+        // Apply top/bottom manually to anchor the window stably
+        if (side === 'above') {
+            // Anchor bottom just above the token (grows upwards)
+            const bottomOffset = window.innerHeight - tokenTop + 10;
+            el.style.bottom = `${bottomOffset}px`;
+            el.style.top = '';
+        } else {
+            // Anchor top just below the token (grows downwards)
+            el.style.top = `${tokenTop + tokenHeight + 10}px`;
+            el.style.bottom = '';
+        }
+
+        return result;
     }
 }

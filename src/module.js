@@ -57,6 +57,25 @@ async function registerAdapters() {
     }
 }
 
+// Wrap TokenHUD.clear synchronously during init to ensure it is registered
+// before any instances are created, and fires instantly when the HUD is cleared.
+Hooks.on('init', () => {
+    log.info("Wrapping TokenHUD.prototype.clear");
+    const originalClear = TokenHUD.prototype.clear;
+    TokenHUD.prototype.clear = function (...args) {
+        log.debug("TokenHUD.prototype.clear called");
+        if (activeApp) {
+            log.debug("TokenHUD clear: Instantly hiding and closing activeApp");
+            if (activeApp.element) {
+                activeApp.element.style.display = 'none';
+            }
+            activeApp.close();
+            activeApp = null;
+        }
+        return originalClear.apply(this, args);
+    };
+});
+
 // Initialize hook
 Hooks.once('init', async () => {
     log.info("Initializing Bakana's Action Display");
@@ -76,16 +95,6 @@ Hooks.once('ready', async () => {
     log.info("Ready");
 });
 
-// Close our overlay when the Token HUD is closed
-Hooks.on('closeTokenHUD', () => {
-    log.debug("closeTokenHUD hook fired");
-    if (activeApp) {
-        log.debug("Closing activeApp");
-        activeApp.close();
-        activeApp = null;
-    }
-});
-
 // Hook into Token HUD rendering to display our overlay
 Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
     const token = tokenHUD.object;
@@ -93,9 +102,12 @@ Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
 
     log.debug("renderTokenHUD hook fired for token:", token.name);
 
-    // Close any existing app
+    // Close any existing app immediately
     if (activeApp) {
         log.debug("renderTokenHUD: Closing existing activeApp");
+        if (activeApp.element) {
+            activeApp.element.style.display = 'none';
+        }
         activeApp.close();
     }
 
