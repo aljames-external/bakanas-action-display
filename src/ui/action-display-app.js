@@ -187,11 +187,29 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     /* -------------------------------------------- */
 
     /**
-     * Hook into the render lifecycle to position the element after it is added to the DOM.
+     * Hook into the render lifecycle to position the element and register event listeners.
      */
     _onRender(context, options) {
         super._onRender(context, options);
         this.setPosition();
+
+        // Register global right-click listener to close the HUD if clicking outside
+        this._externalRightClickListener = (event) => {
+            if (this.element && this.element.contains(event.target)) return;
+            this.close();
+        };
+        document.addEventListener('contextmenu', this._externalRightClickListener);
+    }
+
+    /**
+     * Hook into the close lifecycle to clean up global event listeners.
+     */
+    _onClose(options) {
+        super._onClose(options);
+        if (this._externalRightClickListener) {
+            document.removeEventListener('contextmenu', this._externalRightClickListener);
+            this._externalRightClickListener = null;
+        }
     }
 
     /**
