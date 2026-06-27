@@ -187,34 +187,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     /* -------------------------------------------- */
 
     /**
-     * Hook into the render lifecycle to position the element and register event listeners.
+     * Hook into the render lifecycle to position the element after it is added to the DOM.
      */
     _onRender(context, options) {
         super._onRender(context, options);
         this.setPosition();
-
-        // Register global right-click listener on the next tick to prevent the opening
-        // right-click event from bubbling up and immediately triggering the close handler.
-        setTimeout(() => {
-            if (!this.element || !document.body.contains(this.element)) return;
-
-            this._externalRightClickListener = (event) => {
-                if (this.element && this.element.contains(event.target)) return;
-                this.close();
-            };
-            document.addEventListener('contextmenu', this._externalRightClickListener);
-        }, 0);
-    }
-
-    /**
-     * Hook into the close lifecycle to clean up global event listeners.
-     */
-    _onClose(options) {
-        super._onClose(options);
-        if (this._externalRightClickListener) {
-            document.removeEventListener('contextmenu', this._externalRightClickListener);
-            this._externalRightClickListener = null;
-        }
     }
 
     /**
