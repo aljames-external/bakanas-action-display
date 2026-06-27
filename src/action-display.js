@@ -1,6 +1,10 @@
 import { BaseSystemAdapter } from './adapters/base-system-adapter.js';
 import { BaseModuleAdapter } from './adapters/base-module-adapter.js';
 
+// Lists of systems and modules that have adapter implementations
+const SUPPORTED_SYSTEMS = ['dnd5e', 'pf2e'];
+const SUPPORTED_MODULES = ['sequencer', 'midi-qol'];
+
 /**
  * Core coordinator class for Bakana's Action Display.
  * Manages the pipeline: System Adapters -> Module Adapters -> UI Display.
@@ -10,6 +14,23 @@ class ActionDisplay {
         this.systemAdapters = new Map();
         this.moduleAdapters = new Map();
         this.activeSystemAdapter = null;
+    }
+
+    /**
+     * Get the list of supported modules that are currently active in the world.
+     * @returns {string[]} Array of active supported module IDs
+     */
+    getSupportedModules() {
+        return SUPPORTED_MODULES.filter(id => game.modules.get(id)?.active);
+    }
+
+    /**
+     * Check if a game system is supported by an adapter.
+     * @param {string} systemId 
+     * @returns {boolean}
+     */
+    isSystemSupported(systemId) {
+        return SUPPORTED_SYSTEMS.includes(systemId);
     }
 
     /**

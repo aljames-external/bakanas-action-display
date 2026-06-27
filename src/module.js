@@ -21,41 +21,44 @@ function toPascalCase(str) {
  */
 async function registerAdapters() {
     const systemId = game.system.id;
-    const systemPath = `./adapters/${systemId}-system-adapter.js`;
-    const systemClassName = `${toPascalCase(systemId)}SystemAdapter`;
 
-    try {
-        const systemModule = await import(systemPath);
-        const AdapterClass = systemModule[systemClassName];
-        if (AdapterClass) {
-            actionDisplay.registerSystemAdapter(new AdapterClass());
-        } else {
-            console.error(`${MODULE_ID} | Class ${systemClassName} not found in ${systemPath}`);
+    // 1. Load active system adapter if supported
+    if (actionDisplay.isSystemSupported(systemId)) {
+        const systemPath = `./adapters/${systemId}-system-adapter.js`;
+        const systemClassName = `${toPascalCase(systemId)}SystemAdapter`;
+
+        try {
+            const systemModule = await import(systemPath);
+            const AdapterClass = systemModule[systemClassName];
+            if (AdapterClass) {
+                actionDisplay.registerSystemAdapter(new AdapterClass());
+            } else {
+                console.error(`${MODULE_ID} | Class ${systemClassName} not found in ${systemPath}`);
+            }
+        } catch (error) {
+            console.error(`${MODULE_ID} | Failed to load system adapter for ${systemId} at ${systemPath}:`, error);
         }
-    } catch (error) {
-        console.warn(`${MODULE_ID} | No system adapter found for system: ${systemId} (tried loading ${systemPath})`);
+    } else {
+        console.warn(`${MODULE_ID} | No system adapter configured for system: ${systemId}`);
     }
 
-    // List of modules we have adapters for.
-    // We only attempt to load adapters for these modules if they are active.
-    const supportedModules = ['sequencer', 'midi-qol'];
+    // 2. Load active supported module adapters
+    const activeModules = actionDisplay.getSupportedModules();
 
-    for (const moduleId of supportedModules) {
-        if (game.modules.get(moduleId)?.active) {
-            const modulePath = `./adapters/${moduleId}-module-adapter.js`;
-            const moduleClassName = `${toPascalCase(moduleId)}ModuleAdapter`;
+    for (const moduleId of activeModules) {
+        const modulePath = `./adapters/${moduleId}-module-adapter.js`;
+        const moduleClassName = `${toPascalCase(moduleId)}ModuleAdapter`;
 
-            try {
-                const moduleNamespace = await import(modulePath);
-                const AdapterClass = moduleNamespace[moduleClassName];
-                if (AdapterClass) {
-                    actionDisplay.registerModuleAdapter(new AdapterClass());
-                } else {
-                    console.error(`${MODULE_ID} | Class ${moduleClassName} not found in ${modulePath}`);
-                }
-            } catch (error) {
-                console.error(`${MODULE_ID} | Failed to load module adapter for ${moduleId} at ${modulePath}:`, error);
+        try {
+            const moduleNamespace = await import(modulePath);
+            const AdapterClass = moduleNamespace[moduleClassName];
+            if (AdapterClass) {
+                actionDisplay.registerModuleAdapter(new AdapterClass());
+            } else {
+                console.error(`${MODULE_ID} | Class ${moduleClassName} not found in ${modulePath}`);
             }
+        } catch (error) {
+            console.error(`${MODULE_ID} | Failed to load module adapter for ${moduleId} at ${modulePath}:`, error);
         }
     }
 }
