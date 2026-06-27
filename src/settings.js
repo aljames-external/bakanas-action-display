@@ -36,6 +36,22 @@ Hooks.once('init', () => {
         }
     });
 
+    // Register HUD Position Mode (attached/detached)
+    game.settings.register(MODULE_ID, 'hudPositionMode', {
+        scope: 'client',
+        config: false,
+        type: String,
+        default: 'attached'
+    });
+
+    // Register HUD Detached Position (coordinates)
+    game.settings.register(MODULE_ID, 'hudDetachedPosition', {
+        scope: 'client',
+        config: false,
+        type: Object,
+        default: null
+    });
+
     // Apply the initial opacity value to the document root
     const initialOpacity = game.settings.get(MODULE_ID, 'hudOpacity');
     document.documentElement.style.setProperty('--bad-hud-opacity', initialOpacity);

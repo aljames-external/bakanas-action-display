@@ -37,14 +37,68 @@
     padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     user-select: none;
     max-height: 500px;
     overflow: visible; /* CRITICAL: Allows left/right-side tabs to stick out */
     position: relative;
 }
 
-/* Main Layout Wrapper */
+/* ==========================================================================
+   CONTROL BAR (Grip + Pin Button)
+   ========================================================================== */
+.bad-control-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin-bottom: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.bad-drag-handle {
+    cursor: move;
+    color: #64748b;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    height: 16px;
+    transition: color 0.2s ease;
+}
+
+.bad-drag-handle:hover {
+    color: #cbd5e1;
+}
+
+.bad-control-btn {
+    background: none !important;
+    border: none !important;
+    color: #64748b !important;
+    cursor: pointer;
+    padding: 0 4px !important;
+    font-size: 0.8rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease !important;
+    height: auto !important;
+    width: auto !important;
+    line-height: normal !important;
+    box-shadow: none !important;
+}
+
+.bad-control-btn:hover {
+    color: #a78bfa !important; /* Soft violet glow */
+}
+
+
+/* ==========================================================================
+   MAIN LAYOUT & CONTENT AREA
+   ========================================================================== */
 .bad-main-layout {
     display: flex;
     flex-direction: row;
@@ -175,11 +229,10 @@
 /* ==========================================================================
    LEFT-SIDE SLIDE-OUT TABS (Item Types Accordion)
    ========================================================================== */
-
 .bad-left-tabs {
     position: absolute;
     right: 100%; /* Anchor to the left edge of the main container */
-    top: 10px;
+    top: 36px; /* Shifted down slightly to align below the new control bar */
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -319,11 +372,10 @@
 /* ==========================================================================
    RIGHT-SIDE SLIDE-OUT TABS (Action Types Accordion)
    ========================================================================= */
-
 .bad-right-tabs {
     position: absolute;
     left: 100%; /* Anchor to the right edge of the main container */
-    top: 10px;
+    top: 36px; /* Shifted down slightly to align below the new control bar */
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -459,7 +511,6 @@
 /* ==========================================================================
    COMMON ANIMATIONS
    ========================================================================== */
-
 @keyframes bad-fade-in-slide {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }

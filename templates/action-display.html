@@ -1,4 +1,12 @@
 <div class="bakanas-action-display-container">
+    <!-- Control Bar (Grip + Pin Button) -->
+    <div class="bad-control-bar">
+        <div class="bad-drag-handle" title="Drag to move"><i class="fas fa-grip"></i></div>
+        <button class="bad-control-btn bad-pin-btn" data-action="toggleAnchor" title="{{#if isAttached}}Detach HUD (make floating){{else}}Attach HUD to token{{/if}}">
+            <i class="fas {{#if isAttached}}fa-link{{else}}fa-unlink{{/if}}"></i>
+        </button>
+    </div>
+
     <!-- Left-side Slide-out Accordion Tabs (Item Types: Weapon, Spell, Feat, etc.) -->
     <div class="bad-left-tabs">
         {{#each itemTypes}}

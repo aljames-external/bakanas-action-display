@@ -11,7 +11,8 @@ function localize(key, fallback) {
 /**
  * Modern ApplicationV2-based HUD overlay for Bakana's Action Display.
  * Uses HandlebarsApplicationMixin for rendering and the Actions API for event handling.
- * Positions itself dynamically relative to the selected token, with symmetrical slide-out tabs on both sides.
+ * Positions itself dynamically relative to the selected token, or floats freely if detached.
+ * Supports dragging and persists its position and attachment state.
  */
 export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
     constructor(token, options = {}) {
@@ -21,11 +22,18 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         
         // Active filter states - Left Side (Item Types)
         this.activeLeftParentType = 'all'; // Default to show all item types
-        this.activeLeftSubType = null;     // Default to no sub-type (unless 'spell' is selected)
+        this.activeLeftSubType = null;     // Default to no sub-type
 
         // Active filter states - Right Side (Action Types)
-        this.activeParentType = 'all';     // Default to show all action types (no filter)
+        this.activeParentType = 'all';     // Default to show all action types
         this.activeSubType = null;
+
+        // HUD Attachment/Position Mode (persisted client-side)
+        this.positionMode = game.settings.get('bakanas-action-display', 'hudPositionMode') || 'attached';
+        this.isAttached = this.positionMode === 'attached';
+        
+        // Dragging state
+        this._dragData = null;
     }
 
     /**
@@ -49,6 +57,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             changeLeftSubItemType: ActionDisplayApp._onChangeLeftSubItemType,
             changeActionType: ActionDisplayApp._onChangeActionType,
             changeSubActionType: ActionDisplayApp._onChangeSubActionType,
+            toggleAnchor: ActionDisplayApp._onToggleAnchor,
             rollAction: ActionDisplayApp._onRollAction
         }
     };
@@ -70,7 +79,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const rawActions = actionDisplay.getActions(this.actor);
 
         // 1. Extract unique Item Types (for Left-side Tabs)
-        // We build a hierarchy: Parent -> Sub-tabs (for spells) based on what actually exists
         const existingItemCombinations = new Set();
         for (const action of rawActions) {
             if (action.itemTypes && Array.isArray(action.itemTypes)) {
@@ -83,7 +91,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         const itemParentLabels = {
-            'all': localize('BAD.tabs.all', 'All Items'),
+            'all': 'All Items',
             'weapon': localize('DND5E.ItemTypeWeapon', 'Weapon'),
             'equipment': localize('DND5E.ItemTypeEquipment', 'Equipment'),
             'consumable': localize('DND5E.ItemTypeConsumable', 'Consumable'),
@@ -182,7 +190,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         // 2. Extract unique Action Types (for Right-side Tabs)
-        // We build a hierarchy: Parent -> Sub-tabs based on what actually exists
         const existingCombinations = new Set();
         for (const action of rawActions) {
             if (action.tabs && Array.isArray(action.tabs)) {
@@ -335,10 +342,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             return matchesLeftParent && matchesLeftSub && matchesRightParent && matchesRightSub;
         });
 
-        // Inject data into context
+        // Inject data and attachment state into context
         context.itemTypes = itemTypes;
         context.actionTypes = actionTypes;
         context.items = filteredActions;
+        context.isAttached = this.isAttached;
 
         return context;
     }
@@ -360,7 +368,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.activeLeftSubType = hasSubTabs ? 'all' : null;
         
         log.debug(`Changed item parent filter to: ${this.activeLeftParentType}, sub: ${this.activeLeftSubType}`);
-        this.render(); // Re-render the application reactively
+        this.render();
     }
 
     /**
@@ -371,7 +379,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         event.preventDefault();
         this.activeLeftSubType = target.dataset.type;
         log.debug(`Changed item sub filter to: ${this.activeLeftSubType}`);
-        this.render(); // Re-render the application reactively
+        this.render();
     }
 
     /**
@@ -387,7 +395,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.activeSubType = hasSubTabs ? 'all' : null;
         
         log.debug(`Changed action parent filter to: ${this.activeParentType}, sub: ${this.activeSubType}`);
-        this.render(); // Re-render the application reactively
+        this.render();
     }
 
     /**
@@ -398,7 +406,33 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         event.preventDefault();
         this.activeSubType = target.dataset.type;
         log.debug(`Changed action sub filter to: ${this.activeSubType}`);
-        this.render(); // Re-render the application reactively
+        this.render();
+    }
+
+    /**
+     * Toggle between attached (token-tracking) and detached (floating) modes.
+     * 'this' refers to the application instance.
+     */
+    static async _onToggleAnchor(event, target) {
+        event.preventDefault();
+        this.isAttached = !this.isAttached;
+        this.positionMode = this.isAttached ? 'attached' : 'detached';
+        
+        if (!this.isAttached) {
+            // Detaching: Save current screen position
+            const el = this.element;
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                const pos = { left: rect.left, top: rect.top };
+                await game.settings.set('bakanas-action-display', 'hudDetachedPosition', pos);
+            }
+        }
+        
+        await game.settings.set('bakanas-action-display', 'hudPositionMode', this.positionMode);
+        log.debug(`Toggled HUD anchor mode to: ${this.positionMode}`);
+        
+        // Re-render to update the control bar icon and re-position
+        this.render();
     }
 
     /**
@@ -412,7 +446,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const action = actions.find(a => a.id === actionId);
         
         if (action) {
-            // Execute the roll, passing the click event (to capture Shift/Ctrl/Alt)
             action.roll(event);
             
             // If not holding Shift, close the overlay after rolling
@@ -423,74 +456,183 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     }
 
     /* -------------------------------------------- */
-    /*  Positioning & Lifecycle                     */
+    /*  Positioning & Dragging                      */
     /* -------------------------------------------- */
 
     /**
-     * Hook into the render lifecycle to position the element after it is added to the DOM.
+     * Hook into the render lifecycle to position the element and set up drag listeners.
      */
     _onRender(context, options) {
         super._onRender(context, options);
         this.setPosition();
+        this._setupDragListeners();
     }
 
     /**
-     * Position the application window dynamically relative to the token.
-     * Determines the side (above/below) based on where there is more available screen space,
-     * anchoring the HUD stably on that side.
+     * Set up mouse listeners for dragging the HUD.
+     */
+    _setupDragListeners() {
+        const el = this.element;
+        if (!el) return;
+        
+        const handle = el.querySelector('.bad-drag-handle');
+        if (!handle) return;
+        
+        // Remove existing listener to prevent duplicates on re-render
+        handle.removeEventListener('mousedown', this._onDragStart);
+        
+        this._onDragStart = this._onDragStart.bind(this);
+        handle.addEventListener('mousedown', this._onDragStart);
+    }
+
+    _onDragStart(event) {
+        event.preventDefault();
+        const el = this.element;
+        if (!el) return;
+
+        // Record starting mouse and window coordinates
+        this._dragData = {
+            startX: event.clientX,
+            startY: event.clientY,
+            startLeft: el.offsetLeft,
+            startTop: el.offsetTop
+        };
+
+        this._onDragMove = this._onDragMove.bind(this);
+        this._onDragEnd = this._onDragEnd.bind(this);
+
+        document.addEventListener('mousemove', this._onDragMove);
+        document.addEventListener('mouseup', this._onDragEnd);
+        
+        log.debug("Drag started");
+    }
+
+    _onDragMove(event) {
+        event.preventDefault();
+        const el = this.element;
+        if (!el || !this._dragData) return;
+
+        // Calculate delta
+        const dx = event.clientX - this._dragData.startX;
+        const dy = event.clientY - this._dragData.startY;
+
+        // Calculate new coordinates
+        let left = this._dragData.startLeft + dx;
+        let top = this._dragData.startTop + dy;
+
+        // Clamp to screen bounds
+        const width = el.offsetWidth;
+        const height = el.offsetHeight;
+        left = Math.max(10, Math.min(window.innerWidth - width - 10, left));
+        top = Math.max(10, Math.min(window.innerHeight - height - 10, top));
+
+        // Apply styles directly for ultra-smooth 60fps dragging
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
+        el.style.bottom = ''; // Clear bottom to prevent layout conflicts
+
+        // Dragging immediately detaches the HUD from the token
+        if (this.isAttached) {
+            this.isAttached = false;
+            this.positionMode = 'detached';
+        }
+    }
+
+    async _onDragEnd(event) {
+        event.preventDefault();
+        document.removeEventListener('mousemove', this._onDragMove);
+        document.removeEventListener('mouseup', this._onDragEnd);
+
+        const el = this.element;
+        if (el && this._dragData) {
+            const rect = el.getBoundingClientRect();
+            const pos = { left: rect.left, top: rect.top };
+            
+            // Persist the new detached coordinates and mode
+            await game.settings.set('bakanas-action-display', 'hudDetachedPosition', pos);
+            await game.settings.set('bakanas-action-display', 'hudPositionMode', 'detached');
+            
+            log.debug("Drag ended, saved position:", pos);
+        }
+        
+        this._dragData = null;
+        
+        // Re-render to update the anchor icon/tooltip in the control bar
+        this.render();
+    }
+
+    /**
+     * Position the application window.
+     * In Attached mode, anchors dynamically above/below the token.
+     * In Detached mode, places it at the user's last dragged screen coordinates.
      */
     setPosition(position = {}) {
-        if (!this.token) return super.setPosition(position);
-
         const el = this.element;
         if (!el) return super.setPosition(position);
 
-        // Position calculations relative to the token on the screen
-        const tokenTransform = this.token.worldTransform;
-        const scale = game.canvas.stage?.scale?.x ?? 1;
-        const tokenWidth = this.token.w * scale;
-        const tokenHeight = this.token.h * scale;
+        if (this.isAttached && this.token) {
+            // --- ATTACHED MODE (Tracks Token) ---
+            const tokenTransform = this.token.worldTransform;
+            const scale = game.canvas.stage?.scale?.x ?? 1;
+            const tokenWidth = this.token.w * scale;
+            const tokenHeight = this.token.h * scale;
 
-        // Get screen coordinates of the token
-        const tokenLeft = tokenTransform.tx;
-        const tokenTop = tokenTransform.ty;
-        
-        // App dimensions
-        const appWidth = this.options.position.width || 320;
+            const tokenLeft = tokenTransform.tx;
+            const tokenTop = tokenTransform.ty;
+            
+            const appWidth = this.options.position.width || 320;
 
-        // 1. Calculate available space above and below the token
-        const spaceAbove = tokenTop;
-        const spaceBelow = window.innerHeight - (tokenTop + tokenHeight);
-        const side = spaceAbove > spaceBelow ? 'above' : 'below';
+            const spaceAbove = tokenTop;
+            const spaceBelow = window.innerHeight - (tokenTop + tokenHeight);
+            const side = spaceAbove > spaceBelow ? 'above' : 'below';
 
-        // Center horizontally and clamp to screen bounds.
-        // We leave 150px of extra margin on BOTH sides to prevent the left/right slide-out tabs from going off-screen.
-        const tabExtension = 150;
-        let left = tokenLeft + (tokenWidth / 2) - (appWidth / 2);
-        left = Math.max(tabExtension, Math.min(window.innerWidth - appWidth - tabExtension, left));
+            // Leave 150px safety margin on both sides for slide-out tabs
+            const tabExtension = 150;
+            let left = tokenLeft + (tokenWidth / 2) - (appWidth / 2);
+            left = Math.max(tabExtension, Math.min(window.innerWidth - appWidth - tabExtension, left));
 
-        // Set width and left via super.setPosition, but handle top/bottom manually
-        // to avoid layout thrashing (reading offsetHeight)
-        const targetPosition = foundry.utils.mergeObject(position, {
-            left,
-            width: appWidth,
-            height: 'auto'
-        });
+            const targetPosition = foundry.utils.mergeObject(position, {
+                left,
+                width: appWidth,
+                height: 'auto'
+            });
 
-        const result = super.setPosition(targetPosition);
+            const result = super.setPosition(targetPosition);
 
-        // Apply top/bottom manually to anchor the window stably
-        if (side === 'above') {
-            // Anchor bottom just above the token (grows upwards)
-            const bottomOffset = window.innerHeight - tokenTop + 10;
-            el.style.bottom = `${bottomOffset}px`;
-            el.style.top = '';
+            // Apply top/bottom manually to anchor the window stably
+            if (side === 'above') {
+                const bottomOffset = window.innerHeight - tokenTop + 10;
+                el.style.bottom = `${bottomOffset}px`;
+                el.style.top = '';
+            } else {
+                el.style.top = `${tokenTop + tokenHeight + 10}px`;
+                el.style.bottom = '';
+            }
+
+            return result;
         } else {
-            // Anchor top just below the token (grows downwards)
-            el.style.top = `${tokenTop + tokenHeight + 10}px`;
-            el.style.bottom = '';
-        }
+            // --- DETACHED MODE (Floating / Fixed Position) ---
+            const savedPos = game.settings.get('bakanas-action-display', 'hudDetachedPosition');
+            const appWidth = this.options.position.width || 320;
+            
+            let left = savedPos?.left ?? 100;
+            let top = savedPos?.top ?? 100;
 
-        return result;
+            // Clamp to screen bounds to ensure it's always visible (handles resolution changes)
+            left = Math.max(10, Math.min(window.innerWidth - appWidth - 10, left));
+            top = Math.max(10, Math.min(window.innerHeight - (el.offsetHeight || 200) - 10, top));
+
+            const targetPosition = foundry.utils.mergeObject(position, {
+                left,
+                top,
+                width: appWidth,
+                height: 'auto'
+            });
+
+            // Clear bottom styling since we are using absolute top/left
+            el.style.bottom = '';
+
+            return super.setPosition(targetPosition);
+        }
     }
 }
