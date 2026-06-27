@@ -1,0 +1,56 @@
+<div class="bakanas-action-display-container">
+    <!-- Clickable Tabs for Filtering -->
+    <div class="bad-tabs">
+        {{#each tabs}}
+        <button class="bad-tab-btn {{#if this.active}}active{{/if}}" data-tab="{{this.id}}" title="{{this.label}}">
+            {{this.label}}
+        </button>
+        {{/each}}
+    </div>
+    
+    <!-- Active Tab Content -->
+    <div class="bad-tab-content">
+        {{#if categories.length}}
+            {{#each categories}}
+            <div class="bad-category {{#if this.expanded}}expanded{{/if}}" data-category="{{this.id}}">
+                <!-- Category Header (Clickable to Expand/Collapse) -->
+                <div class="bad-category-header">
+                    <span class="bad-category-toggle">
+                        {{#if this.expanded}}<i class="fas fa-chevron-down"></i>{{else}}<i class="fas fa-chevron-right"></i>{{/if}}
+                    </span>
+                    <span class="bad-category-name">{{this.label}}</span>
+                </div>
+                
+                <!-- Category Items -->
+                <div class="bad-category-items">
+                    {{#each this.items}}
+                    <div class="bad-action-item" data-action-id="{{this.id}}">
+                        {{#if this.img}}
+                        <img class="bad-action-icon" src="{{this.img}}" alt="{{this.name}}" />
+                        {{else}}
+                        <div class="bad-action-icon-placeholder"><i class="fas fa-dice-d20"></i></div>
+                        {{/if}}
+                        
+                        <span class="bad-action-name">{{this.name}}</span>
+                        
+                        {{#if this.uses.available !== null}}
+                        <span class="bad-action-uses {{#if (eq this.uses.available 0)}}depleted{{/if}}">
+                            {{this.uses.available}}{{#if this.uses.max}} / {{this.uses.max}}{{/if}}
+                        </span>
+                        {{/if}}
+
+                        {{#if this.extra.hasSequencerEffect}}
+                        <span class="bad-action-sparkle" title="Enhanced with Animation"><i class="fas fa-sparkles"></i></span>
+                        {{/if}}
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/each}}
+        {{else}}
+            <div class="bad-no-actions">
+                <i class="fas fa-info-circle"></i> No actions available in this category.
+            </div>
+        {{/if}}
+    </div>
+</div>
