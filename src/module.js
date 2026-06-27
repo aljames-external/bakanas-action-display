@@ -68,12 +68,17 @@ async function registerAdapters() {
 // before any asynchronous operations or instance creations occur, matching
 // the reference npc-quick-actions implementation.
 Hooks.on('init', () => {
+    log.info("Synchronously wrapping TokenHUD.prototype.clear");
     const originalClear = TokenHUD.prototype.clear;
     TokenHUD.prototype.clear = function () {
+        log.info("Wrapped TokenHUD.prototype.clear executed. activeApp is:", activeApp);
         originalClear.call(this);
         if (activeApp) {
+            log.info("TokenHUD clear: Closing activeApp");
             activeApp.close();
             activeApp = null;
+        } else {
+            log.info("TokenHUD clear: No activeApp found to close");
         }
     };
 });
@@ -102,13 +107,17 @@ Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
     const token = tokenHUD.object;
     if (!token || !token.document.isOwner) return;
 
+    log.info("renderTokenHUD hook fired for token:", token.name);
+
     // Close any existing app
     if (activeApp) {
+        log.info("renderTokenHUD: Closing existing activeApp");
         activeApp.close();
     }
 
     // Create and render the new app
     activeApp = new ActionDisplayApp(token);
+    log.info("renderTokenHUD: Created new ActionDisplayApp:", activeApp);
     activeApp.render({ force: true });
 });
 
