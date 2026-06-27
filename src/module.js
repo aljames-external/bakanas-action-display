@@ -6,37 +6,56 @@ const MODULE_ID = 'bakanas-action-display';
 let activeApp = null;
 
 /**
+ * Helper to convert hyphenated or lowercase IDs into PascalCase.
+ * e.g., "dnd5e" -> "Dnd5e", "midi-qol" -> "MidiQol"
+ */
+function toPascalCase(str) {
+    return str.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+}
+
+/**
  * Dynamically loads and registers adapters based on the active system and enabled modules.
+ * Derives paths and class names by convention:
+ * - Path: `./adapters/${id}-${type}-adapter.js`
+ * - Class: `${PascalCase(id)}${Type}Adapter`
  */
 async function registerAdapters() {
     const systemId = game.system.id;
-    
-    // System Adapter Registry
-    const systemRegistry = {
-        'dnd5e': { path: './adapters/dnd5e-system-adapter.js', className: 'DnD5eSystemAdapter' },
-        'pf2e': { path: './adapters/pf2e-system-adapter.js', className: 'PF2eSystemAdapter' }
-    };
+    const systemPath = `./adapters/${systemId}-system-adapter.js`;
+    const systemClassName = `${toPascalCase(systemId)}SystemAdapter`;
 
-    const systemConfig = systemRegistry[systemId];
-    if (systemConfig) {
-        const module = await import(systemConfig.path);
-        const AdapterClass = module[systemConfig.className];
-        actionDisplay.registerSystemAdapter(new AdapterClass());
-    } else {
-        console.warn(`${MODULE_ID} | No system adapter configured for: ${systemId}`);
+    try {
+        const systemModule = await import(systemPath);
+        const AdapterClass = systemModule[systemClassName];
+        if (AdapterClass) {
+            actionDisplay.registerSystemAdapter(new AdapterClass());
+        } else {
+            console.error(`${MODULE_ID} | Class ${systemClassName} not found in ${systemPath}`);
+        }
+    } catch (error) {
+        console.warn(`${MODULE_ID} | No system adapter found for system: ${systemId} (tried loading ${systemPath})`);
     }
 
-    // Module Adapter Registry
-    const moduleRegistry = [
-        { id: 'sequencer', path: './adapters/sequencer-module-adapter.js', className: 'SequencerModuleAdapter' },
-        { id: 'midi-qol', path: './adapters/midi-qol-module-adapter.js', className: 'MidiQOLModuleAdapter' }
-    ];
+    // List of modules we have adapters for.
+    // We only attempt to load adapters for these modules if they are active.
+    const supportedModules = ['sequencer', 'midi-qol'];
 
-    for (const mod of moduleRegistry) {
-        if (game.modules.get(mod.id)?.active) {
-            const module = await import(mod.path);
-            const AdapterClass = module[mod.className];
-            actionDisplay.registerModuleAdapter(new AdapterClass());
+    for (const moduleId of supportedModules) {
+        if (game.modules.get(moduleId)?.active) {
+            const modulePath = `./adapters/${moduleId}-module-adapter.js`;
+            const moduleClassName = `${toPascalCase(moduleId)}ModuleAdapter`;
+
+            try {
+                const moduleNamespace = await import(modulePath);
+                const AdapterClass = moduleNamespace[moduleClassName];
+                if (AdapterClass) {
+                    actionDisplay.registerModuleAdapter(new AdapterClass());
+                } else {
+                    console.error(`${MODULE_ID} | Class ${moduleClassName} not found in ${modulePath}`);
+                }
+            } catch (error) {
+                console.error(`${MODULE_ID} | Failed to load module adapter for ${moduleId} at ${modulePath}:`, error);
+            }
         }
     }
 }

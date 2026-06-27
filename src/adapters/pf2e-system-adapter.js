@@ -4,7 +4,7 @@ import { BaseSystemAdapter } from './base-system-adapter.js';
  * System adapter for Pathfinder 2nd Edition (PF2e).
  * Extracts Strikes (attacks), Actions/Feats, and Spells, mapping them to the unified Action structure.
  */
-export class PF2eSystemAdapter extends BaseSystemAdapter {
+export class Pf2eSystemAdapter extends BaseSystemAdapter {
     constructor() {
         super('pf2e');
     }

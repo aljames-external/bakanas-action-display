@@ -4,7 +4,7 @@ import { BaseSystemAdapter } from './base-system-adapter.js';
  * System adapter for the DnD5e system.
  * Extracts actions, spells, features, and weapons, and calculates their remaining uses.
  */
-export class DnD5eSystemAdapter extends BaseSystemAdapter {
+export class Dnd5eSystemAdapter extends BaseSystemAdapter {
     constructor() {
         super('dnd5e');
     }

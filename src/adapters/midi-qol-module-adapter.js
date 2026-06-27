@@ -4,7 +4,7 @@ import { BaseModuleAdapter } from './base-module-adapter.js';
  * Module adapter for 'midi-qol' (D&D5e automation).
  * Identifies actions that are automated by Midi-QOL and flags them for the UI.
  */
-export class MidiQOLModuleAdapter extends BaseModuleAdapter {
+export class MidiQolModuleAdapter extends BaseModuleAdapter {
     constructor() {
         super('midi-qol');
     }
