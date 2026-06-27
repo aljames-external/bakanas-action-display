@@ -31,21 +31,7 @@
     "changelog": "https://github.com/aljames-arctic/bakanas-action-display/releases",
     "bugs": "https://github.com/aljames-arctic/bakanas-action-display/issues",
     "license": "LICENSE",
-    "relationships": {
-        "requires": [
-            {
-                "id": "sequencer",
-                "type": "module",
-                "compatibility": {}
-            },
-            {
-                "id": "socketlib",
-                "type": "module",
-                "compatibility": {}
-            }
-        ],
-        "recommends": []
-    },
+    "relationships": {},
     "styles": [
         "styles/bakanas-action-display.css"
     ],
