@@ -8,7 +8,6 @@ let activeApp = null;
 
 /**
  * Helper to convert hyphenated or lowercase IDs into PascalCase.
- * e.g., "dnd5e" -> "Dnd5e", "midi-qol" -> "MidiQol"
  */
 function toPascalCase(str) {
     return str.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
@@ -16,14 +15,10 @@ function toPascalCase(str) {
 
 /**
  * Dynamically loads and registers adapters based on the active system and enabled modules.
- * Derives paths and class names by convention:
- * - Path: `./adapters/${id}-${type}-adapter.js`
- * - Class: `${PascalCase(id)}${Type}Adapter`
  */
 async function registerAdapters() {
     const systemId = game.system.id;
 
-    // 1. Load active system adapter if supported
     if (actionDisplay.isSystemSupported(systemId)) {
         const systemPath = `./adapters/system/${systemId}-system-adapter.js`;
         const systemClassName = `${toPascalCase(systemId)}SystemAdapter`;
@@ -43,9 +38,7 @@ async function registerAdapters() {
         log.warn(`No system adapter configured for system: ${systemId}`);
     }
 
-    // 2. Load active supported module adapters
     const activeModules = actionDisplay.getSupportedModules();
-
     for (const moduleId of activeModules) {
         const modulePath = `./adapters/module/${moduleId}-module-adapter.js`;
         const moduleClassName = `${toPascalCase(moduleId)}ModuleAdapter`;
@@ -64,25 +57,7 @@ async function registerAdapters() {
     }
 }
 
-// Wrap TokenHUD.clear synchronously during init to ensure it is registered
-// before any asynchronous operations or instance creations occur, matching
-// the reference npc-quick-actions implementation.
-Hooks.on('init', () => {
-    log.info("Synchronously wrapping TokenHUD.prototype.clear");
-    const originalClear = TokenHUD.prototype.clear;
-    TokenHUD.prototype.clear = function () {
-        log.info("Wrapped TokenHUD.prototype.clear executed. activeApp is:", activeApp);
-        originalClear.call(this);
-        if (activeApp) {
-            log.info("TokenHUD clear: Closing activeApp");
-            activeApp.close();
-            activeApp = null;
-        } else {
-            log.info("TokenHUD clear: No activeApp found to close");
-        }
-    };
-});
-
+// Initialize hook
 Hooks.once('init', async () => {
     log.info("Initializing Bakana's Action Display");
 
@@ -94,12 +69,27 @@ Hooks.once('init', async () => {
 
     // Bind to globalThis for debugging and external integration
     globalThis.bakanasActionDisplay = actionDisplay;
-
-
 });
 
+// Ready hook - Patch the live instance directly to ensure it fires reliably
 Hooks.once('ready', async () => {
     log.info("Ready");
+
+    if (canvas.hud?.token) {
+        log.debug("Patching canvas.hud.token.clear directly on the live instance");
+        const originalClear = canvas.hud.token.clear;
+        canvas.hud.token.clear = function (...args) {
+            log.debug("canvas.hud.token.clear called. activeApp is:", activeApp);
+            originalClear.apply(this, args);
+            if (activeApp) {
+                log.debug("Closing activeApp");
+                activeApp.close();
+                activeApp = null;
+            }
+        };
+    } else {
+        log.error("canvas.hud.token not found during ready hook!");
+    }
 });
 
 // Hook into Token HUD rendering to display our overlay
@@ -107,17 +97,17 @@ Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
     const token = tokenHUD.object;
     if (!token || !token.document.isOwner) return;
 
-    log.info("renderTokenHUD hook fired for token:", token.name);
+    log.debug("renderTokenHUD hook fired for token:", token.name);
 
     // Close any existing app
     if (activeApp) {
-        log.info("renderTokenHUD: Closing existing activeApp");
+        log.debug("renderTokenHUD: Closing existing activeApp");
         activeApp.close();
     }
 
     // Create and render the new app
     activeApp = new ActionDisplayApp(token);
-    log.info("renderTokenHUD: Created new ActionDisplayApp:", activeApp);
+    log.debug("renderTokenHUD: Created new ActionDisplayApp:", activeApp);
     activeApp.render({ force: true });
 });
 
@@ -139,5 +129,3 @@ Hooks.on('updateItem', (item) => {
         activeApp.render();
     }
 });
-
-
