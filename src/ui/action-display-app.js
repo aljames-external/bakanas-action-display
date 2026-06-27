@@ -196,6 +196,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
     /**
      * Position the application window dynamically relative to the token.
+     * Determines the side (above/below) based on where there is more available screen space,
+     * anchoring the HUD stably on that side.
      */
     setPosition(position = {}) {
         if (!this.token) return super.setPosition(position);
@@ -215,22 +217,31 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         
         // App dimensions
         const appWidth = this.options.position.width || 320;
-        const appHeight = el.offsetHeight || 150; // Fallback estimate if not fully laid out
-        
-        // Position the app centered above the token by default
-        let left = tokenLeft + (tokenWidth / 2) - (appWidth / 2);
-        let top = tokenTop - appHeight - 10;
+        const appHeight = el.offsetHeight || 150; // Current height of the active tab
 
-        // If it goes off the top of the screen, position it below the token instead
-        if (top < 10) {
+        // 1. Calculate available space above and below the token
+        const spaceAbove = tokenTop;
+        const spaceBelow = window.innerHeight - (tokenTop + tokenHeight);
+
+        // 2. Decide the side based on where there is more space.
+        // This is 100% stable since the token's position doesn't change when switching tabs!
+        const side = spaceAbove > spaceBelow ? 'above' : 'below';
+
+        // 3. Calculate the actual top coordinate based on the chosen side and current height.
+        let top;
+        if (side === 'above') {
+            // Anchored to the bottom (just above the token, growing/shrinking upwards)
+            top = tokenTop - appHeight - 10;
+        } else {
+            // Anchored to the top (just below the token, growing/shrinking downwards)
             top = tokenTop + tokenHeight + 10;
         }
 
-        // Keep it within screen boundaries horizontally
+        // Center horizontally and clamp to screen bounds
+        let left = tokenLeft + (tokenWidth / 2) - (appWidth / 2);
         left = Math.max(10, Math.min(window.innerWidth - appWidth - 10, left));
 
         // Merge our calculated coordinates and delegate to the base class.
-        // This lets ApplicationV2 handle the actual CSS injection and state updates safely.
         const targetPosition = foundry.utils.mergeObject(position, {
             left,
             top,

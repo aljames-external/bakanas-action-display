@@ -1,4 +1,10 @@
 /* Custom Styling for Bakana's Action Display App Window */
+.bakanas-action-display-window {
+    position: fixed !important;
+    z-index: 1000;
+    pointer-events: all;
+}
+
 .bakanas-action-display-window.window-app {
     background: none !important;
     border: none !important;
