@@ -1,9 +1,8 @@
 // Main entry point for Bakana's Action Display
-import './settings.js'; // Load settings
+import './settings.js';
 import { actionDisplay } from './action-display.js';
 import { ActionDisplayApp } from './ui/action-display-app.js';
 import { log } from './lib/logger.js';
-import { MODULE_ID } from './constants.js';
 
 let activeApp = null;
 
