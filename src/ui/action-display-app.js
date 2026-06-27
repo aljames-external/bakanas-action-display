@@ -1,10 +1,11 @@
 import { actionDisplay } from '../action-display.js';
 
 /**
- * Custom Application that displays the tabbed, collapsible quick actions menu.
+ * Modern ApplicationV2-based HUD overlay for Bakana's Action Display.
+ * Uses HandlebarsApplicationMixin for rendering and the Actions API for event handling.
  * Positions itself dynamically relative to the selected token.
  */
-export class ActionDisplayApp extends Application {
+export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
     constructor(token, options = {}) {
         super(options);
         this.token = token;
@@ -13,24 +14,42 @@ export class ActionDisplayApp extends Application {
         this.expandedCategories = new Set(['weapon', 'feat', 'spell']); // Default expanded categories
     }
 
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            id: 'bakanas-action-display-app',
-            template: 'modules/bakanas-action-display/templates/action-display.html',
-            popOut: true,
-            minimizable: false,
-            resizable: false,
-            title: "Bakana's Action Display",
-            classes: ['bakanas-action-display-window'],
+    /**
+     * Configure default options for the ApplicationV2.
+     */
+    static DEFAULT_OPTIONS = {
+        id: 'bakanas-action-display-app',
+        classes: ['bakanas-action-display-window'],
+        tag: 'div',
+        window: {
+            frame: false, // BORDERLESS! Removes the default window frame (header, borders, etc.)
+            title: "Bakana's Action Display"
+        },
+        position: {
             width: 320,
             height: 'auto'
-        });
-    }
+        },
+        // Declarative Actions API - maps data-action attributes in HTML to static handlers
+        actions: {
+            changeTab: ActionDisplayApp._onChangeTab,
+            toggleCategory: ActionDisplayApp._onToggleCategory,
+            rollAction: ActionDisplayApp._onRollAction
+        }
+    };
 
     /**
-     * Prepare data for the Handlebars template.
+     * Define the templates (parts) that make up this application.
      */
-    getData(options) {
+    static PARTS = {
+        hud: {
+            template: 'modules/bakanas-action-display/templates/action-display.html'
+        }
+    };
+
+    /**
+     * Prepare the rendering context (equivalent to getData in AppV1).
+     */
+    async _prepareContext(options) {
         const rawActions = actionDisplay.getActions(this.actor);
 
         // 1. Extract all unique tab IDs present in the actions
@@ -43,7 +62,7 @@ export class ActionDisplayApp extends Application {
             }
         }
 
-        // Define standard tab labels (with localization where possible)
+        // Define standard tab labels
         const tabLabels = {
             'all': game.i18n.localize('BAD.tabs.all') || 'All Items',
             'action': game.i18n.localize('DND5E.Action') || 'Action',
@@ -63,23 +82,21 @@ export class ActionDisplayApp extends Application {
             active: tabId === this.activeTab
         }));
 
-        // Sort tabs by a predefined order (fallback 'all' appears first)
+        // Sort tabs by a predefined order
         const tabOrder = ['all', 'action', 'bonus', 'reaction', 'legendary', 'lair', 'crew', 'special', 'other'];
         tabs.sort((a, b) => tabOrder.indexOf(a.id) - tabOrder.indexOf(b.id));
 
-        // If the active tab is no longer available (e.g. actor changed), default to the first available
+        // If the active tab is no longer available, default to the first available
         if (tabs.length && !uniqueTabs.has(this.activeTab)) {
             this.activeTab = tabs[0].id;
             tabs[0].active = true;
         }
 
-        // 2. Filter actions for the active tab (since an action can be in multiple tabs, we check if it includes it)
+        // 2. Filter actions for the active tab
         const filteredActions = rawActions.filter(a => a.tabs && a.tabs.includes(this.activeTab));
 
         // 3. Group filtered actions by item type (categories)
         const categoriesMap = new Map();
-        
-        // System-independent fallback labels, using DnD5e as primary if available
         const categoryLabels = {
             'weapon': game.i18n.localize('DND5E.ItemTypeWeaponPl') || 'Weapons',
             'equipment': game.i18n.localize('DND5E.ItemTypeEquipmentPl') || 'Equipment',
@@ -103,7 +120,6 @@ export class ActionDisplayApp extends Application {
         }
 
         const categories = Array.from(categoriesMap.values());
-        // Sort categories by a predefined order
         const categoryOrder = ['weapon', 'equipment', 'consumable', 'feat', 'spell', 'other'];
         categories.sort((a, b) => categoryOrder.indexOf(a.id) - categoryOrder.indexOf(b.id));
 
@@ -113,57 +129,75 @@ export class ActionDisplayApp extends Application {
         };
     }
 
+    /* -------------------------------------------- */
+    /*  Actions Handlers                            */
+    /* -------------------------------------------- */
+
     /**
-     * Bind interactive elements in the HTML.
+     * Handle tab selection clicks.
+     * 'this' refers to the application instance.
      */
-    activateListeners(html) {
-        super.activateListeners(html);
+    static async _onChangeTab(event, target) {
+        event.preventDefault();
+        this.activeTab = target.dataset.tab;
+        this.render(); // Re-render the application reactively
+    }
 
-        // Tab selection
-        html.find('.bad-tab-btn').click(event => {
-            event.preventDefault();
-            this.activeTab = event.currentTarget.dataset.tab;
-            this.render(true);
-        });
+    /**
+     * Handle expanding/collapsing categories.
+     * 'this' refers to the application instance.
+     */
+    static async _onToggleCategory(event, target) {
+        event.preventDefault();
+        const categoryId = target.closest('.bad-category').dataset.category;
+        if (this.expandedCategories.has(categoryId)) {
+            this.expandedCategories.delete(categoryId);
+        } else {
+            this.expandedCategories.add(categoryId);
+        }
+        this.render();
+    }
 
-        // Category expand/collapse toggle
-        html.find('.bad-category-header').click(event => {
-            event.preventDefault();
-            const categoryId = event.currentTarget.closest('.bad-category').dataset.category;
-            if (this.expandedCategories.has(categoryId)) {
-                this.expandedCategories.delete(categoryId);
-            } else {
-                this.expandedCategories.add(categoryId);
-            }
-            this.render(true);
-        });
-
-        // Action roll execution
-        html.find('.bad-action-item').click(async (event) => {
-            event.preventDefault();
-            const actionId = event.currentTarget.dataset.actionId;
-            const actions = actionDisplay.getActions(this.actor);
-            const action = actions.find(a => a.id === actionId);
+    /**
+     * Handle action item clicks to roll them.
+     * 'this' refers to the application instance.
+     */
+    static async _onRollAction(event, target) {
+        event.preventDefault();
+        const actionId = target.dataset.actionId;
+        const actions = actionDisplay.getActions(this.actor);
+        const action = actions.find(a => a.id === actionId);
+        
+        if (action) {
+            // Execute the roll, passing the click event (to capture Shift/Ctrl/Alt)
+            action.roll(event);
             
-            if (action) {
-                // Execute the roll, passing the click event (for modifier keys)
-                action.roll(event);
-                
-                // If not holding Shift, close the overlay after rolling
-                if (!event.shiftKey) {
-                    this.close();
-                }
+            // If not holding Shift, close the overlay after rolling
+            if (!event.shiftKey) {
+                this.close();
             }
-        });
+        }
+    }
+
+    /* -------------------------------------------- */
+    /*  Positioning & Lifecycle                     */
+    /* -------------------------------------------- */
+
+    /**
+     * Hook into the render lifecycle to position the element after it is added to the DOM.
+     */
+    _onRender(context, options) {
+        super._onRender(context, options);
+        this.setPosition();
     }
 
     /**
      * Position the application window dynamically relative to the token.
      */
-    setPosition(options = {}) {
-        if (!this.token) return super.setPosition(options);
+    setPosition(position = {}) {
+        if (!this.token) return super.setPosition(position);
 
-        const el = this.element[0];
+        const el = this.element; // In AppV2, this.element is the native HTMLElement
         if (!el) return;
 
         // Position calculations relative to the token on the screen
@@ -177,11 +211,10 @@ export class ActionDisplayApp extends Application {
         const tokenTop = tokenTransform.ty;
         
         // App dimensions
-        const appWidth = this.options.width;
+        const appWidth = this.options.position.width || 320;
         
         // Position the app centered above the token by default
         let left = tokenLeft + (tokenWidth / 2) - (appWidth / 2);
-        // Position it 10px above the token
         let top = tokenTop - el.offsetHeight - 10;
 
         // If it goes off the top of the screen, position it below the token instead
@@ -192,25 +225,18 @@ export class ActionDisplayApp extends Application {
         // Keep it within screen boundaries horizontally
         left = Math.max(10, Math.min(window.innerWidth - appWidth - 10, left));
 
-        // Apply styles directly
+        // Apply styles directly to the native element
         el.style.left = `${left}px`;
         el.style.top = `${top}px`;
-        el.style.height = 'auto'; // Ensure it auto-fits content
+        el.style.height = 'auto';
         el.style.position = 'fixed';
         
-        // Update Foundry's internal position object
+        // Update AppV2 internal position object
         this.position.left = left;
         this.position.top = top;
         this.position.width = appWidth;
         this.position.height = el.offsetHeight;
-    }
 
-    /**
-     * Overrides render to run positioning after HTML injection.
-     */
-    async _render(force = false, options = {}) {
-        await super._render(force, options);
-        // Run positioning after the element is added to the DOM and has dimensions
-        this.setPosition();
+        return this.position;
     }
 }
