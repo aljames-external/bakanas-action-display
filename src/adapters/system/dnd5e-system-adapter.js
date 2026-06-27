@@ -34,17 +34,24 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
                 continue;
             }
 
-            // 3. Filter out unprepared spells (unless they are innate, at-will, or pact magic)
+            // 3. Filter out passive items (no activation type), except for Containers and Loot
+            // which are inherently passive but we want to display them in the 'None' tab.
+            const isPassive = !activationType || activationType === 'none';
+            if (isPassive && !['backpack', 'loot'].includes(item.type)) {
+                continue;
+            }
+
+            // 4. Filter out unprepared spells (unless they are innate, at-will, or pact magic)
             const prepMode = item.system.preparation?.mode ?? 'prepared';
             const isPrepared = item.system.preparation?.prepared !== false;
             if (item.type === 'spell' && !['innate', 'atwill', 'pact'].includes(prepMode) && !isPrepared) {
                 continue;
             }
 
-            // 4. Calculate resource uses
+            // 5. Calculate resource uses
             action.uses = this._calculateUses(item, actor);
 
-            // 5. Assign to hierarchical action tabs: [parentTab, subTab] (for right-side tabs)
+            // 6. Assign to hierarchical action tabs: [parentTab, subTab] (for right-side tabs)
             const parentTab = this._getParentTab(activationType);
             const subTab = this._getSubTab(activationType);
             
@@ -54,7 +61,7 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
                 action.tabs = [parentTab];
             }
 
-            // 6. Assign to hierarchical item types: [parentType, subType] (for left-side tabs)
+            // 7. Assign to hierarchical item types: [parentType, subType] (for left-side tabs)
             if (item.type === 'spell') {
                 const level = item.system.level ?? 0;
                 action.itemTypes = ['spell', level.toString()];
