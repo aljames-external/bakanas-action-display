@@ -50,6 +50,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      * Prepare the rendering context (equivalent to getData in AppV1).
      */
     async _prepareContext(options) {
+        // Essential: Await and preserve the base context from the parent class/mixin
+        const context = await super._prepareContext(options);
         const rawActions = actionDisplay.getActions(this.actor);
 
         // 1. Extract all unique tab IDs present in the actions
@@ -123,10 +125,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const categoryOrder = ['weapon', 'equipment', 'consumable', 'feat', 'spell', 'other'];
         categories.sort((a, b) => categoryOrder.indexOf(a.id) - categoryOrder.indexOf(b.id));
 
-        return {
-            tabs,
-            categories
-        };
+        // Inject our custom data into the base context
+        context.tabs = tabs;
+        context.categories = categories;
+
+        return context;
     }
 
     /* -------------------------------------------- */
@@ -198,7 +201,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         if (!this.token) return super.setPosition(position);
 
         const el = this.element; // In AppV2, this.element is the native HTMLElement
-        if (!el) return;
+        if (!el) return super.setPosition(position);
 
         // Position calculations relative to the token on the screen
         const tokenTransform = this.token.worldTransform;
@@ -212,10 +215,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         
         // App dimensions
         const appWidth = this.options.position.width || 320;
+        const appHeight = el.offsetHeight || 150; // Fallback estimate if not fully laid out
         
         // Position the app centered above the token by default
         let left = tokenLeft + (tokenWidth / 2) - (appWidth / 2);
-        let top = tokenTop - el.offsetHeight - 10;
+        let top = tokenTop - appHeight - 10;
 
         // If it goes off the top of the screen, position it below the token instead
         if (top < 10) {
@@ -225,18 +229,15 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // Keep it within screen boundaries horizontally
         left = Math.max(10, Math.min(window.innerWidth - appWidth - 10, left));
 
-        // Apply styles directly to the native element
-        el.style.left = `${left}px`;
-        el.style.top = `${top}px`;
-        el.style.height = 'auto';
-        el.style.position = 'fixed';
-        
-        // Update AppV2 internal position object
-        this.position.left = left;
-        this.position.top = top;
-        this.position.width = appWidth;
-        this.position.height = el.offsetHeight;
+        // Merge our calculated coordinates and delegate to the base class.
+        // This lets ApplicationV2 handle the actual CSS injection and state updates safely.
+        const targetPosition = foundry.utils.mergeObject(position, {
+            left,
+            top,
+            width: appWidth,
+            height: 'auto'
+        });
 
-        return this.position;
+        return super.setPosition(targetPosition);
     }
 }

@@ -33,11 +33,11 @@
                         
                         <span class="bad-action-name">{{this.name}}</span>
                         
-                        {{#if this.uses.available !== null}}
+                        {{#unless (eq this.uses.available null)}}
                         <span class="bad-action-uses {{#if (eq this.uses.available 0)}}depleted{{/if}}">
                             {{this.uses.available}}{{#if this.uses.max}} / {{this.uses.max}}{{/if}}
                         </span>
-                        {{/if}}
+                        {{/unless}}
 
                         {{#if this.extra.midiAutomated}}
                         <span class="bad-action-midi" title="Automated by Midi-QOL"><i class="fas fa-cog"></i></span>
