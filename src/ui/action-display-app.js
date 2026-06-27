@@ -136,8 +136,8 @@ export class ActionDisplayApp extends Application {
             const action = actions.find(a => a.id === actionId);
             
             if (action) {
-                // Execute the roll
-                action.roll();
+                // Execute the roll, passing the click event (for modifier keys)
+                action.roll(event);
                 
                 // If not holding Shift, close the overlay after rolling
                 if (!event.shiftKey) {
