@@ -64,6 +64,20 @@ async function registerAdapters() {
     }
 }
 
+// Wrap TokenHUD.clear synchronously during init to ensure it is registered
+// before any asynchronous operations or instance creations occur, matching
+// the reference npc-quick-actions implementation.
+Hooks.on('init', () => {
+    const originalClear = TokenHUD.prototype.clear;
+    TokenHUD.prototype.clear = function () {
+        originalClear.call(this);
+        if (activeApp) {
+            activeApp.close();
+            activeApp = null;
+        }
+    };
+});
+
 Hooks.once('init', async () => {
     log.info("Initializing Bakana's Action Display");
 
@@ -76,15 +90,7 @@ Hooks.once('init', async () => {
     // Bind to globalThis for debugging and external integration
     globalThis.bakanasActionDisplay = actionDisplay;
 
-    // Wrap TokenHUD.clear to close our application when HUD is cleared
-    const originalClear = TokenHUD.prototype.clear;
-    TokenHUD.prototype.clear = function () {
-        originalClear.call(this);
-        if (activeApp) {
-            activeApp.close();
-            activeApp = null;
-        }
-    };
+
 });
 
 Hooks.once('ready', async () => {
@@ -124,3 +130,5 @@ Hooks.on('updateItem', (item) => {
         activeApp.render();
     }
 });
+
+
