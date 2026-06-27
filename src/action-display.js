@@ -1,5 +1,5 @@
-import { BaseSystemAdapter } from './adapters/base-system-adapter.js';
-import { BaseModuleAdapter } from './adapters/base-module-adapter.js';
+import { BaseSystemAdapter } from './adapters/system/base-system-adapter.js';
+import { BaseModuleAdapter } from './adapters/module/base-module-adapter.js';
 import { log } from './lib/logger.js';
 
 // Lists of systems and modules that have adapter implementations

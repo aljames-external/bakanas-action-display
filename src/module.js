@@ -25,7 +25,7 @@ async function registerAdapters() {
 
     // 1. Load active system adapter if supported
     if (actionDisplay.isSystemSupported(systemId)) {
-        const systemPath = `./adapters/${systemId}-system-adapter.js`;
+        const systemPath = `./adapters/system/${systemId}-system-adapter.js`;
         const systemClassName = `${toPascalCase(systemId)}SystemAdapter`;
 
         try {
@@ -47,7 +47,7 @@ async function registerAdapters() {
     const activeModules = actionDisplay.getSupportedModules();
 
     for (const moduleId of activeModules) {
-        const modulePath = `./adapters/${moduleId}-module-adapter.js`;
+        const modulePath = `./adapters/module/${moduleId}-module-adapter.js`;
         const moduleClassName = `${toPascalCase(moduleId)}ModuleAdapter`;
 
         try {
