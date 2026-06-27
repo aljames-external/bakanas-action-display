@@ -2,6 +2,13 @@ import { actionDisplay } from '../action-display.js';
 import { log } from '../lib/logger.js';
 
 /**
+ * Helper to safely localize a key, falling back to a default string if the key is not found.
+ */
+function localize(key, fallback) {
+    return (game.i18n && game.i18n.has(key)) ? game.i18n.localize(key) : fallback;
+}
+
+/**
  * Modern ApplicationV2-based HUD overlay for Bakana's Action Display.
  * Uses HandlebarsApplicationMixin for rendering and the Actions API for event handling.
  * Positions itself dynamically relative to the selected token, with symmetrical slide-out tabs on both sides.
@@ -76,16 +83,16 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         const itemParentLabels = {
-            'all': 'All Items',
-            'weapon': game.i18n.localize('DND5E.ItemTypeWeaponPl') || 'Weapons',
-            'equipment': game.i18n.localize('DND5E.ItemTypeEquipmentPl') || 'Equipment',
-            'consumable': game.i18n.localize('DND5E.ItemTypeConsumablePl') || 'Consumables',
-            'tool': game.i18n.localize('DND5E.ItemTypeToolPl') || 'Tools',
-            'backpack': game.i18n.localize('DND5E.ItemTypeContainerPl') || 'Containers',
-            'loot': game.i18n.localize('DND5E.ItemTypeLootPl') || 'Loot',
-            'feat': game.i18n.localize('DND5E.ItemTypeFeatPl') || 'Features',
-            'spell': game.i18n.localize('DND5E.ItemTypeSpellPl') || 'Spells',
-            'other': game.i18n.localize('DND5E.Other') || 'Other'
+            'all': localize('BAD.tabs.all', 'All Items'),
+            'weapon': localize('DND5E.ItemTypeWeapon', 'Weapon'),
+            'equipment': localize('DND5E.ItemTypeEquipment', 'Equipment'),
+            'consumable': localize('DND5E.ItemTypeConsumable', 'Consumable'),
+            'tool': localize('DND5E.ItemTypeTool', 'Tool'),
+            'backpack': localize('DND5E.ItemTypeContainer', 'Container'),
+            'loot': localize('DND5E.ItemTypeLoot', 'Loot'),
+            'feat': localize('DND5E.ItemTypeFeat', 'Feature'),
+            'spell': localize('DND5E.ItemTypeSpell', 'Spell'),
+            'other': localize('DND5E.Other', 'Other')
         };
 
         const itemParentIcons = {
@@ -188,13 +195,13 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         const parentLabels = {
-            'all': 'All Actions',
-            'standard': 'Standard',
-            'time': 'Time',
-            'monster': 'Monster',
-            'vehicle': 'Vehicle',
-            'special': 'Special',
-            'none': 'None'
+            'all': localize('BAD.actions.all', 'All Actions'),
+            'standard': localize('BAD.actions.standard', 'Standard'),
+            'time': localize('BAD.actions.time', 'Time'),
+            'monster': localize('BAD.actions.monster', 'Monster'),
+            'vehicle': localize('BAD.actions.vehicle', 'Vehicle'),
+            'special': localize('BAD.actions.special', 'Special'),
+            'none': localize('BAD.actions.none', 'None')
         };
 
         const parentIcons = {
@@ -208,16 +215,16 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         };
 
         const subLabels = {
-            'action': 'Action',
-            'bonus': 'Bonus Action',
-            'reaction': 'Reaction',
-            'minute': 'Minute',
-            'hour': 'Hour',
-            'day': 'Day',
-            'legendary': 'Legendary',
-            'mythic': 'Mythic',
-            'lair': 'Lair',
-            'crew': 'Crew'
+            'action': localize('DND5E.Action', 'Action'),
+            'bonus': localize('DND5E.BonusAction', 'Bonus Action'),
+            'reaction': localize('DND5E.Reaction', 'Reaction'),
+            'minute': localize('DND5E.TimeMinute', 'Minute'),
+            'hour': localize('DND5E.TimeHour', 'Hour'),
+            'day': localize('DND5E.TimeDay', 'Day'),
+            'legendary': localize('DND5E.LegendaryAction', 'Legendary'),
+            'mythic': localize('DND5E.MythicAction', 'Mythic'),
+            'lair': localize('DND5E.LairAction', 'Lair'),
+            'crew': localize('DND5E.CrewAction', 'Crew')
         };
 
         // Build the right-side hierarchy dynamically
