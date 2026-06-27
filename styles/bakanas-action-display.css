@@ -39,7 +39,7 @@
     gap: 10px;
     user-select: none;
     max-height: 500px;
-    overflow-y: auto;
+    overflow: hidden; /* Prevents the container (including tabs) from scrolling */
 }
 
 /* Tab Bar */
@@ -90,6 +90,9 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow-y: auto; /* Only the item list scrolls when it exceeds max-height */
+    min-height: 0;    /* Ensures flexbox scrolling works correctly in all browsers */
+    padding-right: 4px; /* Space to prevent scrollbar from overlapping item text/icons */
 }
 
 /* Category Container */
