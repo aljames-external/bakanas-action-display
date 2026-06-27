@@ -1,54 +1,51 @@
 <div class="bakanas-action-display-container">
-    <!-- Clickable Tabs for Filtering -->
-    <div class="bad-tabs">
-        {{#each tabs}}
-        <button class="bad-tab-btn {{#if this.active}}active{{/if}}" data-action="changeTab" data-tab="{{this.id}}" title="{{this.label}}">
+    <!-- Top Tabs (Item Types: Weapon, Spell, Feat, etc.) -->
+    <div class="bad-tabs bad-top-tabs">
+        {{#each itemTypes}}
+        <button class="bad-tab-btn {{#if this.active}}active{{/if}}" data-action="changeItemType" data-type="{{this.id}}" title="{{this.label}}">
             {{this.label}}
         </button>
         {{/each}}
     </div>
     
-    <!-- Active Tab Content -->
-    <div class="bad-tab-content">
-        {{#if categories.length}}
-            {{#each categories}}
-            <div class="bad-category {{#if this.expanded}}expanded{{/if}}" data-category="{{this.id}}">
-                <!-- Category Header (Clickable to Expand/Collapse) -->
-                <div class="bad-category-header" data-action="toggleCategory">
-                    <span class="bad-category-toggle">
-                        {{#if this.expanded}}<i class="fas fa-chevron-down"></i>{{else}}<i class="fas fa-chevron-right"></i>{{/if}}
+    <div class="bad-main-layout">
+        <!-- Main Content Area (Flat list of filtered items) -->
+        <div class="bad-tab-content">
+            {{#if items.length}}
+                {{#each items}}
+                <div class="bad-action-item" data-action="rollAction" data-action-id="{{this.id}}">
+                    {{#if this.img}}
+                    <img class="bad-action-icon" src="{{this.img}}" alt="{{this.name}}" />
+                    {{else}}
+                    <div class="bad-action-icon-placeholder"><i class="fas fa-dice-d20"></i></div>
+                    {{/if}}
+                    
+                    <span class="bad-action-name">{{this.name}}</span>
+                    
+                    {{#unless (eq this.uses.available null)}}
+                    <span class="bad-action-uses {{#if (eq this.uses.available 0)}}depleted{{/if}}">
+                        {{this.uses.available}}{{#if this.uses.max}} / {{this.uses.max}}{{/if}}
                     </span>
-                    <span class="bad-category-name">{{this.label}}</span>
+                    {{/unless}}
                 </div>
-                
-                <!-- Category Items -->
-                <div class="bad-category-items">
-                    {{#each this.items}}
-                    <div class="bad-action-item" data-action="rollAction" data-action-id="{{this.id}}">
-                        {{#if this.img}}
-                        <img class="bad-action-icon" src="{{this.img}}" alt="{{this.name}}" />
-                        {{else}}
-                        <div class="bad-action-icon-placeholder"><i class="fas fa-dice-d20"></i></div>
-                        {{/if}}
-                        
-                        <span class="bad-action-name">{{this.name}}</span>
-                        
-                        {{#unless (eq this.uses.available null)}}
-                        <span class="bad-action-uses {{#if (eq this.uses.available 0)}}depleted{{/if}}">
-                            {{this.uses.available}}{{#if this.uses.max}} / {{this.uses.max}}{{/if}}
-                        </span>
-                        {{/unless}}
-
-
-                    </div>
-                    {{/each}}
+                {{/each}}
+            {{else}}
+                <div class="bad-no-actions">
+                    <i class="fas fa-info-circle"></i> No actions available.
                 </div>
+            {{/if}}
+        </div>
+
+        <!-- Right-side Slide-out Tabs (Action Types: Action, Bonus, Reaction) -->
+        <div class="bad-right-tabs">
+            {{#each actionTypes}}
+            <div class="bad-right-tab {{#if this.active}}active{{/if}}" data-action="changeActionType" data-type="{{this.id}}" title="{{this.label}}">
+                <div class="bad-right-tab-icon">
+                    <i class="{{this.icon}}"></i>
+                </div>
+                <span class="bad-right-tab-text">{{this.label}}</span>
             </div>
             {{/each}}
-        {{else}}
-            <div class="bad-no-actions">
-                <i class="fas fa-info-circle"></i> No actions available in this category.
-            </div>
-        {{/if}}
+        </div>
     </div>
 </div>
