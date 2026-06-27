@@ -3,6 +3,7 @@
     position: fixed !important;
     z-index: 1000;
     pointer-events: all;
+    opacity: var(--bad-hud-opacity, 0.88); /* Configurable opacity */
 }
 
 .bakanas-action-display-window.window-app {
