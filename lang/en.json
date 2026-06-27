@@ -1,6 +1,9 @@
 {
     "BAD": {
         "title": "Bakana's Action Display",
+        "tabs": {
+            "all": "All Items"
+        },
         "settings": {
             "logVerbosity": {
                 "name": "Log Verbosity Level",

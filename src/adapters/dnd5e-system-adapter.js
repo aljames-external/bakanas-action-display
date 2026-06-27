@@ -2,7 +2,7 @@ import { BaseSystemAdapter } from './base-system-adapter.js';
 
 /**
  * System adapter for the DnD5e system.
- * Extracts actions, spells, features, and weapons, and calculates their remaining uses.
+ * Modifies the base actions list by filtering out passive items, calculating resource uses, and sorting them into tabs.
  */
 export class Dnd5eSystemAdapter extends BaseSystemAdapter {
     constructor() {
@@ -10,24 +10,52 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
     }
 
     /**
-     * Extract and sort actions from a DnD5e actor.
+     * Filter, map, and sort the base actions list for DnD5e.
+     * @param {Object[]} actions Base action list from the core
      * @param {Actor} actor 
-     * @returns {Object[]} Unified action objects
+     * @returns {Object[]} The modified actions list
      */
-    getActions(actor) {
-        if (!actor) return [];
+    modifyActions(actions, actor) {
+        const modified = [];
 
-        const actions = [];
-        for (const item of actor.items) {
-            const action = this._parseItem(item, actor);
-            if (action) {
-                actions.push(action);
+        for (const action of actions) {
+            const item = action.originalItem;
+            const activationType = item.system?.activation?.type;
+
+            // 1. Filter out items without activation types (passive items)
+            if (!activationType || activationType === 'none') continue;
+
+            // 2. Filter out unequipped items for weapons, equipment, and consumables
+            const isEquipped = item.system.equipped !== false;
+            if (['weapon', 'equipment', 'consumable'].includes(item.type) && !isEquipped) {
+                continue;
             }
+
+            // 3. Filter out unprepared spells (unless they are innate, at-will, or pact magic)
+            const prepMode = item.system.preparation?.mode ?? 'prepared';
+            const isPrepared = item.system.preparation?.prepared !== false;
+            if (item.type === 'spell' && !['innate', 'atwill', 'pact'].includes(prepMode) && !isPrepared) {
+                continue;
+            }
+
+            // 4. Calculate resource uses
+            action.uses = this._calculateUses(item, actor);
+
+            // 5. Assign to tabs based on normalized activation type
+            const tab = this._normalizeActivationType(activationType);
+            action.tabs = [tab];
+
+            // Maintain system-specific data
+            action.systemData = {
+                recharge: item.system.recharge
+            };
+
+            modified.push(action);
         }
 
         // Sort actions: activation type first, then item type, then name
-        return actions.sort((a, b) => {
-            const actSort = this._getActivationSort(a.activationType) - this._getActivationSort(b.activationType);
+        return modified.sort((a, b) => {
+            const actSort = this._getActivationSort(a.tabs[0]) - this._getActivationSort(b.tabs[0]);
             if (actSort !== 0) return actSort;
 
             const typeSort = this._getTypeSort(a.type) - this._getTypeSort(b.type);
@@ -35,52 +63,6 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
 
             return a.name.localeCompare(b.name);
         });
-    }
-
-    /**
-     * Parse a single DnD5e Item into a unified action.
-     * @param {Item} item 
-     * @param {Actor} actor 
-     * @returns {Object|null} The action object, or null if it's not an action
-     */
-    _parseItem(item, actor) {
-        const activationType = item.system?.activation?.type;
-        if (!activationType || activationType === 'none') return null;
-
-        // Filter out unequipped items for weapons/equipment/consumables
-        const isEquipped = item.system.equipped !== false;
-        if (['weapon', 'equipment', 'consumable'].includes(item.type) && !isEquipped) {
-            return null;
-        }
-
-        // Filter out unprepared spells (unless they are innate, at-will, or pact magic)
-        const prepMode = item.system.preparation?.mode ?? 'prepared';
-        const isPrepared = item.system.preparation?.prepared !== false;
-        if (item.type === 'spell' && !['innate', 'atwill', 'pact'].includes(prepMode) && !isPrepared) {
-            return null;
-        }
-
-        const uses = this._calculateUses(item, actor);
-
-        return {
-            id: item.id,
-            name: item.name,
-            type: item.type,
-            img: item.img,
-            activationType: this._normalizeActivationType(activationType),
-            roll: (event) => {
-                if (typeof item.use === 'function') {
-                    item.use({ event });
-                } else if (typeof item.roll === 'function') {
-                    item.roll({ event });
-                }
-            },
-            originalItem: item,
-            uses: uses,
-            systemData: {
-                recharge: item.system.recharge
-            }
-        };
     }
 
     /**

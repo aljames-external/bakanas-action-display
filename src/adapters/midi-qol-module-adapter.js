@@ -11,11 +11,11 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
 
     /**
      * Process actions and check for Midi-QOL automation flags.
-     * @param {Object[]} actions 
+     * @param {Object[]} actions The current list of actions
      * @param {Actor} actor 
      * @returns {Object[]} The modified actions
      */
-    processActions(actions, actor) {
+    modifyActions(actions, actor) {
         return actions.map(action => {
             const item = action.originalItem;
             if (!item) return action;

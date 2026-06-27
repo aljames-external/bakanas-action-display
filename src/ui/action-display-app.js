@@ -33,50 +33,60 @@ export class ActionDisplayApp extends Application {
     getData(options) {
         const rawActions = actionDisplay.getActions(this.actor);
 
-        // 1. Extract all unique activation types present in the actions to build tabs
-        const uniqueActivationTypes = new Set(rawActions.map(a => a.activationType));
-        
-        // Define standard tab labels
+        // 1. Extract all unique tab IDs present in the actions
+        const uniqueTabs = new Set();
+        for (const action of rawActions) {
+            if (action.tabs && Array.isArray(action.tabs)) {
+                for (const tabId of action.tabs) {
+                    uniqueTabs.add(tabId);
+                }
+            }
+        }
+
+        // Define standard tab labels (with localization where possible)
         const tabLabels = {
-            'action': game.i18n.localize('DND5E.Action'),
-            'bonus': game.i18n.localize('DND5E.BonusAction'),
-            'reaction': game.i18n.localize('DND5E.Reaction'),
-            'legendary': game.i18n.localize('DND5E.LegendaryAction'),
-            'lair': game.i18n.localize('DND5E.LairAction'),
-            'special': game.i18n.localize('DND5E.Special'),
-            'crew': game.i18n.localize('DND5E.CrewAction'),
-            'other': game.i18n.localize('DND5E.Other')
+            'all': game.i18n.localize('BAD.tabs.all') || 'All Items',
+            'action': game.i18n.localize('DND5E.Action') || 'Action',
+            'bonus': game.i18n.localize('DND5E.BonusAction') || 'Bonus Action',
+            'reaction': game.i18n.localize('DND5E.Reaction') || 'Reaction',
+            'legendary': game.i18n.localize('DND5E.LegendaryAction') || 'Legendary',
+            'lair': game.i18n.localize('DND5E.LairAction') || 'Lair',
+            'special': game.i18n.localize('DND5E.Special') || 'Special',
+            'crew': game.i18n.localize('DND5E.CrewAction') || 'Crew',
+            'other': game.i18n.localize('DND5E.Other') || 'Other'
         };
 
         // Build the tabs array
-        const tabs = Array.from(uniqueActivationTypes).map(type => ({
-            id: type,
-            label: tabLabels[type] ?? type.toUpperCase(),
-            active: type === this.activeTab
+        const tabs = Array.from(uniqueTabs).map(tabId => ({
+            id: tabId,
+            label: tabLabels[tabId] ?? tabId.toUpperCase(),
+            active: tabId === this.activeTab
         }));
 
-        // Sort tabs by a predefined order
-        const tabOrder = ['action', 'bonus', 'reaction', 'legendary', 'lair', 'crew', 'special', 'other'];
+        // Sort tabs by a predefined order (fallback 'all' appears first)
+        const tabOrder = ['all', 'action', 'bonus', 'reaction', 'legendary', 'lair', 'crew', 'special', 'other'];
         tabs.sort((a, b) => tabOrder.indexOf(a.id) - tabOrder.indexOf(b.id));
 
         // If the active tab is no longer available (e.g. actor changed), default to the first available
-        if (tabs.length && !uniqueActivationTypes.has(this.activeTab)) {
+        if (tabs.length && !uniqueTabs.has(this.activeTab)) {
             this.activeTab = tabs[0].id;
             tabs[0].active = true;
         }
 
-        // 2. Filter actions for the active tab
-        const filteredActions = rawActions.filter(a => a.activationType === this.activeTab);
+        // 2. Filter actions for the active tab (since an action can be in multiple tabs, we check if it includes it)
+        const filteredActions = rawActions.filter(a => a.tabs && a.tabs.includes(this.activeTab));
 
         // 3. Group filtered actions by item type (categories)
         const categoriesMap = new Map();
+        
+        // System-independent fallback labels, using DnD5e as primary if available
         const categoryLabels = {
-            'weapon': game.i18n.localize('DND5E.ItemTypeWeaponPl'),
-            'equipment': game.i18n.localize('DND5E.ItemTypeEquipmentPl'),
-            'consumable': game.i18n.localize('DND5E.ItemTypeConsumablePl'),
-            'feat': game.i18n.localize('DND5E.ItemTypeFeatPl'),
-            'spell': game.i18n.localize('DND5E.ItemTypeSpellPl'),
-            'other': game.i18n.localize('DND5E.Other')
+            'weapon': game.i18n.localize('DND5E.ItemTypeWeaponPl') || 'Weapons',
+            'equipment': game.i18n.localize('DND5E.ItemTypeEquipmentPl') || 'Equipment',
+            'consumable': game.i18n.localize('DND5E.ItemTypeConsumablePl') || 'Consumables',
+            'feat': game.i18n.localize('DND5E.ItemTypeFeatPl') || 'Features/Actions',
+            'spell': game.i18n.localize('DND5E.ItemTypeSpellPl') || 'Spells',
+            'other': game.i18n.localize('DND5E.Other') || 'Other'
         };
 
         for (const action of filteredActions) {
