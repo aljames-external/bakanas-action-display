@@ -1,0 +1,54 @@
+{
+    "id": "bakanas-action-display",
+    "title": "Bakana's Action Display",
+    "description": "<p>An elegant action display overlay for tokens in Foundry VTT.</p>",
+    "version": "#{VERSION}#",
+    "authors": [
+        {
+            "name": "Bakana!",
+            "url": "https://github.com/aljames-arctic",
+            "flags": {}
+        }
+    ],
+    "compatibility": {
+        "minimum": "12",
+        "verified": "14"
+    },
+    "esmodules": [
+        "src/module.js"
+    ],
+    "languages": [
+        {
+            "lang": "en",
+            "name": "English",
+            "path": "lang/en.json",
+            "flags": {}
+        }
+    ],
+    "url": "#{URL}#",
+    "manifest": "#{MANIFEST}#",
+    "download": "#{DOWNLOAD}#",
+    "changelog": "https://github.com/aljames-arctic/bakanas-action-display/releases",
+    "bugs": "https://github.com/aljames-arctic/bakanas-action-display/issues",
+    "license": "LICENSE",
+    "relationships": {
+        "requires": [
+            {
+                "id": "sequencer",
+                "type": "module",
+                "compatibility": {}
+            },
+            {
+                "id": "socketlib",
+                "type": "module",
+                "compatibility": {}
+            }
+        ],
+        "recommends": []
+    },
+    "styles": [
+        "styles/bakanas-action-display.css"
+    ],
+    "socket": true,
+    "flags": {}
+}
