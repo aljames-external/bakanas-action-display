@@ -71,24 +71,18 @@ Hooks.once('init', async () => {
     globalThis.bakanasActionDisplay = actionDisplay;
 });
 
-// Ready hook - Patch the live instance directly to ensure it fires reliably
+// Ready hook
 Hooks.once('ready', async () => {
     log.info("Ready");
+});
 
-    if (canvas.hud?.token) {
-        log.debug("Patching canvas.hud.token.clear directly on the live instance");
-        const originalClear = canvas.hud.token.clear;
-        canvas.hud.token.clear = function (...args) {
-            log.debug("canvas.hud.token.clear called. activeApp is:", activeApp);
-            originalClear.apply(this, args);
-            if (activeApp) {
-                log.debug("Closing activeApp");
-                activeApp.close();
-                activeApp = null;
-            }
-        };
-    } else {
-        log.error("canvas.hud.token not found during ready hook!");
+// Close our overlay when the Token HUD is closed
+Hooks.on('closeTokenHUD', () => {
+    log.debug("closeTokenHUD hook fired");
+    if (activeApp) {
+        log.debug("Closing activeApp");
+        activeApp.close();
+        activeApp = null;
     }
 });
 
