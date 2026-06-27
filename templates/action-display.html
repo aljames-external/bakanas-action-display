@@ -36,14 +36,34 @@
             {{/if}}
         </div>
 
-        <!-- Right-side Slide-out Tabs (Action Types: Action, Bonus, Reaction) -->
+        <!-- Right-side Slide-out Accordion Tabs (Action Types: Standard, Time, Monster, etc.) -->
         <div class="bad-right-tabs">
             {{#each actionTypes}}
-            <div class="bad-right-tab {{#if this.active}}active{{/if}}" data-action="changeActionType" data-type="{{this.id}}" title="{{this.label}}">
-                <div class="bad-right-tab-icon">
-                    <i class="{{this.icon}}"></i>
+            <div class="bad-right-tab-group {{#if this.expanded}}expanded{{/if}}">
+                <!-- Parent Tab -->
+                <div class="bad-right-tab {{#if this.active}}active{{/if}} {{#if this.activeParent}}active-parent{{/if}}" 
+                     data-action="changeActionType" 
+                     data-type="{{this.id}}" 
+                     data-has-sub-tabs="{{#if this.subTabs.length}}true{{else}}false{{/if}}"
+                     title="{{this.label}}">
+                    <div class="bad-right-tab-icon">
+                        <i class="{{this.icon}}"></i>
+                    </div>
+                    <span class="bad-right-tab-text">{{this.label}}</span>
                 </div>
-                <span class="bad-right-tab-text">{{this.label}}</span>
+                
+                <!-- Sub-tabs (Revealed when parent is expanded) -->
+                {{#if this.subTabs.length}}
+                <div class="bad-right-sub-tabs">
+                    {{#each this.subTabs}}
+                    <button class="bad-right-sub-tab {{#if this.active}}active{{/if}}" 
+                            data-action="changeSubActionType" 
+                            data-type="{{this.id}}">
+                        {{this.label}}
+                    </button>
+                    {{/each}}
+                </div>
+                {{/if}}
             </div>
             {{/each}}
         </div>

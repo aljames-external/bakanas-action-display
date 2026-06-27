@@ -214,7 +214,7 @@
     color: #475569;
 }
 
-/* Right-side Slide-out Tabs (Action Types) */
+/* Right-side Slide-out Tabs (Action Types Accordion) */
 .bad-right-tabs {
     position: absolute;
     left: 100%; /* Anchor to the right edge of the main container */
@@ -225,6 +225,14 @@
     z-index: -1; /* Placed behind the container so the seam is hidden underneath */
 }
 
+/* Tab Group (Parent + Sub-tabs) */
+.bad-right-tab-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Parent Tab */
 .bad-right-tab {
     display: flex;
     align-items: center;
@@ -276,7 +284,7 @@
     transition-delay: 0.1s; /* Fade in text after expansion starts */
 }
 
-/* Selected/Active Tab State */
+/* Selected/Active Parent Tab State (when no sub-tab is active) */
 .bad-right-tab.active {
     background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%) !important;
     border-color: #8b5cf6 !important;
@@ -286,4 +294,64 @@
 
 .bad-right-tab.active .bad-right-tab-icon {
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+/* Selected Parent Tab State (when a sub-tab IS active) - subtle highlight */
+.bad-right-tab.active-parent {
+    background: rgba(124, 58, 237, 0.15) !important;
+    border-color: rgba(124, 58, 237, 0.4) !important;
+    color: #a78bfa !important;
+}
+
+/* Sub-tabs Container */
+.bad-right-sub-tabs {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+    width: 100%;
+}
+
+/* Show sub-tabs with a subtle fade-in animation when expanded */
+.bad-right-tab-group.expanded .bad-right-sub-tabs {
+    display: flex;
+    animation: bad-fade-in-slide 0.2s ease-out;
+}
+
+/* Sub-tab Button */
+.bad-right-sub-tab {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+    color: #cbd5e1;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    width: fit-content;
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+    height: auto !important;
+    line-height: normal !important;
+}
+
+.bad-right-sub-tab:hover {
+    background: rgba(167, 139, 250, 0.1);
+    color: #ffffff;
+    border-color: rgba(167, 139, 250, 0.3);
+}
+
+.bad-right-sub-tab.active {
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%) !important;
+    border-color: #8b5cf6 !important;
+    color: #ffffff !important;
+    box-shadow: 2px 2px 8px rgba(124, 58, 237, 0.4);
+}
+
+/* Micro-animations */
+@keyframes bad-fade-in-slide {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }

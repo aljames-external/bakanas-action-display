@@ -2,7 +2,8 @@ import { BaseSystemAdapter } from './base-system-adapter.js';
 
 /**
  * System adapter for the DnD5e system.
- * Modifies the base actions list by filtering out passive items, calculating resource uses, and sorting them into tabs.
+ * Modifies the base actions list by filtering, calculating resource uses,
+ * and sorting them into hierarchical action tabs and item types.
  */
 export class Dnd5eSystemAdapter extends BaseSystemAdapter {
     constructor() {
@@ -17,23 +18,26 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
      */
     modifyActions(actions, actor) {
         const modified = [];
+        const allowedTypes = ['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'feat', 'spell'];
 
         for (const action of actions) {
             const item = action.originalItem;
+            
+            // 1. Filter by allowed item types
+            if (!allowedTypes.includes(item.type)) continue;
+
             const activationType = item.system?.activation?.type;
 
-            // 1. Filter out items without activation types (passive items)
-            if (!activationType || activationType === 'none') continue;
-
-            // 2. Filter out unequipped items for weapons, equipment, and consumables
+            // 2. Filter out unequipped items for weapons, equipment, consumables, and tools
+            // (Containers and Loot don't have equipped states and are always allowed if owned)
             const isEquipped = item.system.equipped !== false;
-            if (['weapon', 'equipment', 'consumable'].includes(item.type) && !isEquipped) {
+            if (['weapon', 'equipment', 'consumable', 'tool'].includes(item.type) && !isEquipped) {
                 continue;
             }
 
             // 3. Filter out unprepared spells (unless they are innate, at-will, or pact magic)
-            const prepMode = item.system.method ?? 'prepared';
-            const isPrepared = item.system.prepared !== false;
+            const prepMode = item.system.preparation?.mode ?? 'prepared';
+            const isPrepared = item.system.preparation?.prepared !== false;
             if (item.type === 'spell' && !['innate', 'atwill', 'pact'].includes(prepMode) && !isPrepared) {
                 continue;
             }
@@ -41,9 +45,15 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             // 4. Calculate resource uses
             action.uses = this._calculateUses(item, actor);
 
-            // 5. Assign to tabs based on normalized activation type
-            const tab = this._normalizeActivationType(activationType);
-            action.tabs = [tab];
+            // 5. Assign to hierarchical tabs: [parentTab, subTab]
+            const parentTab = this._getParentTab(activationType);
+            const subTab = this._getSubTab(activationType);
+            
+            if (subTab) {
+                action.tabs = [parentTab, subTab];
+            } else {
+                action.tabs = [parentTab];
+            }
 
             // Maintain system-specific data
             action.systemData = {
@@ -53,10 +63,17 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             modified.push(action);
         }
 
-        // Sort actions: activation type first, then item type, then name
+        // Sort actions: parent activation type first, then sub-activation, then item type, then name
         return modified.sort((a, b) => {
-            const actSort = this._getActivationSort(a.tabs[0]) - this._getActivationSort(b.tabs[0]);
-            if (actSort !== 0) return actSort;
+            const aParent = a.tabs[0];
+            const bParent = b.tabs[0];
+            const parentSort = this._getParentSort(aParent) - this._getParentSort(bParent);
+            if (parentSort !== 0) return parentSort;
+
+            const aSub = a.tabs[1] ?? '';
+            const bSub = b.tabs[1] ?? '';
+            const subSort = this._getSubSort(aParent, aSub) - this._getSubSort(bParent, bSub);
+            if (subSort !== 0) return subSort;
 
             const typeSort = this._getTypeSort(a.type) - this._getTypeSort(b.type);
             if (typeSort !== 0) return typeSort;
@@ -66,33 +83,79 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
     }
 
     /**
-     * Normalize DnD5e activation types to our core types.
+     * Determine the parent action tab based on DnD5e activation type.
      */
-    _normalizeActivationType(type) {
+    _getParentTab(type) {
+        if (!type || type === 'none') return 'none';
+        
+        switch (type) {
+            case 'action':
+            case 'bonus':
+            case 'reaction':
+                return 'standard';
+            
+            case 'minute':
+            case 'hour':
+            case 'day':
+                return 'time';
+                
+            case 'legendary':
+            case 'mythic':
+            case 'lair':
+                return 'monster';
+                
+            case 'crew':
+                return 'vehicle';
+                
+            case 'special':
+                return 'special';
+                
+            default:
+                return 'none';
+        }
+    }
+
+    /**
+     * Determine the sub-action tab based on DnD5e activation type.
+     */
+    _getSubTab(type) {
+        if (!type || type === 'none') return null;
+        
         switch (type) {
             case 'action': return 'action';
             case 'bonus': return 'bonus';
             case 'reaction': return 'reaction';
+            case 'minute': return 'minute';
+            case 'hour': return 'hour';
+            case 'day': return 'day';
             case 'legendary': return 'legendary';
+            case 'mythic': return 'mythic';
             case 'lair': return 'lair';
-            case 'special': return 'special';
             case 'crew': return 'crew';
-            default: return 'other';
+            default: return null;
         }
     }
 
-    _getActivationSort(type) {
+    _getParentSort(type) {
         const order = {
-            'action': 1,
-            'bonus': 2,
-            'reaction': 3,
-            'legendary': 4,
-            'lair': 5,
-            'crew': 6,
-            'special': 7,
-            'other': 8
+            'standard': 1,
+            'time': 2,
+            'monster': 3,
+            'vehicle': 4,
+            'special': 5,
+            'none': 6
         };
         return order[type] ?? 99;
+    }
+
+    _getSubSort(parent, sub) {
+        const orders = {
+            'standard': { 'action': 1, 'bonus': 2, 'reaction': 3 },
+            'time': { 'minute': 1, 'hour': 2, 'day': 3 },
+            'monster': { 'legendary': 1, 'mythic': 2, 'lair': 3 },
+            'vehicle': { 'crew': 1 }
+        };
+        return orders[parent]?.[sub] ?? 99;
     }
 
     _getTypeSort(type) {
@@ -100,9 +163,11 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             'weapon': 1,
             'equipment': 2,
             'consumable': 3,
-            'feat': 4,
-            'spell': 5,
-            'other': 6
+            'tool': 4,
+            'backpack': 5,
+            'loot': 6,
+            'feat': 7,
+            'spell': 8
         };
         return order[type] ?? 99;
     }
@@ -153,7 +218,7 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
 
         // 5. Spells (slot-based spells)
         if (item.type === 'spell') {
-            const prepMode = system.method;
+            const prepMode = system.preparation?.mode;
             const actorSpells = actor.system.spells;
             if (prepMode === 'pact') {
                 return {

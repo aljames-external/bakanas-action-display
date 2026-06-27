@@ -4,7 +4,7 @@ import { log } from '../lib/logger.js';
 /**
  * Modern ApplicationV2-based HUD overlay for Bakana's Action Display.
  * Uses HandlebarsApplicationMixin for rendering and the Actions API for event handling.
- * Positions itself dynamically relative to the selected token, with slide-out tabs.
+ * Positions itself dynamically relative to the selected token, with hierarchical slide-out tabs.
  */
 export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
     constructor(token, options = {}) {
@@ -13,8 +13,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.actor = token.actor;
         
         // Active filter states
-        this.activeItemType = 'all';  // Top tabs (spell, weapon, feat, etc.)
-        this.activeActionType = 'all'; // Right-side slide-out tabs (action, bonus, reaction, etc.)
+        this.activeItemType = 'all';       // Top tabs (spell, weapon, feat, etc.)
+        this.activeParentType = 'standard'; // Right-side parent tabs (standard, time, monster, etc.)
+        this.activeSubType = 'all';         // Right-side sub-tabs (action, bonus, reaction, etc.)
     }
 
     /**
@@ -36,6 +37,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         actions: {
             changeItemType: ActionDisplayApp._onChangeItemType,
             changeActionType: ActionDisplayApp._onChangeActionType,
+            changeSubActionType: ActionDisplayApp._onChangeSubActionType,
             rollAction: ActionDisplayApp._onRollAction
         }
     };
@@ -71,6 +73,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             'weapon': game.i18n.localize('DND5E.ItemTypeWeaponPl') || 'Weapons',
             'equipment': game.i18n.localize('DND5E.ItemTypeEquipmentPl') || 'Equipment',
             'consumable': game.i18n.localize('DND5E.ItemTypeConsumablePl') || 'Consumables',
+            'tool': game.i18n.localize('DND5E.ItemTypeToolPl') || 'Tools',
+            'backpack': game.i18n.localize('DND5E.ItemTypeContainerPl') || 'Containers',
+            'loot': game.i18n.localize('DND5E.ItemTypeLootPl') || 'Loot',
             'feat': game.i18n.localize('DND5E.ItemTypeFeatPl') || 'Features',
             'spell': game.i18n.localize('DND5E.ItemTypeSpellPl') || 'Spells',
             'other': game.i18n.localize('DND5E.Other') || 'Other'
@@ -83,7 +88,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }));
 
         // Sort item types by a predefined order
-        const itemTypeOrder = ['all', 'weapon', 'spell', 'feat', 'equipment', 'consumable', 'other'];
+        const itemTypeOrder = ['all', 'weapon', 'spell', 'feat', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'other'];
         
         // Ensure 'all' is always present if we have actions
         if (!uniqueItemTypes.has('all') && rawActions.length > 0) {
@@ -103,77 +108,136 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         // 2. Extract unique Action Types (for Right-side Tabs)
-        const uniqueActionTypes = new Set();
+        // We build a hierarchy: Parent -> Sub-tabs based on what actually exists in the actor's actions
+        const existingCombinations = new Set();
         for (const action of rawActions) {
             if (action.tabs && Array.isArray(action.tabs)) {
-                for (const tabId of action.tabs) {
-                    uniqueActionTypes.add(tabId);
+                if (action.tabs.length === 2) {
+                    existingCombinations.add(`${action.tabs[0]}/${action.tabs[1]}`);
+                } else if (action.tabs.length === 1) {
+                    existingCombinations.add(action.tabs[0]);
                 }
             }
         }
 
-        const actionTypeLabels = {
-            'all': game.i18n.localize('BAD.tabs.all') || 'All',
-            'action': game.i18n.localize('DND5E.Action') || 'Action',
-            'bonus': game.i18n.localize('DND5E.BonusAction') || 'Bonus',
-            'reaction': game.i18n.localize('DND5E.Reaction') || 'Reaction',
-            'legendary': game.i18n.localize('DND5E.LegendaryAction') || 'Legendary',
-            'lair': game.i18n.localize('DND5E.LairAction') || 'Lair',
-            'special': game.i18n.localize('DND5E.Special') || 'Special',
-            'crew': game.i18n.localize('DND5E.CrewAction') || 'Crew',
-            'other': game.i18n.localize('DND5E.Other') || 'Other'
+        const parentLabels = {
+            'standard': 'Standard',
+            'time': 'Time',
+            'monster': 'Monster',
+            'vehicle': 'Vehicle',
+            'special': 'Special',
+            'none': 'None'
         };
 
-        const actionTypeIcons = {
-            'all': 'fas fa-border-all',
-            'action': 'fas fa-hand-fist',
-            'bonus': 'fas fa-plus',
-            'reaction': 'fas fa-bolt',
-            'legendary': 'fas fa-crown',
-            'lair': 'fas fa-dungeon',
+        const parentIcons = {
+            'standard': 'fas fa-hand-fist',
+            'time': 'fas fa-clock',
+            'monster': 'fas fa-dragon',
+            'vehicle': 'fas fa-ship',
             'special': 'fas fa-star',
-            'crew': 'fas fa-ship',
-            'other': 'fas fa-ellipsis'
+            'none': 'fas fa-ban'
         };
 
-        const actionTypes = Array.from(uniqueActionTypes).map(actionId => ({
-            id: actionId,
-            label: actionTypeLabels[actionId] ?? actionId.toUpperCase(),
-            icon: actionTypeIcons[actionId] ?? 'fas fa-question',
-            active: actionId === this.activeActionType
-        }));
+        const subLabels = {
+            'action': 'Action',
+            'bonus': 'Bonus Action',
+            'reaction': 'Reaction',
+            'minute': 'Minute',
+            'hour': 'Hour',
+            'day': 'Day',
+            'legendary': 'Legendary',
+            'mythic': 'Mythic',
+            'lair': 'Lair',
+            'crew': 'Crew'
+        };
 
-        // Sort action types by a predefined order
-        const actionTypeOrder = ['all', 'action', 'bonus', 'reaction', 'legendary', 'lair', 'crew', 'special', 'other'];
-        
-        // Ensure 'all' is always present if we have actions
-        if (!uniqueActionTypes.has('all') && rawActions.length > 0) {
-            actionTypes.unshift({
-                id: 'all',
-                label: actionTypeLabels['all'],
-                icon: actionTypeIcons['all'],
-                active: this.activeActionType === 'all'
-            });
+        // Build the hierarchy dynamically
+        const parentGroups = {};
+        for (const combo of existingCombinations) {
+            const parts = combo.split('/');
+            const parentId = parts[0];
+            const subId = parts[1]; // might be undefined
+
+            if (!parentGroups[parentId]) {
+                parentGroups[parentId] = {
+                    id: parentId,
+                    label: parentLabels[parentId] ?? parentId.toUpperCase(),
+                    icon: parentIcons[parentId] ?? 'fas fa-question',
+                    active: parentId === this.activeParentType,
+                    expanded: parentId === this.activeParentType,
+                    activeParent: parentId === this.activeParentType && this.activeSubType && this.activeSubType !== 'all',
+                    subTabs: []
+                };
+            }
+
+            if (subId) {
+                parentGroups[parentId].subTabs.push({
+                    id: subId,
+                    label: subLabels[subId] ?? subId.toUpperCase(),
+                    active: parentId === this.activeParentType && subId === this.activeSubType
+                });
+            }
         }
-        actionTypes.sort((a, b) => actionTypeOrder.indexOf(a.id) - actionTypeOrder.indexOf(b.id));
 
-        // If the active action type is no longer available, default to 'all'
-        if (actionTypes.length && !actionTypes.some(t => t.id === this.activeActionType)) {
-            this.activeActionType = 'all';
-            const allTab = actionTypes.find(t => t.id === 'all');
-            if (allTab) allTab.active = true;
+        // Convert to array and sort by a predefined order
+        const parentOrder = ['standard', 'time', 'monster', 'vehicle', 'special', 'none'];
+        const actionTypes = Object.values(parentGroups);
+        actionTypes.sort((a, b) => parentOrder.indexOf(a.id) - parentOrder.indexOf(b.id));
+
+        // Sort sub-tabs within each parent and add 'All' if sub-tabs exist
+        const subOrder = {
+            'standard': ['all', 'action', 'bonus', 'reaction'],
+            'time': ['all', 'minute', 'hour', 'day'],
+            'monster': ['all', 'legendary', 'mythic', 'lair'],
+            'vehicle': ['all', 'crew']
+        };
+
+        for (const parent of actionTypes) {
+            if (parent.subTabs.length > 0) {
+                // Add an 'All' sub-tab
+                parent.subTabs.unshift({
+                    id: 'all',
+                    label: 'All',
+                    active: parent.id === this.activeParentType && this.activeSubType === 'all'
+                });
+                
+                const order = subOrder[parent.id] ?? [];
+                parent.subTabs.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+            }
         }
 
-        // 3. Filter actions by both active Item Type (top) and active Action Type (right)
+        // If the active parent type is no longer available, default to the first available
+        if (actionTypes.length && !actionTypes.some(p => p.id === this.activeParentType)) {
+            this.activeParentType = actionTypes[0].id;
+            actionTypes[0].active = true;
+            actionTypes[0].expanded = true;
+            this.activeSubType = actionTypes[0].subTabs.length > 0 ? 'all' : null;
+            if (actionTypes[0].subTabs.length > 0) {
+                actionTypes[0].subTabs[0].active = true;
+            }
+        }
+
+        // 3. Filter actions by both active Item Type (top) and active Action/Parent/Sub Type (right)
         const filteredActions = rawActions.filter(action => {
+            // Filter by Item Type (Top Tab)
             const matchesItemType = this.activeItemType === 'all' || 
                                    (action.type === this.activeItemType) || 
                                    (this.activeItemType === 'other' && !action.type);
             
-            const matchesActionType = this.activeActionType === 'all' || 
-                                     (action.tabs && action.tabs.includes(this.activeActionType));
+            // Filter by Action Type (Right Tab)
+            if (!action.tabs || !Array.isArray(action.tabs)) return false;
+            
+            const parentId = action.tabs[0];
+            const subId = action.tabs[1]; // might be undefined
 
-            return matchesItemType && matchesActionType;
+            const matchesParent = parentId === this.activeParentType;
+            
+            let matchesSub = true;
+            if (this.activeSubType && this.activeSubType !== 'all') {
+                matchesSub = subId === this.activeSubType;
+            }
+
+            return matchesItemType && matchesParent && matchesSub;
         });
 
         // Inject data into context
@@ -200,13 +264,29 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     }
 
     /**
-     * Handle action type (right tab) selection clicks.
+     * Handle parent action type (right tab) selection clicks.
      * 'this' refers to the application instance.
      */
     static async _onChangeActionType(event, target) {
         event.preventDefault();
-        this.activeActionType = target.dataset.type;
-        log.debug(`Changed action type filter to: ${this.activeActionType}`);
+        const parentId = target.dataset.type;
+        const hasSubTabs = target.dataset.hasSubTabs === 'true';
+        
+        this.activeParentType = parentId;
+        this.activeSubType = hasSubTabs ? 'all' : null;
+        
+        log.debug(`Changed action parent filter to: ${this.activeParentType}, sub: ${this.activeSubType}`);
+        this.render(); // Re-render the application reactively
+    }
+
+    /**
+     * Handle sub-action type selection clicks.
+     * 'this' refers to the application instance.
+     */
+    static async _onChangeSubActionType(event, target) {
+        event.preventDefault();
+        this.activeSubType = target.dataset.type;
+        log.debug(`Changed action sub filter to: ${this.activeSubType}`);
         this.render(); // Re-render the application reactively
     }
 
