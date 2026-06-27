@@ -68,11 +68,11 @@ export class DnD5eSystemAdapter extends BaseSystemAdapter {
             type: item.type,
             img: item.img,
             activationType: this._normalizeActivationType(activationType),
-            roll: () => {
+            roll: (event) => {
                 if (typeof item.use === 'function') {
-                    item.use();
+                    item.use({ event });
                 } else if (typeof item.roll === 'function') {
-                    item.roll();
+                    item.roll({ event });
                 }
             },
             originalItem: item,

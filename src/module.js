@@ -1,7 +1,9 @@
 // Main entry point for Bakana's Action Display
 import { actionDisplay } from './action-display.js';
 import { DnD5eSystemAdapter } from './adapters/dnd5e-system-adapter.js';
+import { PF2eSystemAdapter } from './adapters/pf2e-system-adapter.js';
 import { SequencerModuleAdapter } from './adapters/sequencer-module-adapter.js';
+import { MidiQOLModuleAdapter } from './adapters/midi-qol-module-adapter.js';
 import { ActionDisplayApp } from './ui/action-display-app.js';
 
 const MODULE_ID = 'bakanas-action-display';
@@ -12,9 +14,11 @@ Hooks.once('init', async () => {
 
     // Register system adapters
     actionDisplay.registerSystemAdapter(new DnD5eSystemAdapter());
+    actionDisplay.registerSystemAdapter(new PF2eSystemAdapter());
 
     // Register module adapters
     actionDisplay.registerModuleAdapter(new SequencerModuleAdapter());
+    actionDisplay.registerModuleAdapter(new MidiQOLModuleAdapter());
 
     // Initialize the core coordinator
     actionDisplay.init();
