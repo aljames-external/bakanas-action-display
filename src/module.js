@@ -5,27 +5,47 @@ import { ActionDisplayApp } from './ui/action-display-app.js';
 const MODULE_ID = 'bakanas-action-display';
 let activeApp = null;
 
+/**
+ * Dynamically loads and registers adapters based on the active system and enabled modules.
+ */
+async function registerAdapters() {
+    const systemId = game.system.id;
+    
+    // System Adapter Registry
+    const systemRegistry = {
+        'dnd5e': { path: './adapters/dnd5e-system-adapter.js', className: 'DnD5eSystemAdapter' },
+        'pf2e': { path: './adapters/pf2e-system-adapter.js', className: 'PF2eSystemAdapter' }
+    };
+
+    const systemConfig = systemRegistry[systemId];
+    if (systemConfig) {
+        const module = await import(systemConfig.path);
+        const AdapterClass = module[systemConfig.className];
+        actionDisplay.registerSystemAdapter(new AdapterClass());
+    } else {
+        console.warn(`${MODULE_ID} | No system adapter configured for: ${systemId}`);
+    }
+
+    // Module Adapter Registry
+    const moduleRegistry = [
+        { id: 'sequencer', path: './adapters/sequencer-module-adapter.js', className: 'SequencerModuleAdapter' },
+        { id: 'midi-qol', path: './adapters/midi-qol-module-adapter.js', className: 'MidiQOLModuleAdapter' }
+    ];
+
+    for (const mod of moduleRegistry) {
+        if (game.modules.get(mod.id)?.active) {
+            const module = await import(mod.path);
+            const AdapterClass = module[mod.className];
+            actionDisplay.registerModuleAdapter(new AdapterClass());
+        }
+    }
+}
+
 Hooks.once('init', async () => {
     console.log(`${MODULE_ID} | Initializing Bakana's Action Display`);
 
-    // 1. Dynamically import and register the active system adapter
-    if (game.system.id === 'dnd5e') {
-        const { DnD5eSystemAdapter } = await import('./adapters/dnd5e-system-adapter.js');
-        actionDisplay.registerSystemAdapter(new DnD5eSystemAdapter());
-    } else if (game.system.id === 'pf2e') {
-        const { PF2eSystemAdapter } = await import('./adapters/pf2e-system-adapter.js');
-        actionDisplay.registerSystemAdapter(new PF2eSystemAdapter());
-    }
-
-    // 2. Dynamically import and register active module adapters
-    if (game.modules.get('sequencer')?.active) {
-        const { SequencerModuleAdapter } = await import('./adapters/sequencer-module-adapter.js');
-        actionDisplay.registerModuleAdapter(new SequencerModuleAdapter());
-    }
-    if (game.modules.get('midi-qol')?.active) {
-        const { MidiQOLModuleAdapter } = await import('./adapters/midi-qol-module-adapter.js');
-        actionDisplay.registerModuleAdapter(new MidiQOLModuleAdapter());
-    }
+    // Dynamically load and register active adapters
+    await registerAdapters();
 
     // Initialize the core coordinator
     actionDisplay.init();
