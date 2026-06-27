@@ -103,24 +103,24 @@ Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
 
     // Create and render the new app
     activeApp = new ActionDisplayApp(token);
-    activeApp.render(true);
+    activeApp.render({ force: true });
 });
 
 // Re-render the app if the token, actor, or their items are updated
 Hooks.on('updateToken', (tokenDocument) => {
     if (activeApp && activeApp.token.document.id === tokenDocument.id) {
-        activeApp.render(true);
+        activeApp.render();
     }
 });
 
 Hooks.on('updateActor', (actor) => {
     if (activeApp && activeApp.actor.id === actor.id) {
-        activeApp.render(true);
+        activeApp.render();
     }
 });
 
 Hooks.on('updateItem', (item) => {
     if (activeApp && activeApp.actor.id === item.parent?.id) {
-        activeApp.render(true);
+        activeApp.render();
     }
 });
