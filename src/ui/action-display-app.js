@@ -484,6 +484,19 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      */
     static async _onRollAction(event, target) {
         event.preventDefault();
+        
+        if (this._preventReopen) {
+            log.debug("_onRollAction | preventReopen is true, toggling off and closing menu");
+            this._preventReopen = false;
+            this._activeLeftClickMenu?.close();
+            this._activeLeftClickMenu = null;
+            return;
+        }
+
+        // Close any existing left-click menu if we clicked a different item
+        this._activeLeftClickMenu?.close();
+        this._activeLeftClickMenu = null;
+
         const actionId = target.dataset.actionId;
         const actions = actionDisplay.getActions(this.actor);
         const action = actions.find(a => a.id === actionId);
@@ -519,16 +532,22 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
                     const options = {
                         jQuery: false, // Opt-out of jQuery for callbacks
-                        onOpen: () => {
+                        onOpen: (target) => {
+                            log.debug("Left-click dropdown opened on target:", target);
+                            this._activeMenuTarget = target; // Store the target for toggle-off tracking
                             this.element.querySelector('.bakanas-action-display-container')?.classList.add('has-context-menu');
                         },
                         onClose: () => {
+                            log.debug("Left-click dropdown closed");
+                            this._activeMenuTarget = null; // Clear target
+                            this._activeLeftClickMenu = null; // Clear menu instance
                             this.element.querySelector('.bakanas-action-display-container')?.classList.remove('has-context-menu');
                         }
                     };
 
                     // Create and render a temporary ContextMenu at the clicked element (passing raw HTMLElement)
                     const menu = new foundry.applications.ux.ContextMenu.implementation(this.element, null, menuItems, options);
+                    this._activeLeftClickMenu = menu; // Store the menu instance
                     menu.render(target);
                 } else if (qualifyingActivities.length === 1) {
                     // Only one qualifying activity: roll directly!
@@ -617,21 +636,21 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     }
 
     /**
-     * Intercept pointerdown events in the capture phase to detect right-clicks
+     * Intercept pointerdown events in the capture phase to detect clicks (left or right)
      * on the active menu target, preparing to prevent it from reopening.
      * @param {PointerEvent} event The triggering pointerdown event
      * @private
      */
     _onPointerDownCapture(event) {
-        if (event.button !== 2) return; // Only care about right-clicks (button 2)
+        if (event.button !== 2 && event.button !== 0) return; // Only care about right-clicks (2) or left-clicks (0)
         
         const targetItem = event.target.closest('.bad-action-item');
         const activeItem = this._activeMenuTarget?.closest('.bad-action-item') || this._activeMenuTarget;
         
-        log.debug(`_onPointerDownCapture | targetItem:`, targetItem, `activeItem:`, activeItem);
+        log.debug(`_onPointerDownCapture | button: ${event.button}, targetItem:`, targetItem, `activeItem:`, activeItem);
         
         if (targetItem && activeItem === targetItem) {
-            log.debug("Pointerdown right-click on active target, preparing to prevent reopen");
+            log.debug("Pointerdown click on active target, preparing to prevent reopen");
             this._preventReopen = true;
         }
     }
