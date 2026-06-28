@@ -427,4 +427,19 @@ export class Pf1SystemAdapter extends BaseSystemAdapter {
         };
         return order[type] ?? 99;
     }
+
+    /**
+     * Sort order for PF1e item types.
+     */
+    _getTypeSort(type) {
+        const order = {
+            'weapon': 1,
+            'attack': 1,
+            'spell': 2,
+            'feat': 3,
+            'buff': 4,
+            'consumable': 5
+        };
+        return order[type] ?? 99;
+    }
 }
