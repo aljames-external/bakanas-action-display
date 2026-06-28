@@ -41,6 +41,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      */
     async close(options = {}) {
         log.debug(`ActionDisplayApp.close() initiated for token: ${this.token?.name}, state: ${this.state}`);
+        // Hide the element instantly to prevent any default close animations/transitions
+        // from causing visual glitches (like shifting and covering the token).
+        if (this.element) {
+            this.element.style.display = 'none';
+        }
         const result = await super.close(options);
         log.debug(`ActionDisplayApp.close() completed, new state: ${this.state}`);
         return result;
