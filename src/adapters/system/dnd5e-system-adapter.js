@@ -26,7 +26,13 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             // 1. Filter by allowed item types
             if (!allowedTypes.includes(item.type)) continue;
 
-            const activationType = item.system?.activation?.type;
+            let activationType = item.system?.activation?.type;
+            if ((!activationType || activationType === 'none') && item.system.activities?.size > 0) {
+                const activeActivity = item.system.activities.find(a => a.activation?.type && a.activation.type !== 'none');
+                if (activeActivity) {
+                    activationType = activeActivity.activation.type;
+                }
+            }
 
             // 2. Filter out unequipped items for weapons, equipment, consumables, and tools
             const isEquipped = item.system.equipped !== false;
