@@ -68,7 +68,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             changeActionType: ActionDisplayApp._onChangeActionType,
             changeSubActionType: ActionDisplayApp._onChangeSubActionType,
             toggleAnchor: ActionDisplayApp._onToggleAnchor,
-            rollAction: ActionDisplayApp._onRollAction
+            rollAction: ActionDisplayApp._onRollAction,
+            toggleFilterResources: ActionDisplayApp._onToggleFilterResources
         }
     };
 
@@ -357,6 +358,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         context.actionTypes = actionTypes;
         context.items = filteredActions;
         context.isAttached = this.isAttached;
+        context.filterNoResources = game.settings.get('bakanas-action-display', 'filterNoResources');
 
         return context;
     }
@@ -463,6 +465,17 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 this.close();
             }
         }
+    }
+
+    /**
+     * Toggle the "Filter Out of Resources" setting.
+     * 'this' refers to the application instance.
+     */
+    static async _onToggleFilterResources(event, target) {
+        const checked = target.checked;
+        await game.settings.set('bakanas-action-display', 'filterNoResources', checked);
+        log.debug(`Toggled filterNoResources to: ${checked}`);
+        this.render();
     }
 
     /* -------------------------------------------- */

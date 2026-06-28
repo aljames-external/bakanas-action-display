@@ -119,6 +119,15 @@ class ActionDisplay {
             }
         }
 
+        // 4. Resource Filtering: Filter out actions with depleted resources if enabled
+        const filterNoResources = game.settings.get('bakanas-action-display', 'filterNoResources');
+        if (filterNoResources) {
+            actions = actions.filter(action => {
+                // Only filter out if it has a resource tracker (available !== null) and it is depleted (<= 0)
+                return !(action.uses && action.uses.available !== null && action.uses.available <= 0);
+            });
+        }
+
         // Filter out hidden actions
         return actions.filter(a => !a.hidden);
     }
