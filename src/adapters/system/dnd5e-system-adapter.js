@@ -43,25 +43,38 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
 
             // 4. Process activities if they exist (D&D 5e v4+)
             const activities = item.system.activities;
-            const validActivities = activities 
-                ? Array.from(activities.values()).filter(a => a.activation?.type && a.activation.type !== 'none')
-                : [];
-
-            if (validActivities.length > 0) {
-                // Create a separate action for each valid activity
-                for (const activity of validActivities) {
-                    const activationType = activity.activation.type;
+            const activitiesByActivation = {};
+            
+            if (activities && activities.size > 0) {
+                for (const activity of activities.values()) {
+                    const activationType = activity.activation?.type;
+                    if (!activationType || activationType === 'none') continue;
                     
-                    // Clone the base action and override properties for this specific activity
+                    if (!activitiesByActivation[activationType]) {
+                        activitiesByActivation[activationType] = [];
+                    }
+                    activitiesByActivation[activationType].push(activity);
+                }
+            }
+
+            const activeTypes = Object.keys(activitiesByActivation);
+            if (activeTypes.length > 0) {
+                // Create a single action for each activation type, containing all its activities
+                for (const activationType of activeTypes) {
+                    const typeActivities = activitiesByActivation[activationType];
+                    
+                    // Clone the base action
                     const activityAction = {
                         ...action,
-                        id: `${action.id}-${activity.id}`, // Unique ID for the HUD
-                        name: validActivities.length > 1 ? `${item.name} (${activity.name || activity.type.toUpperCase()})` : item.name,
-                        img: activity.img || item.img,
-                        uses: this._calculateUses(item, actor), // Use item-level uses as fallback
+                        id: `${action.id}-${activationType}`, // Unique ID per activation type
+                        name: item.name, // Keep the clean item name!
+                        img: item.img, // Use the parent item's icon
+                        uses: this._calculateUses(item, actor), // Use item-level uses
                         roll: async (event) => {
-                            // Roll the specific activity directly
-                            return activity.use({ event });
+                            // Default roll behavior (rolls the first activity directly)
+                            if (typeActivities.length > 0) {
+                                return typeActivities[0].use({ event });
+                            }
                         }
                     };
 
@@ -78,10 +91,11 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
                         activityAction.itemTypes = [item.type];
                     }
 
-                    // Maintain system-specific data
+                    // Maintain system-specific data (store the activities list!)
                     activityAction.systemData = {
                         recharge: item.system.recharge,
-                        activityId: activity.id
+                        activationType: activationType,
+                        activities: typeActivities
                     };
 
                     modified.push(activityAction);

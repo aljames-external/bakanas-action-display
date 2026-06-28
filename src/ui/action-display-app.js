@@ -478,7 +478,36 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const action = actions.find(a => a.id === actionId);
         
         if (action) {
-            action.roll(event);
+            const activities = action.systemData?.activities;
+            if (activities && activities.length > 1) {
+                // Multiple activities for this activation type! Show a left-click dropdown menu.
+                log.debug(`_onRollAction | Item has multiple activities, showing dropdown`, action);
+                
+                const menuItems = activities.map(activity => ({
+                    name: activity.name || activity.type.toUpperCase(),
+                    icon: activity.img ? `<img src="${activity.img}" style="width: 16px; height: 16px; border: none; vertical-align: middle; margin-right: 8px; border-radius: 4px;" />` : '<i class="fas fa-play" style="margin-right: 8px;"></i>',
+                    callback: () => {
+                        log.debug(`Rolling activity: ${activity.name} via dropdown`);
+                        activity.use({ event });
+                    }
+                }));
+
+                const options = {
+                    onOpen: () => {
+                        this.element.querySelector('.bakanas-action-display-container')?.classList.add('has-context-menu');
+                    },
+                    onClose: () => {
+                        this.element.querySelector('.bakanas-action-display-container')?.classList.remove('has-context-menu');
+                    }
+                };
+
+                // Create and render a temporary ContextMenu at the clicked element
+                const menu = new ContextMenu($(target), null, menuItems, options);
+                menu.render($(target));
+            } else {
+                // Single activity or legacy action: roll directly
+                action.roll(event);
+            }
         }
     }
 
