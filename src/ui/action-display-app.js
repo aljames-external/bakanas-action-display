@@ -465,8 +465,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         if (action) {
             action.roll(event);
             
-            // If not holding Shift, close the overlay after rolling
-            if (!event.shiftKey) {
+            // Close the overlay after rolling, unless they hold Shift or the HUD is detached
+            if (!event.shiftKey && this.isAttached) {
                 this.close();
             }
         }
