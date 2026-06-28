@@ -1,4 +1,5 @@
 import { BaseSystemAdapter } from './base-system-adapter.js';
+import { log } from '../../lib/logger.js';
 
 /**
  * System adapter for Pathfinder 1st Edition (PF1e).
@@ -16,6 +17,7 @@ export class Pf1SystemAdapter extends BaseSystemAdapter {
      * @returns {Object[]} The modified actions list
      */
     modifyActions(actions, actor) {
+        log.debug(`Pf1SystemAdapter.modifyActions | Starting for actor: ${actor.name}`);
         const modified = [];
 
         // 1. Build a map of weapon children to their parent weapons
@@ -23,25 +25,56 @@ export class Pf1SystemAdapter extends BaseSystemAdapter {
         const weaponLinkedAttacks = new Map();
         
         const weapons = actor.items.filter(i => i.type === 'weapon');
+        log.debug(`Pf1SystemAdapter.modifyActions | Found ${weapons.length} weapons on actor`);
+
         for (const weapon of weapons) {
             const children = weapon.system.links?.children ?? [];
+            if (children.length > 0) {
+                log.debug(`Pf1SystemAdapter.modifyActions | Weapon "${weapon.name}" (${weapon.id}) has ${children.length} children in links:`, children);
+            }
             const linked = [];
             for (const child of children) {
-                const parts = child.uuid.split('.');
-                const childId = parts[parts.length - 1];
-                const childItem = actor.items.get(childId);
+                if (!child.uuid) continue;
+                
+                let childItem = null;
+                // Try official Foundry UUID resolution first
+                try {
+                    childItem = foundry.utils.fromUuidSync(child.uuid, { relative: weapon });
+                    if (childItem) {
+                        log.debug(`Pf1SystemAdapter.modifyActions | Resolved child via fromUuidSync: "${childItem.name}" (${childItem.id})`);
+                    }
+                } catch (e) {
+                    log.debug(`Pf1SystemAdapter.modifyActions | fromUuidSync failed for ${child.uuid}, trying fallback`);
+                }
+
+                // Fallback to manual ID extraction
+                if (!childItem) {
+                    const parts = child.uuid.split('.');
+                    const childId = parts[parts.length - 1];
+                    childItem = actor.items.get(childId);
+                    if (childItem) {
+                        log.debug(`Pf1SystemAdapter.modifyActions | Resolved child via manual fallback: "${childItem.name}" (${childItem.id})`);
+                    }
+                }
+
                 if (childItem && childItem.type === 'attack') {
-                    attackToWeaponMap.set(childId, weapon);
+                    attackToWeaponMap.set(childItem.id, weapon);
                     linked.push(childItem);
+                } else if (childItem) {
+                    log.debug(`Pf1SystemAdapter.modifyActions | Resolved child "${childItem.name}" is not of type 'attack' (type: ${childItem.type})`);
                 }
             }
             if (linked.length > 0) {
                 weaponLinkedAttacks.set(weapon.id, linked);
+                log.debug(`Pf1SystemAdapter.modifyActions | Weapon "${weapon.name}" successfully linked to attacks: ${linked.map(i => i.name).join(', ')}`);
             }
         }
 
+        log.debug(`Pf1SystemAdapter.modifyActions | Final attackToWeaponMap keys (IDs to skip):`, Array.from(attackToWeaponMap.keys()));
+
         for (const action of actions) {
             const item = action.originalItem;
+            log.debug(`Pf1SystemAdapter.modifyActions | Processing action row: "${item.name}" (${item.type}, ID: ${item.id})`);
 
             if (item.type === 'spell') {
                 // 1. Spells in PF1e
@@ -71,7 +104,12 @@ export class Pf1SystemAdapter extends BaseSystemAdapter {
                 modified.push(action);
             } else if (item.type === 'attack') {
                 // 2. Standalone Attacks (only if NOT linked to a weapon, e.g. Touch/Claws)
-                if (attackToWeaponMap.has(item.id)) continue; // Skip, merged into parent weapon
+                log.debug(`Pf1SystemAdapter.modifyActions | Checking attack item: "${item.name}" (ID: ${item.id})`);
+                if (attackToWeaponMap.has(item.id)) {
+                    log.debug(`Pf1SystemAdapter.modifyActions | >>> SKIPPING attack "${item.name}" (ID: ${item.id}) because it is merged into weapon: "${attackToWeaponMap.get(item.id).name}"`);
+                    continue;
+                }
+                log.debug(`Pf1SystemAdapter.modifyActions | >>> KEEPING standalone attack: "${item.name}" (ID: ${item.id})`);
 
                 const itemActions = item.system.actions ?? [];
                 if (itemActions.length === 0) continue;
