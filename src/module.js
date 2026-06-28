@@ -94,14 +94,17 @@ Hooks.once('ready', async () => {
         }
     };
 
-    // Wrap the active token HUD instance's clear method directly to support custom system HUDs (like TokenHUDPF)
+    // Wrap the clear method on the actual HUD class prototype (e.g. TokenHUD or TokenHUDPF)
+    // to ensure it works across scene changes and supports custom system HUDs.
     if (canvas.hud?.token) {
-        log.info("Wrapping canvas.hud.token.clear instance method");
-        const originalClear = canvas.hud.token.clear;
-        canvas.hud.token.clear = function (...args) {
-            log.debug("canvas.hud.token.clear called");
+        const hudClass = canvas.hud.token.constructor;
+        log.info(`Wrapping ${hudClass.name}.prototype.clear`);
+        const originalClear = hudClass.prototype.clear;
+        
+        hudClass.prototype.clear = function (...args) {
+            console.log(`bakanas-action-display | ${hudClass.name}.prototype.clear called`);
             if (activeApp) {
-                log.debug("TokenHUD clear: Instantly hiding and closing activeApp");
+                console.log("bakanas-action-display | Closing activeApp via clear hook");
                 if (activeApp.element) {
                     activeApp.element.style.display = 'none';
                 }
