@@ -487,6 +487,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      */
     _onRender(context, options) {
         super._onRender(context, options);
+        log.debug(`_onRender | token: ${this.token?.name}, state: ${this.state}, isAttached: ${this.isAttached}`);
         this.setPosition();
         this._setupDragListeners();
         this._adjustMinHeight();
@@ -517,10 +518,14 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const leftHeight = leftTabs ? leftTabs.offsetHeight : 0;
         const rightHeight = rightTabs ? rightTabs.offsetHeight : 0;
         const maxTabHeight = Math.max(leftHeight, rightHeight);
+        
+        log.debug(`_adjustMinHeight | leftHeight: ${leftHeight}px, rightHeight: ${rightHeight}px, maxTabHeight: ${maxTabHeight}px`);
 
         if (maxTabHeight > 0) {
+            const targetMinHeight = maxTabHeight + 24;
+            log.debug(`_adjustMinHeight | Applying min-height: ${targetMinHeight}px to container`);
             // Add 24px safety margin (12px top/bottom) to match container padding
-            container.style.minHeight = `${maxTabHeight + 24}px`;
+            container.style.minHeight = `${targetMinHeight}px`;
         }
     }
 
@@ -662,10 +667,13 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             // Apply top/bottom manually to anchor the window stably
             if (side === 'above') {
                 const bottomOffset = window.innerHeight - tokenTop + 10;
+                log.debug(`setPosition (Attached/Above) | token: ${this.token.name}, left: ${left}px, bottomOffset: ${bottomOffset}px (tokenTop: ${tokenTop}px, windowHeight: ${window.innerHeight}px)`);
                 el.style.bottom = `${bottomOffset}px`;
                 el.style.top = '';
             } else {
-                el.style.top = `${tokenTop + tokenHeight + 10}px`;
+                const topOffset = tokenTop + tokenHeight + 10;
+                log.debug(`setPosition (Attached/Below) | token: ${this.token.name}, left: ${left}px, topOffset: ${topOffset}px (tokenTop: ${tokenTop}px, tokenHeight: ${tokenHeight}px)`);
+                el.style.top = `${topOffset}px`;
                 el.style.bottom = '';
             }
 
@@ -677,6 +685,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             
             let left = savedPos?.left ?? 100;
             let top = savedPos?.top ?? 100;
+            
+            log.debug(`setPosition (Detached) | left: ${left}px, top: ${top}px, appWidth: ${appWidth}px`);
 
             // Clamp to screen bounds to ensure it's always visible (handles resolution changes)
             left = Math.max(10, Math.min(window.innerWidth - appWidth - 10, left));
