@@ -106,6 +106,12 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             }
         }
 
+        // Always ensure 'hidden' tab is present if we are currently viewing it,
+        // even if it is empty, to prevent jarring automatic tab switches when unhiding the last item.
+        if (this.activeLeftParentType === 'hidden') {
+            existingItemCombinations.add('hidden');
+        }
+
         const itemParentLabels = {
             'all': 'All Items',
             'weapon': localize('DND5E.ItemTypeWeapon', 'Weapon'),
