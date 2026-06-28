@@ -97,9 +97,9 @@ Hooks.once('ready', async () => {
 
     // Intercept right-clicks on tokens to detect when the user is trying to toggle-close
     // a detached HUD by right-clicking the same token again.
-    const originalRightClick = Token.prototype._onRightClick;
-    Token.prototype._onRightClick = function (event) {
-        log.debug("Token.prototype._onRightClick called");
+    const originalRightClick = Token.prototype._onClickRight;
+    Token.prototype._onClickRight = function (event) {
+        log.debug("Token.prototype._onClickRight called");
         if (activeApp && activeApp.token === this) {
             const persist = game.settings.get('bakanas-action-display', 'persistDetached');
             if (persist && !activeApp.isAttached) {
