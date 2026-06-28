@@ -551,3 +551,18 @@
     height: 13px;
     margin: 0;
 }
+
+/* ==========================================================================
+   HIDDEN ITEMS STYLING
+   ========================================================================== */
+.bad-action-item.bad-item-hidden {
+    opacity: 0.5; /* Ghostly appearance */
+    border: 1px dashed rgba(167, 139, 250, 0.4); /* Dashed violet border indicating hidden state */
+    background: rgba(22, 22, 29, 0.4);
+    transition: opacity 0.2s ease, border-style 0.2s ease;
+}
+
+.bad-action-item.bad-item-hidden:hover {
+    opacity: 0.85; /* Light up slightly on hover for interactivity */
+    border-style: solid;
+}

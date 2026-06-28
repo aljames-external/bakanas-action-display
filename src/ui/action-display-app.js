@@ -116,7 +116,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             'loot': localize('DND5E.ItemTypeLoot', 'Loot'),
             'feat': localize('DND5E.ItemTypeFeat', 'Feature'),
             'spell': localize('DND5E.ItemTypeSpell', 'Spell'),
-            'other': localize('DND5E.Other', 'Other')
+            'other': localize('DND5E.Other', 'Other'),
+            'hidden': game.i18n.localize('BAD.hud.hidden') || 'Hidden'
         };
 
         const itemParentIcons = {
@@ -129,7 +130,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             'tool': 'fas fa-hammer',
             'backpack': 'fas fa-sack',
             'loot': 'fas fa-gem',
-            'other': 'fas fa-ellipsis'
+            'other': 'fas fa-ellipsis',
+            'hidden': 'fas fa-eye-slash'
         };
 
         // Build the left-side hierarchy
@@ -179,7 +181,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         // Convert to array and sort by a predefined order
-        const leftOrder = ['all', 'weapon', 'spell', 'feat', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'other'];
+        const leftOrder = ['all', 'weapon', 'spell', 'feat', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'other', 'hidden'];
         const itemTypes = Object.values(leftGroups);
         itemTypes.sort((a, b) => leftOrder.indexOf(a.id) - leftOrder.indexOf(b.id));
 
@@ -335,6 +337,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             if (!action.itemTypes || !Array.isArray(action.itemTypes)) return false;
             const itemParentId = action.itemTypes[0];
             const itemSubId = action.itemTypes[1];
+
+            // If the item is hidden, it only matches if the "Hidden" tab is selected.
+            // If the "Hidden" tab is selected, only hidden items match.
+            if (itemParentId === 'hidden' && this.activeLeftParentType !== 'hidden') return false;
+            if (itemParentId !== 'hidden' && this.activeLeftParentType === 'hidden') return false;
 
             const matchesLeftParent = this.activeLeftParentType === 'all' || itemParentId === this.activeLeftParentType;
             
@@ -492,10 +499,18 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this._setupDragListeners();
         this._adjustMinHeight();
 
-        // Prevent clicks and right-clicks inside the HUD from bubbling up to the document,
-        // which would trigger Foundry's click-off detection and close the HUD.
+        // Prevent clicks inside the HUD from bubbling up to the document
         this.element.addEventListener('click', event => event.stopPropagation());
-        this.element.addEventListener('contextmenu', event => event.stopPropagation());
+        
+        // Prevent right-clicks inside the HUD from bubbling up, and handle right-clicks on action items
+        this.element.addEventListener('contextmenu', event => {
+            event.stopPropagation();
+            const actionItem = event.target.closest('.bad-action-item');
+            if (actionItem) {
+                event.preventDefault();
+                this._onRightClickAction(actionItem);
+            }
+        });
     }
 
     /**
@@ -527,6 +542,42 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             // Add 24px safety margin (12px top/bottom) to match container padding
             container.style.minHeight = `${targetMinHeight}px`;
         }
+    }
+
+    /**
+     * Handle right-click on an action item to toggle its hidden state.
+     * @param {HTMLElement} actionItem The clicked action item element
+     */
+    async _onRightClickAction(actionItem) {
+        const actionId = actionItem.dataset.actionId;
+        if (!actionId || !this.actor) return;
+
+        // Find the action in our processed list to get the original item ID
+        const actions = actionDisplay.getActions(this.actor);
+        const action = actions.find(a => a.id === actionId);
+        if (!action) return;
+
+        const itemId = action.originalItem?.id || action.id;
+        
+        // Retrieve current hidden items list from actor flags
+        const hiddenItems = this.actor.getFlag('bakanas-action-display', 'hiddenItems') || [];
+        const index = hiddenItems.indexOf(itemId);
+        
+        let newHiddenItems = [...hiddenItems];
+        if (index > -1) {
+            // Remove from hidden list (unhide)
+            newHiddenItems.splice(index, 1);
+            log.debug(`Unhiding item: ${action.name} (ID: ${itemId})`);
+        } else {
+            // Add to hidden list (hide)
+            newHiddenItems.push(itemId);
+            log.debug(`Hiding item: ${action.name} (ID: ${itemId})`);
+        }
+
+        // Update the actor's flag to persist the change
+        await this.actor.setFlag('bakanas-action-display', 'hiddenItems', newHiddenItems);
+
+        this.render();
     }
 
     /**

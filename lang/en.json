@@ -29,7 +29,8 @@
             }
         },
         "hud": {
-            "filterNoResources": "Hide Depleted"
+            "filterNoResources": "Hide Depleted",
+            "hidden": "Hidden"
         }
     }
 }
