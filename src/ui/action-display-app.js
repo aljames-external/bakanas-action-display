@@ -527,8 +527,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                     };
 
                     // Create and render a temporary ContextMenu at the clicked element
-                    const menu = new ContextMenu($(target), null, menuItems, options);
-                    menu.render($(target));
+                    const menu = new ContextMenu($(this.element), null, menuItems, options);
+                    menu.render(target);
                 } else if (qualifyingActivities.length === 1) {
                     // Only one qualifying activity: roll directly!
                     qualifyingActivities[0].activity.use({ event });
