@@ -502,15 +502,13 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // Prevent clicks inside the HUD from bubbling up to the document
         this.element.addEventListener('click', event => event.stopPropagation());
         
-        // Prevent right-clicks inside the HUD from bubbling up, and handle right-clicks on action items
-        this.element.addEventListener('contextmenu', event => {
-            event.stopPropagation();
-            const actionItem = event.target.closest('.bad-action-item');
-            if (actionItem) {
-                event.preventDefault();
-                this._onRightClickAction(actionItem);
-            }
-        });
+        // Prevent right-clicks inside the HUD from bubbling up to the document
+        this.element.addEventListener('contextmenu', event => event.stopPropagation());
+
+        // Initialize the context menu for action items if not already done
+        if (!this._contextMenu) {
+            this._contextMenu = this._createContextMenu();
+        }
     }
 
     /**
@@ -545,38 +543,78 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     }
 
     /**
-     * Handle right-click on an action item to toggle its hidden state.
-     * @param {HTMLElement} actionItem The clicked action item element
+     * Create and bind the Foundry ContextMenu for action items.
+     * @returns {ContextMenu} The created ContextMenu instance
+     * @private
      */
-    async _onRightClickAction(actionItem) {
-        const actionId = actionItem.dataset.actionId;
+    _createContextMenu() {
+        const menuItems = [
+            {
+                name: "BAD.hud.hideAction",
+                icon: '<i class="fas fa-eye-slash"></i>',
+                condition: li => {
+                    const el = li[0] || li;
+                    const actionId = el.dataset.actionId;
+                    const actions = actionDisplay.getActions(this.actor);
+                    const action = actions.find(a => a.id === actionId);
+                    return action && !action.isHidden;
+                },
+                callback: li => {
+                    const el = li[0] || li;
+                    this._toggleActionHidden(el.dataset.actionId, true);
+                }
+            },
+            {
+                name: "BAD.hud.unhideAction",
+                icon: '<i class="fas fa-eye"></i>',
+                condition: li => {
+                    const el = li[0] || li;
+                    const actionId = el.dataset.actionId;
+                    const actions = actionDisplay.getActions(this.actor);
+                    const action = actions.find(a => a.id === actionId);
+                    return action && action.isHidden;
+                },
+                callback: li => {
+                    const el = li[0] || li;
+                    this._toggleActionHidden(el.dataset.actionId, false);
+                }
+            }
+        ];
+
+        return new ContextMenu($(this.element), ".bad-action-item", menuItems);
+    }
+
+    /**
+     * Toggle the hidden state of an action.
+     * @param {string} actionId The ID of the action to toggle
+     * @param {boolean} shouldHide Whether the action should be hidden
+     * @private
+     */
+    async _toggleActionHidden(actionId, shouldHide) {
         if (!actionId || !this.actor) return;
 
-        // Find the action in our processed list to get the original item ID
         const actions = actionDisplay.getActions(this.actor);
         const action = actions.find(a => a.id === actionId);
         if (!action) return;
 
         const itemId = action.originalItem?.id || action.id;
-        
-        // Retrieve current hidden items list from actor flags
         const hiddenItems = this.actor.getFlag('bakanas-action-display', 'hiddenItems') || [];
-        const index = hiddenItems.indexOf(itemId);
         
         let newHiddenItems = [...hiddenItems];
-        if (index > -1) {
-            // Remove from hidden list (unhide)
-            newHiddenItems.splice(index, 1);
-            log.debug(`Unhiding item: ${action.name} (ID: ${itemId})`);
+        if (shouldHide) {
+            if (!newHiddenItems.includes(itemId)) {
+                newHiddenItems.push(itemId);
+                log.debug(`Hiding item: ${action.name} (ID: ${itemId})`);
+            }
         } else {
-            // Add to hidden list (hide)
-            newHiddenItems.push(itemId);
-            log.debug(`Hiding item: ${action.name} (ID: ${itemId})`);
+            const index = newHiddenItems.indexOf(itemId);
+            if (index > -1) {
+                newHiddenItems.splice(index, 1);
+                log.debug(`Unhiding item: ${action.name} (ID: ${itemId})`);
+            }
         }
 
-        // Update the actor's flag to persist the change
         await this.actor.setFlag('bakanas-action-display', 'hiddenItems', newHiddenItems);
-
         this.render();
     }
 
