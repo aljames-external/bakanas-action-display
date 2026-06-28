@@ -593,3 +593,8 @@
 .bakanas-action-display-container.has-context-menu .bad-action-item {
     pointer-events: none !important;
 }
+
+/* Re-enable pointer events on the active item (which has the context menu open) so it can be toggled off */
+.bakanas-action-display-container.has-context-menu .bad-action-item.context {
+    pointer-events: all !important;
+}
