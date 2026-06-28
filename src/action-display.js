@@ -93,10 +93,6 @@ class ActionDisplay {
         let actions = this._extractBaseActions(actor);
 
         // 2. System Adapter: Modify/Filter/Sort the base actions
-        if (!this.activeSystemAdapter) {
-            this._detectSystemAdapter(); // Try detecting again in case registration happened late
-        }
-
         if (this.activeSystemAdapter) {
             try {
                 actions = this.activeSystemAdapter.modifyActions(actions, actor);
