@@ -1,6 +1,9 @@
 import { actionDisplay } from '../action-display.js';
 import { log } from '../lib/logger.js';
 
+// Cache to persist tab states per actor across HUD rebuilds
+const activeTabCache = new Map();
+
 /**
  * Helper to safely localize a key, falling back to a default string if the key is not found.
  */
@@ -21,12 +24,13 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.actor = token.actor;
         
         // Active filter states - Left Side (Item Types)
-        this.activeLeftParentType = 'all'; // Default to show all item types
-        this.activeLeftSubType = null;     // Default to no sub-type
+        const cached = activeTabCache.get(this.actor?.uuid);
+        this.activeLeftParentType = cached?.leftParent ?? 'all';
+        this.activeLeftSubType = cached?.leftSub ?? null;
 
         // Active filter states - Right Side (Action Types)
-        this.activeParentType = 'all';     // Default to show all action types
-        this.activeSubType = null;
+        this.activeParentType = cached?.rightParent ?? 'all';
+        this.activeSubType = cached?.rightSub ?? null;
 
         // HUD Attachment/Position Mode (persisted client-side)
         this.positionMode = game.settings.get('bakanas-action-display', 'hudPositionMode') || 'attached';
@@ -343,6 +347,16 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         context.items = filteredActions;
         context.isAttached = this.isAttached;
         context.filterNoResources = game.settings.get('bakanas-action-display', 'filterNoResources');
+
+        // Persist the validated tab states for this actor
+        if (this.actor?.uuid) {
+            activeTabCache.set(this.actor.uuid, {
+                leftParent: this.activeLeftParentType,
+                leftSub: this.activeLeftSubType,
+                rightParent: this.activeParentType,
+                rightSub: this.activeSubType
+            });
+        }
 
         return context;
     }
