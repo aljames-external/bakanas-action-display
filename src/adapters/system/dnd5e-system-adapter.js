@@ -42,8 +42,8 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             }
 
             // 4. Filter out unprepared spells (unless they are innate, at-will, or pact magic)
-            const prepMode = item.system.preparation?.mode ?? 'prepared';
-            const isPrepared = item.system.preparation?.prepared !== false;
+            const prepMode = item.system.method ?? item.system.preparation?.mode ?? 'prepared';
+            const isPrepared = item.system.prepared ?? item.system.preparation?.prepared ?? true;
             if (item.type === 'spell' && !['innate', 'atwill', 'pact'].includes(prepMode) && !isPrepared) {
                 continue;
             }
@@ -234,7 +234,7 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
 
         // 5. Spells (slot-based spells)
         if (item.type === 'spell') {
-            const prepMode = system.preparation?.mode;
+            const prepMode = system.method ?? system.preparation?.mode;
             const actorSpells = actor.system.spells;
             if (prepMode === 'pact') {
                 return {
