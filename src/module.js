@@ -80,16 +80,16 @@ Hooks.once('ready', async () => {
     // Expose global debug helper
     globalThis.bad = {
         closeHUD: () => {
-            console.log("bad.closeHUD() called");
+            log.debug("bad.closeHUD() called");
             if (activeApp) {
-                console.log("bad.closeHUD | activeApp found, closing:", activeApp);
+                log.debug("bad.closeHUD | activeApp found, closing:", activeApp);
                 if (activeApp.element) {
                     activeApp.element.style.display = 'none';
                 }
                 activeApp.close();
                 activeApp = null;
             } else {
-                console.log("bad.closeHUD | activeApp is null");
+                log.debug("bad.closeHUD | activeApp is null");
             }
         }
     };
@@ -102,9 +102,9 @@ Hooks.once('ready', async () => {
         const originalClear = hudClass.prototype.clear;
         
         hudClass.prototype.clear = function (...args) {
-            console.log(`bakanas-action-display | ${hudClass.name}.prototype.clear called`);
+            log.debug(`${hudClass.name}.prototype.clear called`);
             if (activeApp) {
-                console.log("bakanas-action-display | Closing activeApp via clear hook");
+                log.debug("Closing activeApp via clear hook");
                 if (activeApp.element) {
                     activeApp.element.style.display = 'none';
                 }
