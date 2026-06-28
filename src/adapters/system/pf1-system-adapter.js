@@ -161,9 +161,11 @@ export class Pf1SystemAdapter extends BaseSystemAdapter {
     _calculateUses(item) {
         const uses = item.system.uses;
         if (uses && (uses.value !== null || uses.max !== null)) {
+            // If value is null but max is defined, it means the item is fully charged (available = max)
+            const max = uses.max ?? 0;
             return {
-                available: uses.value ?? 0,
-                max: uses.max ?? 0
+                available: uses.value ?? max,
+                max: max
             };
         }
         
@@ -194,9 +196,10 @@ export class Pf1SystemAdapter extends BaseSystemAdapter {
         if (spellbook.spellPreparationMode === 'prepared') {
             const prep = spell.system.preparation;
             if (prep && prep.max > 0) {
+                // If value is null, fall back to max (fully prepared)
                 return {
-                    available: prep.value ?? 0,
-                    max: prep.max ?? 0
+                    available: prep.value ?? prep.max,
+                    max: prep.max
                 };
             }
             return { available: 0, max: 0 }; // Not prepared
