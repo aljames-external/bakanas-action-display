@@ -202,6 +202,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             });
         }
 
+        log.debug(`_prepareContext | activeLeftParentType: ${this.activeLeftParentType}, available tabs: ${itemTypes.map(t => t.id).join(', ')}`);
+
         // If active left parent type is no longer available, default to 'all'
         if (itemTypes.length && !itemTypes.some(p => p.id === this.activeLeftParentType)) {
             this.activeLeftParentType = 'all';
