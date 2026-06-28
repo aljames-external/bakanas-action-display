@@ -26,28 +26,13 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             // 1. Filter by allowed item types
             if (!allowedTypes.includes(item.type)) continue;
 
-            let activationType = item.system?.activation?.type;
-            if ((!activationType || activationType === 'none') && item.system.activities?.size > 0) {
-                const activeActivity = item.system.activities.find(a => a.activation?.type && a.activation.type !== 'none');
-                if (activeActivity) {
-                    activationType = activeActivity.activation.type;
-                }
-            }
-
             // 2. Filter out unequipped items for weapons, equipment, consumables, and tools
             const isEquipped = item.system.equipped !== false;
             if (['weapon', 'equipment', 'consumable', 'tool'].includes(item.type) && !isEquipped) {
                 continue;
             }
 
-            // 3. Filter out passive items (no activation type), except for Containers and Loot
-            // which are inherently passive but we want to display them in the 'None' tab.
-            const isPassive = !activationType || activationType === 'none';
-            if (isPassive && !['backpack', 'loot'].includes(item.type)) {
-                continue;
-            }
-
-            // 4. Filter out unprepared spells (unless they are innate, at-will, or pact magic)
+            // 3. Filter out unprepared spells (unless they are innate, at-will, or pact magic)
             if (item.type === 'spell') {
                 const prepMode = item.system.method;
                 const isPrepared = item.system.prepared !== false;
@@ -56,33 +41,82 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
                 }
             }
 
-            // 5. Calculate resource uses
-            action.uses = this._calculateUses(item, actor);
+            // 4. Process activities if they exist (D&D 5e v4+)
+            const activities = item.system.activities;
+            const validActivities = activities 
+                ? Array.from(activities.values()).filter(a => a.activation?.type && a.activation.type !== 'none')
+                : [];
 
-            // 6. Assign to hierarchical action tabs: [parentTab, subTab] (for right-side tabs)
-            const parentTab = this._getParentTab(activationType);
-            const subTab = this._getSubTab(activationType);
-            
-            if (subTab) {
-                action.tabs = [parentTab, subTab];
+            if (validActivities.length > 0) {
+                // Create a separate action for each valid activity
+                for (const activity of validActivities) {
+                    const activationType = activity.activation.type;
+                    
+                    // Clone the base action and override properties for this specific activity
+                    const activityAction = {
+                        ...action,
+                        id: `${action.id}-${activity.id}`, // Unique ID for the HUD
+                        name: validActivities.length > 1 ? `${item.name} (${activity.name || activity.type.toUpperCase()})` : item.name,
+                        img: activity.img || item.img,
+                        uses: this._calculateUses(item, actor), // Use item-level uses as fallback
+                        roll: async (event) => {
+                            // Roll the specific activity directly
+                            return activity.use({ event });
+                        }
+                    };
+
+                    // Assign to hierarchical action tabs: [parentTab, subTab] (for right-side tabs)
+                    const parentTab = this._getParentTab(activationType);
+                    const subTab = this._getSubTab(activationType);
+                    activityAction.tabs = subTab ? [parentTab, subTab] : [parentTab];
+
+                    // Assign to hierarchical item types: [parentType, subType] (for left-side tabs)
+                    if (item.type === 'spell') {
+                        const level = item.system.level ?? 0;
+                        activityAction.itemTypes = ['spell', level.toString()];
+                    } else {
+                        activityAction.itemTypes = [item.type];
+                    }
+
+                    // Maintain system-specific data
+                    activityAction.systemData = {
+                        recharge: item.system.recharge,
+                        activityId: activity.id
+                    };
+
+                    modified.push(activityAction);
+                }
             } else {
-                action.tabs = [parentTab];
+                // 5. Fallback/Legacy: Process as a single action (for items without activities, or passive containers/loot)
+                let activationType = item.system?.activation?.type;
+                
+                const isPassive = !activationType || activationType === 'none';
+                if (isPassive && !['backpack', 'loot'].includes(item.type)) {
+                    continue;
+                }
+
+                // Calculate resource uses
+                action.uses = this._calculateUses(item, actor);
+
+                // Assign to hierarchical action tabs: [parentTab, subTab]
+                const parentTab = this._getParentTab(activationType);
+                const subTab = this._getSubTab(activationType);
+                action.tabs = subTab ? [parentTab, subTab] : [parentTab];
+
+                // Assign to hierarchical item types: [parentType, subType]
+                if (item.type === 'spell') {
+                    const level = item.system.level ?? 0;
+                    action.itemTypes = ['spell', level.toString()];
+                } else {
+                    action.itemTypes = [item.type];
+                }
+
+                action.systemData = {
+                    recharge: item.system.recharge
+                };
+
+                modified.push(action);
             }
-
-            // 7. Assign to hierarchical item types: [parentType, subType] (for left-side tabs)
-            if (item.type === 'spell') {
-                const level = item.system.level ?? 0;
-                action.itemTypes = ['spell', level.toString()];
-            } else {
-                action.itemTypes = [item.type];
-            }
-
-            // Maintain system-specific data
-            action.systemData = {
-                recharge: item.system.recharge
-            };
-
-            modified.push(action);
         }
 
         // Sort actions: parent activation type first, then sub-activation, then item type, then name
