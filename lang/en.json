@@ -35,8 +35,6 @@
             "upcast": "Upcast",
             "itemCharges": "Item Charges",
             "togglePrepared": "Toggle Prepared Spells",
-            "showUnprepared": "Show Unprepared Spells",
-            "hideUnprepared": "Hide Unprepared Spells",
             "prepareSpell": "Prepare Spell",
             "unprepareSpell": "Unprepare Spell"
         }
