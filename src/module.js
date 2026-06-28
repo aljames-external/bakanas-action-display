@@ -65,8 +65,9 @@ Hooks.once('init', async () => {
     log.info("Initializing Bakana's Action Display");
 
     // Wrap Token.prototype._onClickRight during init so it is bound correctly by all tokens' InteractionManagers
-    const originalRightClick = Token.prototype._onClickRight;
-    Token.prototype._onClickRight = function (event) {
+    const TokenClass = foundry.canvas.placeables.Token;
+    const originalRightClick = TokenClass.prototype._onClickRight;
+    TokenClass.prototype._onClickRight = function (event) {
         log.debug("Token.prototype._onClickRight called");
         if (activeApp && activeApp.token === this) {
             const persist = game.settings.get('bakanas-action-display', 'persistDetached');
