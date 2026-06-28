@@ -26,7 +26,13 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             // 1. Filter by allowed item types
             if (!allowedTypes.includes(item.type)) continue;
 
-            const activationType = item.system?.activation?.type;
+            let activationType = item.system?.activation?.type;
+            if ((!activationType || activationType === 'none') && item.system.activities?.size > 0) {
+                const activeActivity = item.system.activities.find(a => a.activation?.type && a.activation.type !== 'none');
+                if (activeActivity) {
+                    activationType = activeActivity.activation.type;
+                }
+            }
 
             // 2. Filter out unequipped items for weapons, equipment, consumables, and tools
             const isEquipped = item.system.equipped !== false;
@@ -42,10 +48,12 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             }
 
             // 4. Filter out unprepared spells (unless they are innate, at-will, or pact magic)
-            const prepMode = item.system.preparation?.mode ?? 'prepared';
-            const isPrepared = item.system.preparation?.prepared !== false;
-            if (item.type === 'spell' && !['innate', 'atwill', 'pact'].includes(prepMode) && !isPrepared) {
-                continue;
+            if (item.type === 'spell') {
+                const prepMode = item.system.method;
+                const isPrepared = item.system.prepared !== false;
+                if (!['innate', 'atwill', 'pact'].includes(prepMode) && !isPrepared) {
+                    continue;
+                }
             }
 
             // 5. Calculate resource uses
@@ -234,7 +242,7 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
 
         // 5. Spells (slot-based spells)
         if (item.type === 'spell') {
-            const prepMode = system.preparation?.mode;
+            const prepMode = system.method;
             const actorSpells = actor.system.spells;
             if (prepMode === 'pact') {
                 return {
