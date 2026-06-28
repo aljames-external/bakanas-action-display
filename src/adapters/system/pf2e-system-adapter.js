@@ -23,8 +23,8 @@ export class Pf2eSystemAdapter extends BaseSystemAdapter {
             const item = action.originalItem;
 
             if (['action', 'feat'].includes(item.type)) {
-                const actions = item.system.actions;
-                const activationType = this._parseActivationType(actions);
+                const actionType = item.system.actionType;
+                const activationType = this._parseActivationType(actionType);
 
                 // Skip passive feats/actions that don't have an active cost
                 if (!activationType) continue;
@@ -108,13 +108,13 @@ export class Pf2eSystemAdapter extends BaseSystemAdapter {
     /**
      * Translate PF2e action cost structures into our core activation types.
      */
-    _parseActivationType(actions) {
-        if (!actions) return null;
-        const value = actions.value;
+    _parseActivationType(actionType) {
+        if (!actionType) return null;
+        const value = actionType.value;
 
         if (value === 'reaction') return 'reaction';
         if (value === 'free') return 'other'; // Map free actions to 'other'
-        if ([1, 2, 3, '1', '2', '3'].includes(value)) return 'action'; // Group 1, 2, or 3 actions under 'action'
+        if (value === 'action') return 'action'; // Group 1, 2, or 3 actions under 'action'
         
         return null;
     }
@@ -181,5 +181,31 @@ export class Pf2eSystemAdapter extends BaseSystemAdapter {
         }
 
         return { available: null, max: null };
+    }
+
+    /**
+     * Get the localized label for a right-side action type (parent tab) in PF2e.
+     */
+    getActionTypeLabel(parentId) {
+        const labels = {
+            'all': 'All Actions',
+            'action': 'Actions',
+            'reaction': 'Reactions',
+            'other': 'Free Actions'
+        };
+        return labels[parentId] || super.getActionTypeLabel(parentId);
+    }
+
+    /**
+     * Get the CSS icon class for a right-side action type (parent tab) in PF2e.
+     */
+    getActionTypeIcon(parentId) {
+        const icons = {
+            'all': 'fas fa-border-all',
+            'action': 'fas fa-bolt',
+            'reaction': 'fas fa-shield-halved',
+            'other': 'fas fa-wind'
+        };
+        return icons[parentId] || super.getActionTypeIcon(parentId);
     }
 }
