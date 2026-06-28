@@ -4,7 +4,7 @@ import { log } from './lib/logger.js';
 
 // Lists of systems and modules that have adapter implementations
 const SUPPORTED_SYSTEMS = ['dnd5e', 'pf2e'];
-const SUPPORTED_MODULES = ['midi-qol']; // Sequencer removed as it doesn't modify items
+const SUPPORTED_MODULES = ['midi-qol'];
 
 /**
  * Core coordinator class for Bakana's Action Display.
