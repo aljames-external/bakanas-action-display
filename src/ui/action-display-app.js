@@ -533,8 +533,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                     const options = {
                         jQuery: false, // Opt-out of jQuery for callbacks
                         onOpen: (target) => {
-                            log.debug("Left-click dropdown opened on target:", target);
-                            this._activeMenuTarget = target; // Store the target for toggle-off tracking
+                            log.debug("Left-click dropdown opened on target (callback):", target);
                             this.element.querySelector('.bakanas-action-display-container')?.classList.add('has-context-menu');
                         },
                         onClose: () => {
@@ -547,7 +546,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
                     // Create and render a temporary ContextMenu at the clicked element (passing raw HTMLElement)
                     const menu = new foundry.applications.ux.ContextMenu.implementation(this.element, null, menuItems, options);
-                    this._activeLeftClickMenu = menu; // Store the menu instance
+                    this._activeMenuTarget = target; // Set target directly to ensure toggle-off tracking works even if onOpen callback doesn't fire
+                    this._activeLeftClickMenu = menu; // Store the menu instance directly
                     menu.render(target);
                 } else if (qualifyingActivities.length === 1) {
                     // Only one qualifying activity: roll directly!
