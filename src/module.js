@@ -94,29 +94,40 @@ Hooks.once('ready', async () => {
         }
     };
 
-    // Wrap the clear method on the actual HUD class prototype (e.g. TokenHUD or TokenHUDPF)
-    // to ensure it works across scene changes and supports custom system HUDs.
+    // Wrap the clear and close methods on the actual HUD class prototype (e.g. TokenHUD or TokenHUDPF)
+    // to ensure it works across scene changes and supports custom system HUDs in all closing scenarios.
     if (canvas.hud?.token) {
         const hudClass = canvas.hud.token.constructor;
-        log.info(`Wrapping ${hudClass.name}.prototype.clear`);
-        const originalClear = hudClass.prototype.clear;
+        log.info(`Wrapping ${hudClass.name}.prototype.clear and close`);
         
+        const originalClear = hudClass.prototype.clear;
         hudClass.prototype.clear = function (...args) {
             log.debug(`${hudClass.name}.prototype.clear called`);
             if (activeApp) {
                 log.debug(`clear hook | activeApp found (state: ${activeApp.state}), initiating close`);
                 if (activeApp.element) {
-                    log.debug("clear hook | Hiding activeApp element (setting display to none)");
+                    log.debug("clear hook | Hiding activeApp element");
                     activeApp.element.style.display = 'none';
-                } else {
-                    log.debug("clear hook | activeApp.element is not rendered/present");
                 }
                 activeApp.close();
                 activeApp = null;
-            } else {
-                log.debug("clear hook | activeApp is already null, nothing to close");
             }
             return originalClear.apply(this, args);
+        };
+
+        const originalClose = hudClass.prototype.close;
+        hudClass.prototype.close = function (...args) {
+            log.debug(`${hudClass.name}.prototype.close called`);
+            if (activeApp) {
+                log.debug(`close hook | activeApp found (state: ${activeApp.state}), initiating close`);
+                if (activeApp.element) {
+                    log.debug("close hook | Hiding activeApp element");
+                    activeApp.element.style.display = 'none';
+                }
+                activeApp.close();
+                activeApp = null;
+            }
+            return originalClose.apply(this, args);
         };
     }
 });
