@@ -381,7 +381,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             
             if (!matchesRight) return false;
 
-            return matchesLeftParent && matchesLeftSub && matchesRightParent && matchesRightSub;
+            return matchesLeftParent && matchesLeftSub;
         });
 
         // Inject data and attachment state into context
