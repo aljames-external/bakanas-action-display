@@ -574,6 +574,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // Prevent right-clicks inside the HUD from bubbling up to the document
         this.element.addEventListener('contextmenu', event => event.stopPropagation());
 
+        // Intercept right-clicks in the capture phase to support toggling the context menu off
+        this.element.addEventListener('contextmenu', this._onContextMenuCapture.bind(this), { capture: true });
+
         // Initialize the context menu for action items if not already done
         if (!this._contextMenu) {
             this._contextMenu = this._createContextMenu();
@@ -608,6 +611,24 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             log.debug(`_adjustMinHeight | Applying min-height: ${targetMinHeight}px to container`);
             // Add 24px safety margin (12px top/bottom) to match container padding
             container.style.minHeight = `${targetMinHeight}px`;
+        }
+    }
+
+    /**
+     * Intercept contextmenu events in the capture phase to toggle the menu off
+     * if the same item is right-clicked again.
+     * @param {Event} event The triggering contextmenu event
+     * @private
+     */
+    _onContextMenuCapture(event) {
+        const targetItem = event.target.closest('.bad-action-item');
+        if (targetItem && this._activeMenuTarget === targetItem) {
+            log.debug("Right-clicked the same item, toggling context menu off");
+            this._contextMenu?.close();
+            
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
         }
     }
 
@@ -653,10 +674,12 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const options = {
             onOpen: (target) => {
                 log.debug("Context menu opened");
+                this._activeMenuTarget = target[0] || target; // Store the raw HTMLElement of the open menu target
                 this.element.querySelector('.bakanas-action-display-container')?.classList.add('has-context-menu');
             },
             onClose: () => {
                 log.debug("Context menu closed");
+                this._activeMenuTarget = null; // Clear the target
                 this.element.querySelector('.bakanas-action-display-container')?.classList.remove('has-context-menu');
             }
         };
