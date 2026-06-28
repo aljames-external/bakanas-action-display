@@ -17,6 +17,16 @@ Hooks.once('init', () => {
         }
     });
 
+    // Register Persist Detached HUD Setting
+    game.settings.register(MODULE_ID, 'persistDetached', {
+        name: game.i18n.localize('BAD.settings.persistDetached.name'),
+        hint: game.i18n.localize('BAD.settings.persistDetached.hint'),
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
     // Register HUD Opacity Setting (Slider)
     game.settings.register(MODULE_ID, 'hudOpacity', {
         name: game.i18n.localize('BAD.settings.hudOpacity.name'),

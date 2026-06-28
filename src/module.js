@@ -5,6 +5,7 @@ import { ActionDisplayApp } from './ui/action-display-app.js';
 import { log } from './lib/logger.js';
 
 let activeApp = null;
+let closeDetachedHUD = false;
 
 /**
  * Helper to convert hyphenated or lowercase IDs into PascalCase.
@@ -94,6 +95,21 @@ Hooks.once('ready', async () => {
         }
     };
 
+    // Intercept right-clicks on tokens to detect when the user is trying to toggle-close
+    // a detached HUD by right-clicking the same token again.
+    const originalRightClick = Token.prototype._onRightClick;
+    Token.prototype._onRightClick = function (event) {
+        log.debug("Token.prototype._onRightClick called");
+        if (activeApp && activeApp.token === this) {
+            const persist = game.settings.get('bakanas-action-display', 'persistDetached');
+            if (persist && !activeApp.isAttached) {
+                log.debug("Right-clicked the same token with a detached HUD. Setting closeDetachedHUD flag.");
+                closeDetachedHUD = true;
+            }
+        }
+        return originalRightClick.call(this, event);
+    };
+
     // Wrap the clear and close methods on the actual HUD class prototype (e.g. TokenHUD or TokenHUDPF)
     // to ensure it works across scene changes and supports custom system HUDs in all closing scenarios.
     if (canvas.hud?.token) {
@@ -104,14 +120,22 @@ Hooks.once('ready', async () => {
         hudClass.prototype.clear = function (...args) {
             log.debug(`${hudClass.name}.prototype.clear called`);
             if (activeApp) {
-                log.debug(`clear hook | activeApp found (state: ${activeApp.state}), initiating close`);
-                if (activeApp.element) {
-                    log.debug("clear hook | Hiding activeApp element");
-                    activeApp.element.style.display = 'none';
+                const persist = game.settings.get('bakanas-action-display', 'persistDetached');
+                const shouldClose = activeApp.isAttached || !persist || closeDetachedHUD;
+                
+                if (shouldClose) {
+                    log.debug(`clear hook | Closing activeApp (state: ${activeApp.state})`);
+                    if (activeApp.element) {
+                        log.debug("clear hook | Hiding activeApp element");
+                        activeApp.element.style.display = 'none';
+                    }
+                    activeApp.close();
+                    activeApp = null;
+                } else {
+                    log.debug("clear hook | activeApp is detached and persist is enabled, keeping it open");
                 }
-                activeApp.close();
-                activeApp = null;
             }
+            closeDetachedHUD = false; // Always reset
             return originalClear.apply(this, args);
         };
 
@@ -119,14 +143,22 @@ Hooks.once('ready', async () => {
         hudClass.prototype.close = function (...args) {
             log.debug(`${hudClass.name}.prototype.close called`);
             if (activeApp) {
-                log.debug(`close hook | activeApp found (state: ${activeApp.state}), initiating close`);
-                if (activeApp.element) {
-                    log.debug("close hook | Hiding activeApp element");
-                    activeApp.element.style.display = 'none';
+                const persist = game.settings.get('bakanas-action-display', 'persistDetached');
+                const shouldClose = activeApp.isAttached || !persist || closeDetachedHUD;
+                
+                if (shouldClose) {
+                    log.debug(`close hook | Closing activeApp (state: ${activeApp.state})`);
+                    if (activeApp.element) {
+                        log.debug("close hook | Hiding activeApp element");
+                        activeApp.element.style.display = 'none';
+                    }
+                    activeApp.close();
+                    activeApp = null;
+                } else {
+                    log.debug("close hook | activeApp is detached and persist is enabled, keeping it open");
                 }
-                activeApp.close();
-                activeApp = null;
             }
+            closeDetachedHUD = false; // Always reset
             return originalClose.apply(this, args);
         };
     }
