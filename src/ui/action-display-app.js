@@ -476,6 +476,34 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         super._onRender(context, options);
         this.setPosition();
         this._setupDragListeners();
+        this._adjustMinHeight();
+    }
+
+    /**
+     * Adjust the min-height of the main container to ensure it is at least
+     * as tall as the tallest tab column, keeping them visually connected.
+     */
+    _adjustMinHeight() {
+        const el = this.element;
+        if (!el) return;
+
+        const container = el.querySelector('.bakanas-action-display-container');
+        const leftTabs = el.querySelector('.bad-left-tabs');
+        const rightTabs = el.querySelector('.bad-right-tabs');
+
+        if (!container) return;
+
+        // Reset min-height to measure natural layout first
+        container.style.minHeight = '';
+
+        const leftHeight = leftTabs ? leftTabs.offsetHeight : 0;
+        const rightHeight = rightTabs ? rightTabs.offsetHeight : 0;
+        const maxTabHeight = Math.max(leftHeight, rightHeight);
+
+        if (maxTabHeight > 0) {
+            // Add 24px safety margin (12px top/bottom) to match container padding
+            container.style.minHeight = `${maxTabHeight + 24}px`;
+        }
     }
 
     /**
