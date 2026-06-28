@@ -1,7 +1,6 @@
 /* Custom Styling for Bakana's Action Display App Window */
 .bakanas-action-display-window {
-    position: fixed !important;
-    z-index: 1000;
+    position: fixed;
     pointer-events: all;
     opacity: var(--bad-hud-opacity, 0.88); /* Configurable opacity */
 }
