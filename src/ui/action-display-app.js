@@ -106,6 +106,12 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             }
         }
 
+        // Always ensure 'hidden' tab is present if we are currently viewing it,
+        // even if it is empty, to prevent jarring automatic tab switches when unhiding the last item.
+        if (this.activeLeftParentType === 'hidden') {
+            existingItemCombinations.add('hidden');
+        }
+
         const itemParentLabels = {
             'all': 'All Items',
             'weapon': localize('DND5E.ItemTypeWeapon', 'Weapon'),
@@ -116,7 +122,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             'loot': localize('DND5E.ItemTypeLoot', 'Loot'),
             'feat': localize('DND5E.ItemTypeFeat', 'Feature'),
             'spell': localize('DND5E.ItemTypeSpell', 'Spell'),
-            'other': localize('DND5E.Other', 'Other')
+            'other': localize('DND5E.Other', 'Other'),
+            'hidden': localize('BAD.hud.hidden', 'Hidden')
         };
 
         const itemParentIcons = {
@@ -129,7 +136,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             'tool': 'fas fa-hammer',
             'backpack': 'fas fa-sack',
             'loot': 'fas fa-gem',
-            'other': 'fas fa-ellipsis'
+            'other': 'fas fa-ellipsis',
+            'hidden': 'fas fa-eye-slash'
         };
 
         // Build the left-side hierarchy
@@ -179,7 +187,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         // Convert to array and sort by a predefined order
-        const leftOrder = ['all', 'weapon', 'spell', 'feat', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'other'];
+        const leftOrder = ['all', 'weapon', 'spell', 'feat', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'other', 'hidden'];
         const itemTypes = Object.values(leftGroups);
         itemTypes.sort((a, b) => leftOrder.indexOf(a.id) - leftOrder.indexOf(b.id));
 
@@ -193,6 +201,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 active: this.activeLeftParentType === 'spell' && this.activeLeftSubType === 'all'
             });
         }
+
+        log.debug(`_prepareContext | activeLeftParentType: ${this.activeLeftParentType}, available tabs: ${itemTypes.map(t => t.id).join(', ')}`);
 
         // If active left parent type is no longer available, default to 'all'
         if (itemTypes.length && !itemTypes.some(p => p.id === this.activeLeftParentType)) {
@@ -335,6 +345,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             if (!action.itemTypes || !Array.isArray(action.itemTypes)) return false;
             const itemParentId = action.itemTypes[0];
             const itemSubId = action.itemTypes[1];
+
+            // If the item is hidden, it only matches if the "Hidden" tab is selected.
+            // If the "Hidden" tab is selected, only hidden items match.
+            if (itemParentId === 'hidden' && this.activeLeftParentType !== 'hidden') return false;
+            if (itemParentId !== 'hidden' && this.activeLeftParentType === 'hidden') return false;
 
             const matchesLeftParent = this.activeLeftParentType === 'all' || itemParentId === this.activeLeftParentType;
             
@@ -492,10 +507,16 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this._setupDragListeners();
         this._adjustMinHeight();
 
-        // Prevent clicks and right-clicks inside the HUD from bubbling up to the document,
-        // which would trigger Foundry's click-off detection and close the HUD.
+        // Prevent clicks inside the HUD from bubbling up to the document
         this.element.addEventListener('click', event => event.stopPropagation());
+        
+        // Prevent right-clicks inside the HUD from bubbling up to the document
         this.element.addEventListener('contextmenu', event => event.stopPropagation());
+
+        // Initialize the context menu for action items if not already done
+        if (!this._contextMenu) {
+            this._contextMenu = this._createContextMenu();
+        }
     }
 
     /**
@@ -527,6 +548,93 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             // Add 24px safety margin (12px top/bottom) to match container padding
             container.style.minHeight = `${targetMinHeight}px`;
         }
+    }
+
+    /**
+     * Create and bind the Foundry ContextMenu for action items.
+     * @returns {ContextMenu} The created ContextMenu instance
+     * @private
+     */
+    _createContextMenu() {
+        const menuItems = [
+            {
+                name: "BAD.hud.hideAction",
+                icon: '<i class="fas fa-eye-slash"></i>',
+                condition: li => {
+                    const el = li[0] || li;
+                    const actionId = el.dataset.actionId;
+                    const actions = actionDisplay.getActions(this.actor);
+                    const action = actions.find(a => a.id === actionId);
+                    return action && !action.isHidden;
+                },
+                callback: li => {
+                    const el = li[0] || li;
+                    this._toggleActionHidden(el.dataset.actionId, true);
+                }
+            },
+            {
+                name: "BAD.hud.unhideAction",
+                icon: '<i class="fas fa-eye"></i>',
+                condition: li => {
+                    const el = li[0] || li;
+                    const actionId = el.dataset.actionId;
+                    const actions = actionDisplay.getActions(this.actor);
+                    const action = actions.find(a => a.id === actionId);
+                    return action && action.isHidden;
+                },
+                callback: li => {
+                    const el = li[0] || li;
+                    this._toggleActionHidden(el.dataset.actionId, false);
+                }
+            }
+        ];
+
+        const options = {
+            onOpen: (target) => {
+                log.debug("Context menu opened");
+                this.element.querySelector('.bakanas-action-display-container')?.classList.add('has-context-menu');
+            },
+            onClose: () => {
+                log.debug("Context menu closed");
+                this.element.querySelector('.bakanas-action-display-container')?.classList.remove('has-context-menu');
+            }
+        };
+
+        return new ContextMenu($(this.element), ".bad-action-item", menuItems, options);
+    }
+
+    /**
+     * Toggle the hidden state of an action.
+     * @param {string} actionId The ID of the action to toggle
+     * @param {boolean} shouldHide Whether the action should be hidden
+     * @private
+     */
+    async _toggleActionHidden(actionId, shouldHide) {
+        if (!actionId || !this.actor) return;
+
+        const actions = actionDisplay.getActions(this.actor);
+        const action = actions.find(a => a.id === actionId);
+        if (!action) return;
+
+        const itemId = action.originalItem?.id || action.id;
+        const hiddenItems = this.actor.getFlag('bakanas-action-display', 'hiddenItems') || [];
+        
+        let newHiddenItems = [...hiddenItems];
+        if (shouldHide) {
+            if (!newHiddenItems.includes(itemId)) {
+                newHiddenItems.push(itemId);
+                log.debug(`Hiding item: ${action.name} (ID: ${itemId})`);
+            }
+        } else {
+            const index = newHiddenItems.indexOf(itemId);
+            if (index > -1) {
+                newHiddenItems.splice(index, 1);
+                log.debug(`Unhiding item: ${action.name} (ID: ${itemId})`);
+            }
+        }
+
+        await this.actor.setFlag('bakanas-action-display', 'hiddenItems', newHiddenItems);
+        this.render();
     }
 
     /**

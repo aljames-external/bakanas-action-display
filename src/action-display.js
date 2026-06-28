@@ -129,7 +129,20 @@ class ActionDisplay {
             });
         }
 
-        // Filter out hidden actions
+        // 5. User-Hidden Items: Override itemTypes to ['hidden'] if the item is flagged as hidden by the user
+        const hiddenIds = actor.getFlag('bakanas-action-display', 'hiddenItems') || [];
+        if (hiddenIds.length > 0) {
+            actions = actions.map(action => {
+                const itemId = action.originalItem?.id || action.id;
+                if (hiddenIds.includes(itemId)) {
+                    action.isHidden = true;
+                    action.itemTypes = ['hidden'];
+                }
+                return action;
+            });
+        }
+
+        // Filter out hidden actions (system-hidden)
         const filtered = actions.filter(a => !a.hidden);
         
         log.debug(`getActions | actor: ${actor.name}, base actions: ${totalBase}, final actions: ${filtered.length} (activeSystemAdapter: ${this.activeSystemAdapter?.systemId})`);

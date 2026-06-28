@@ -29,7 +29,10 @@
             }
         },
         "hud": {
-            "filterNoResources": "Hide Depleted"
+            "filterNoResources": "Hide Depleted",
+            "hidden": "Hidden",
+            "hideAction": "Hide Action",
+            "unhideAction": "Unhide Action"
         }
     }
 }

@@ -551,3 +551,45 @@
     height: 13px;
     margin: 0;
 }
+
+/* ==========================================================================
+   HIDDEN ITEMS STYLING
+   ========================================================================== */
+/* 
+   To prevent the browser from creating a new stacking context (which forces 
+   the context menu to render behind sibling items), we DO NOT apply opacity 
+   to the parent .bad-action-item container. Instead, we apply transparency 
+   only to its child elements, achieving the same ghostly look safely.
+*/
+.bad-action-item.bad-item-hidden {
+    border: 1px dashed rgba(167, 139, 250, 0.3); /* Dashed violet border indicating hidden state */
+    background: rgba(22, 22, 29, 0.25); /* Translucent background */
+    transition: background-color 0.2s ease, border-style 0.2s ease;
+}
+
+/* Apply opacity to all children of the hidden item */
+.bad-action-item.bad-item-hidden > * {
+    opacity: 0.45;
+    transition: opacity 0.2s ease;
+}
+
+/* Light up the item and its contents on hover */
+.bad-action-item.bad-item-hidden:hover {
+    border-style: solid;
+    background: rgba(22, 22, 29, 0.45);
+}
+
+.bad-action-item.bad-item-hidden:hover > * {
+    opacity: 0.85;
+}
+
+/* Ensure Foundry's native context menu always renders on top of our HUD and receives clicks */
+#context-menu, .context-menu {
+    z-index: 999999 !important;
+    pointer-events: all !important;
+}
+
+/* Disable hover and mouse events on HUD items when a context menu is active to prevent flickering */
+.bakanas-action-display-container.has-context-menu .bad-action-item {
+    pointer-events: none !important;
+}

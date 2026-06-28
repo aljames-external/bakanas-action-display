@@ -170,11 +170,16 @@ Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
 
     log.debug("renderTokenHUD hook fired for token:", token.name);
 
-    // Close any existing app immediately
+    // If we already have an activeApp for this token, preserve it to keep its tab/scroll state
+    if (activeApp && activeApp.token.id === token.id) {
+        log.debug("renderTokenHUD | activeApp already exists for this token, preserving instance");
+        return;
+    }
+
+    // Close any existing app for a different token
     if (activeApp) {
-        log.debug(`renderTokenHUD | activeApp already exists (state: ${activeApp.state}), closing it first`);
+        log.debug(`renderTokenHUD | activeApp exists for a different token (state: ${activeApp.state}), closing it`);
         if (activeApp.element) {
-            log.debug("renderTokenHUD | Hiding existing activeApp element");
             activeApp.element.style.display = 'none';
         }
         activeApp.close();
