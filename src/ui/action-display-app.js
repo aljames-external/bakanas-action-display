@@ -831,7 +831,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                     const item = action.originalItem;
                     if (item?.type !== 'spell') return false;
                     
-                    return item.system.prepared === 1;
+                    const prepMode = item.system.method;
+                    return !['innate', 'atwill', 'pact'].includes(prepMode) && item.system.prepared === 1;
                 },
                 callback: async el => {
                     const actionId = el.dataset.actionId;
