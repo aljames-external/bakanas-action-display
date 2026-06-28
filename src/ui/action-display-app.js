@@ -589,7 +589,18 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             }
         ];
 
-        return new ContextMenu($(this.element), ".bad-action-item", menuItems);
+        const options = {
+            onOpen: (target) => {
+                log.debug("Context menu opened");
+                this.element.querySelector('.bakanas-action-display-container')?.classList.add('has-context-menu');
+            },
+            onClose: () => {
+                log.debug("Context menu closed");
+                this.element.querySelector('.bakanas-action-display-container')?.classList.remove('has-context-menu');
+            }
+        };
+
+        return new ContextMenu($(this.element), ".bad-action-item", menuItems, options);
     }
 
     /**

@@ -588,3 +588,8 @@
     z-index: 999999 !important;
     pointer-events: all !important;
 }
+
+/* Disable hover and mouse events on HUD items when a context menu is active to prevent flickering */
+.bakanas-action-display-container.has-context-menu .bad-action-item {
+    pointer-events: none !important;
+}
