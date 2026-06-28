@@ -117,7 +117,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             'feat': localize('DND5E.ItemTypeFeat', 'Feature'),
             'spell': localize('DND5E.ItemTypeSpell', 'Spell'),
             'other': localize('DND5E.Other', 'Other'),
-            'hidden': game.i18n.localize('BAD.hud.hidden') || 'Hidden'
+            'hidden': localize('BAD.hud.hidden', 'Hidden')
         };
 
         const itemParentIcons = {
