@@ -27,12 +27,10 @@ Hooks.once('init', () => {
         default: true
     });
 
-    // Register Filter Out of Resources Setting
+    // Register Filter Out of Resources Setting (hidden from config menu, managed via HUD footer)
     game.settings.register(MODULE_ID, 'filterNoResources', {
-        name: game.i18n.localize('BAD.settings.filterNoResources.name'),
-        hint: game.i18n.localize('BAD.settings.filterNoResources.hint'),
         scope: 'client',
-        config: true,
+        config: false,
         type: Boolean,
         default: false
     });
