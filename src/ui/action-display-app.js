@@ -490,6 +490,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.setPosition();
         this._setupDragListeners();
         this._adjustMinHeight();
+
+        // Prevent clicks and right-clicks inside the HUD from bubbling up to the document,
+        // which would trigger Foundry's click-off detection and close the HUD.
+        this.element.addEventListener('click', event => event.stopPropagation());
+        this.element.addEventListener('contextmenu', event => event.stopPropagation());
     }
 
     /**
