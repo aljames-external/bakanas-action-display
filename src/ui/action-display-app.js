@@ -648,6 +648,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             log.debug("Preventing context menu from reopening (toggled off)");
             this._preventReopen = false;
             
+            this._contextMenu?.close(); // Explicitly close the menu since clicks inside the HUD don't close it automatically
+            
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
