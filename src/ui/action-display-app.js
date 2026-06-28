@@ -159,9 +159,15 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         // Convert to array and sort by a predefined order
-        const leftOrder = ['all', 'weapon', 'spell', 'feat', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'other', 'hidden'];
+        const leftOrder = ['all', 'weapon', 'spell', 'feat', 'buff', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'other', 'hidden'];
         const itemTypes = Object.values(leftGroups);
-        itemTypes.sort((a, b) => leftOrder.indexOf(a.id) - leftOrder.indexOf(b.id));
+        itemTypes.sort((a, b) => {
+            const idxA = leftOrder.indexOf(a.id);
+            const idxB = leftOrder.indexOf(b.id);
+            const sortA = idxA === -1 ? 999 : idxA;
+            const sortB = idxB === -1 ? 999 : idxB;
+            return sortA - sortB;
+        });
 
         // Sort spell sub-tabs (levels 0 to 9) and add 'All Spells'
         const spellParent = leftGroups['spell'];
@@ -247,9 +253,15 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         // Convert to array and sort by a predefined order
-        const parentOrder = ['all', 'standard', 'time', 'monster', 'vehicle', 'special', 'none'];
+        const parentOrder = ['all', 'standard', 'action', 'bonus', 'reaction', 'free', 'time', 'monster', 'vehicle', 'special', 'none'];
         const actionTypes = Object.values(parentGroups);
-        actionTypes.sort((a, b) => parentOrder.indexOf(a.id) - parentOrder.indexOf(b.id));
+        actionTypes.sort((a, b) => {
+            const idxA = parentOrder.indexOf(a.id);
+            const idxB = parentOrder.indexOf(b.id);
+            const sortA = idxA === -1 ? 999 : idxA;
+            const sortB = idxB === -1 ? 999 : idxB;
+            return sortA - sortB;
+        });
 
         // Sort sub-tabs within each parent and add 'All'
         const subOrder = {
