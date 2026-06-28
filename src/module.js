@@ -124,6 +124,20 @@ Hooks.on('updateToken', (tokenDocument) => {
     }
 });
 
+// Update HUD position in real-time when the token moves (e.g., during keyboard movement or animations)
+Hooks.on('refreshToken', (token, options) => {
+    if (activeApp && activeApp.token === token && activeApp.isAttached) {
+        activeApp.setPosition();
+    }
+});
+
+// Update HUD position when the canvas is panned or zoomed
+Hooks.on('canvasPan', (canvas, pan) => {
+    if (activeApp && activeApp.isAttached) {
+        activeApp.setPosition();
+    }
+});
+
 Hooks.on('updateActor', (actor) => {
     if (activeApp && activeApp.actor.id === actor.id) {
         activeApp.render();
