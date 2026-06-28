@@ -188,33 +188,33 @@ Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
 
 // Re-render the app if the token, actor, or their items are updated
 Hooks.on('updateToken', (tokenDocument) => {
-    if (activeApp && activeApp.token.document.id === tokenDocument.id) {
+    if (activeApp && activeApp.token.document.id === tokenDocument.id && activeApp.rendered) {
         activeApp.render();
     }
 });
 
 // Update HUD position in real-time when the token moves (e.g., during keyboard movement or animations)
 Hooks.on('refreshToken', (token, options) => {
-    if (activeApp && activeApp.token === token && activeApp.isAttached) {
+    if (activeApp && activeApp.token === token && activeApp.isAttached && activeApp.rendered) {
         activeApp.setPosition();
     }
 });
 
 // Update HUD position when the canvas is panned or zoomed
 Hooks.on('canvasPan', (canvas, pan) => {
-    if (activeApp && activeApp.isAttached) {
+    if (activeApp && activeApp.isAttached && activeApp.rendered) {
         activeApp.setPosition();
     }
 });
 
 Hooks.on('updateActor', (actor) => {
-    if (activeApp && activeApp.actor.id === actor.id) {
+    if (activeApp && activeApp.actor.id === actor.id && activeApp.rendered) {
         activeApp.render();
     }
 });
 
 Hooks.on('updateItem', (item) => {
-    if (activeApp && activeApp.actor.id === item.parent?.id) {
+    if (activeApp && activeApp.actor.id === item.parent?.id && activeApp.rendered) {
         activeApp.render();
     }
 });

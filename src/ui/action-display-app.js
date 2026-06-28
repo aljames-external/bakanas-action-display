@@ -41,6 +41,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      */
     async close(options = {}) {
         log.debug(`ActionDisplayApp.close() initiated for token: ${this.token?.name}, state: ${this.state}`);
+        // Hide the element instantly to prevent any default close animations/transitions
+        // from causing visual glitches (like shifting and covering the token).
+        if (this.element) {
+            this.element.style.display = 'none';
+        }
         const result = await super.close(options);
         log.debug(`ActionDisplayApp.close() completed, new state: ${this.state}`);
         return result;
@@ -459,11 +464,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         
         if (action) {
             action.roll(event);
-            
-            // If not holding Shift, close the overlay after rolling
-            if (!event.shiftKey) {
-                this.close();
-            }
         }
     }
 
@@ -487,9 +487,15 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      */
     _onRender(context, options) {
         super._onRender(context, options);
+        log.debug(`_onRender | token: ${this.token?.name}, state: ${this.state}, isAttached: ${this.isAttached}`);
         this.setPosition();
         this._setupDragListeners();
         this._adjustMinHeight();
+
+        // Prevent clicks and right-clicks inside the HUD from bubbling up to the document,
+        // which would trigger Foundry's click-off detection and close the HUD.
+        this.element.addEventListener('click', event => event.stopPropagation());
+        this.element.addEventListener('contextmenu', event => event.stopPropagation());
     }
 
     /**
@@ -512,10 +518,14 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const leftHeight = leftTabs ? leftTabs.offsetHeight : 0;
         const rightHeight = rightTabs ? rightTabs.offsetHeight : 0;
         const maxTabHeight = Math.max(leftHeight, rightHeight);
+        
+        log.debug(`_adjustMinHeight | leftHeight: ${leftHeight}px, rightHeight: ${rightHeight}px, maxTabHeight: ${maxTabHeight}px`);
 
         if (maxTabHeight > 0) {
+            const targetMinHeight = maxTabHeight + 24;
+            log.debug(`_adjustMinHeight | Applying min-height: ${targetMinHeight}px to container`);
             // Add 24px safety margin (12px top/bottom) to match container padding
-            container.style.minHeight = `${maxTabHeight + 24}px`;
+            container.style.minHeight = `${targetMinHeight}px`;
         }
     }
 
@@ -650,13 +660,20 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
             const result = super.setPosition(targetPosition);
 
+            // Force the window wrapper to auto-size so it grows/shrinks dynamically with the container,
+            // allowing it to grow upwards (when bottom-anchored) or downwards (when top-anchored).
+            el.style.height = 'auto';
+
             // Apply top/bottom manually to anchor the window stably
             if (side === 'above') {
                 const bottomOffset = window.innerHeight - tokenTop + 10;
+                log.debug(`setPosition (Attached/Above) | token: ${this.token.name}, left: ${left}px, bottomOffset: ${bottomOffset}px (tokenTop: ${tokenTop}px, windowHeight: ${window.innerHeight}px)`);
                 el.style.bottom = `${bottomOffset}px`;
                 el.style.top = '';
             } else {
-                el.style.top = `${tokenTop + tokenHeight + 10}px`;
+                const topOffset = tokenTop + tokenHeight + 10;
+                log.debug(`setPosition (Attached/Below) | token: ${this.token.name}, left: ${left}px, topOffset: ${topOffset}px (tokenTop: ${tokenTop}px, tokenHeight: ${tokenHeight}px)`);
+                el.style.top = `${topOffset}px`;
                 el.style.bottom = '';
             }
 
@@ -668,6 +685,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             
             let left = savedPos?.left ?? 100;
             let top = savedPos?.top ?? 100;
+            
+            log.debug(`setPosition (Detached) | left: ${left}px, top: ${top}px, appWidth: ${appWidth}px`);
 
             // Clamp to screen bounds to ensure it's always visible (handles resolution changes)
             left = Math.max(10, Math.min(window.innerWidth - appWidth - 10, left));

@@ -91,6 +91,7 @@ class ActionDisplay {
 
         // 1. Core: Extract all items as base actions
         let actions = this._extractBaseActions(actor);
+        const totalBase = actions.length;
 
         // 2. System Adapter: Modify/Filter/Sort the base actions
         if (this.activeSystemAdapter) {
@@ -129,7 +130,11 @@ class ActionDisplay {
         }
 
         // Filter out hidden actions
-        return actions.filter(a => !a.hidden);
+        const filtered = actions.filter(a => !a.hidden);
+        
+        log.debug(`getActions | actor: ${actor.name}, base actions: ${totalBase}, final actions: ${filtered.length} (activeSystemAdapter: ${this.activeSystemAdapter?.systemId})`);
+        
+        return filtered;
     }
 
     /**
