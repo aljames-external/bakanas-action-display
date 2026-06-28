@@ -104,12 +104,17 @@ Hooks.once('ready', async () => {
         hudClass.prototype.clear = function (...args) {
             log.debug(`${hudClass.name}.prototype.clear called`);
             if (activeApp) {
-                log.debug("Closing activeApp via clear hook");
+                log.debug(`clear hook | activeApp found (state: ${activeApp.state}), initiating close`);
                 if (activeApp.element) {
+                    log.debug("clear hook | Hiding activeApp element (setting display to none)");
                     activeApp.element.style.display = 'none';
+                } else {
+                    log.debug("clear hook | activeApp.element is not rendered/present");
                 }
                 activeApp.close();
                 activeApp = null;
+            } else {
+                log.debug("clear hook | activeApp is already null, nothing to close");
             }
             return originalClear.apply(this, args);
         };
@@ -125,8 +130,9 @@ Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
 
     // Close any existing app immediately
     if (activeApp) {
-        log.debug("renderTokenHUD: Closing existing activeApp");
+        log.debug(`renderTokenHUD | activeApp already exists (state: ${activeApp.state}), closing it first`);
         if (activeApp.element) {
+            log.debug("renderTokenHUD | Hiding existing activeApp element");
             activeApp.element.style.display = 'none';
         }
         activeApp.close();

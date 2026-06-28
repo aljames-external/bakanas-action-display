@@ -37,6 +37,16 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     }
 
     /**
+     * Close the application, logging the transition.
+     */
+    async close(options = {}) {
+        log.debug(`ActionDisplayApp.close() initiated for token: ${this.token?.name}, state: ${this.state}`);
+        const result = await super.close(options);
+        log.debug(`ActionDisplayApp.close() completed, new state: ${this.state}`);
+        return result;
+    }
+
+    /**
      * Configure default options for the ApplicationV2.
      */
     static DEFAULT_OPTIONS = {
