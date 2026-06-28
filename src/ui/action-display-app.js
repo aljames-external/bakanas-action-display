@@ -527,11 +527,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                         }
                     };
 
-                    // Resolve the ContextMenu class (supports namespaced V12/V13 and legacy fallback)
-                    const ContextMenuClass = foundry.applications.ux.ContextMenu?.implementation || foundry.applications.ux.ContextMenu || ContextMenu;
-                    
                     // Create and render a temporary ContextMenu at the clicked element (passing raw HTMLElement)
-                    const menu = new ContextMenuClass(this.element, null, menuItems, options);
+                    const menu = new foundry.applications.ux.ContextMenu.implementation(this.element, null, menuItems, options);
                     menu.render(target);
                 } else if (qualifyingActivities.length === 1) {
                     // Only one qualifying activity: roll directly!
@@ -722,11 +719,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             }
         };
 
-        // Resolve the ContextMenu class (supports namespaced V12/V13 and legacy fallback)
-        const ContextMenuClass = foundry.applications.ux.ContextMenu?.implementation || foundry.applications.ux.ContextMenu || ContextMenu;
-
         // Create the ContextMenu using the raw HTMLElement (this.element) instead of jQuery
-        return new ContextMenuClass(this.element, ".bad-action-item", menuItems, options);
+        return new foundry.applications.ux.ContextMenu.implementation(this.element, ".bad-action-item", menuItems, options);
     }
 
     /**
