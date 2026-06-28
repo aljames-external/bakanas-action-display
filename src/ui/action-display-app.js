@@ -487,9 +487,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      */
     _onRender(context, options) {
         super._onRender(context, options);
-        this._adjustMinHeight();
         this.setPosition();
         this._setupDragListeners();
+        this._adjustMinHeight();
     }
 
     /**
@@ -649,6 +649,10 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             });
 
             const result = super.setPosition(targetPosition);
+
+            // Force the window wrapper to auto-size so it grows/shrinks dynamically with the container,
+            // allowing it to grow upwards (when bottom-anchored) or downwards (when top-anchored).
+            el.style.height = 'auto';
 
             // Apply top/bottom manually to anchor the window stably
             if (side === 'above') {
