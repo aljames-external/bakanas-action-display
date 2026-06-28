@@ -27,6 +27,16 @@ Hooks.once('init', () => {
         default: true
     });
 
+    // Register Filter Out of Resources Setting
+    game.settings.register(MODULE_ID, 'filterNoResources', {
+        name: game.i18n.localize('BAD.settings.filterNoResources.name'),
+        hint: game.i18n.localize('BAD.settings.filterNoResources.hint'),
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: false
+    });
+
     // Register HUD Opacity Setting (Slider)
     game.settings.register(MODULE_ID, 'hudOpacity', {
         name: game.i18n.localize('BAD.settings.hudOpacity.name'),

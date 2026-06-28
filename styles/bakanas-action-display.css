@@ -516,3 +516,38 @@
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* ==========================================================================
+   FOOTER (Filter Checkbox)
+   ========================================================================== */
+.bad-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid rgba(167, 139, 250, 0.15); /* Soft violet line separator */
+    padding-top: 8px;
+    margin-top: 4px;
+}
+
+.bad-filter-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    user-select: none;
+}
+
+.bad-filter-label:hover {
+    color: #cbd5e1;
+}
+
+.bad-filter-checkbox {
+    cursor: pointer;
+    accent-color: #7c3aed; /* Violet accent to match theme */
+    width: 13px;
+    height: 13px;
+    margin: 0;
+}
