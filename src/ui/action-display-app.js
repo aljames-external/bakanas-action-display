@@ -574,8 +574,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // Prevent right-clicks inside the HUD from bubbling up to the document
         this.element.addEventListener('contextmenu', event => event.stopPropagation());
 
-        // Intercept right-click mousedown and contextmenu events in the capture phase to support toggling the menu off
-        this.element.addEventListener('mousedown', this._onMouseDownCapture.bind(this), { capture: true });
+        // Intercept right-click pointerdown and contextmenu events in the capture phase to support toggling the menu off
+        this.element.addEventListener('pointerdown', this._onPointerDownCapture.bind(this), { capture: true });
         this.element.addEventListener('contextmenu', this._onContextMenuCapture.bind(this), { capture: true });
 
         // Initialize the context menu for action items if not already done
@@ -616,17 +616,21 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     }
 
     /**
-     * Intercept mousedown events in the capture phase to detect right-clicks
+     * Intercept pointerdown events in the capture phase to detect right-clicks
      * on the active menu target, preparing to prevent it from reopening.
-     * @param {MouseEvent} event The triggering mousedown event
+     * @param {PointerEvent} event The triggering pointerdown event
      * @private
      */
-    _onMouseDownCapture(event) {
+    _onPointerDownCapture(event) {
         if (event.button !== 2) return; // Only care about right-clicks (button 2)
         
         const targetItem = event.target.closest('.bad-action-item');
-        if (targetItem && this._activeMenuTarget === targetItem) {
-            log.debug("Mousedown right-click on active target, preparing to prevent reopen");
+        const activeItem = this._activeMenuTarget?.closest('.bad-action-item') || this._activeMenuTarget;
+        
+        log.debug(`_onPointerDownCapture | targetItem:`, targetItem, `activeItem:`, activeItem);
+        
+        if (targetItem && activeItem === targetItem) {
+            log.debug("Pointerdown right-click on active target, preparing to prevent reopen");
             this._preventReopen = true;
         }
     }
@@ -638,6 +642,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      * @private
      */
     _onContextMenuCapture(event) {
+        log.debug(`_onContextMenuCapture | preventReopen: ${this._preventReopen}`);
         if (this._preventReopen) {
             log.debug("Preventing context menu from reopening (toggled off)");
             this._preventReopen = false;
@@ -649,7 +654,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         }
 
         const targetItem = event.target.closest('.bad-action-item');
-        if (targetItem && this._activeMenuTarget === targetItem) {
+        const activeItem = this._activeMenuTarget?.closest('.bad-action-item') || this._activeMenuTarget;
+        
+        log.debug(`_onContextMenuCapture | targetItem:`, targetItem, `activeItem:`, activeItem);
+
+        if (targetItem && activeItem === targetItem) {
             log.debug("Right-clicked the same item, toggling context menu off (fallback)");
             this._contextMenu?.close();
             
@@ -700,8 +709,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
         const options = {
             onOpen: (target) => {
-                log.debug("Context menu opened");
-                this._activeMenuTarget = target[0] || target; // Store the raw HTMLElement of the open menu target
+                const rawTarget = target[0] || target;
+                log.debug("Context menu opened on target:", rawTarget);
+                this._activeMenuTarget = rawTarget; // Store the raw HTMLElement of the open menu target
                 this.element.querySelector('.bakanas-action-display-container')?.classList.add('has-context-menu');
             },
             onClose: () => {
