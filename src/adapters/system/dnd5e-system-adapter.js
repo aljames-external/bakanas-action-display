@@ -344,7 +344,7 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
             } else if (target.type === 'spellSlots') {
                 // Consumes actor spell slots
                 const actorSpells = actor.system.spells;
-                const level = target.target;
+                const level = target.target || item.system.level; // Fallback to spell's base level if target is empty (dynamic slots)
                 if (level === 'pact') {
                     const pact = actorSpells?.pact;
                     const available = pact?.value ?? 0;
@@ -381,8 +381,28 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
                     }
                     return { available: 0, max };
                 }
+            } else if (target.type === 'item') {
+                // Consumes quantity of another item (e.g. ammunition) or charges of another item
+                const targetItem = actor.items.get(target.target);
+                if (targetItem) {
+                    const consumed = target.value || 1;
+                    // If the target item has its own limited uses (like a wand), use those
+                    const uses = this._calculateUses(targetItem, actor);
+                    if (uses.available !== null) {
+                        return {
+                            available: Math.floor(uses.available / consumed),
+                            max: uses.max !== null ? Math.floor(uses.max / consumed) : null
+                        };
+                    }
+                    // Otherwise, use its quantity (standard ammo/consumable)
+                    const qty = targetItem.system.quantity ?? 0;
+                    return {
+                        available: Math.floor(qty / consumed),
+                        max: null
+                    };
+                }
             } else if (target.type === 'material') {
-                // Consumes quantity of another item
+                // Consumes quantity of another item (specifically spell components)
                 const targetItem = actor.items.get(target.target);
                 const qty = targetItem?.system?.quantity ?? 0;
                 const consumed = target.value || 1;
