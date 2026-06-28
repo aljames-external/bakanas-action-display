@@ -574,7 +574,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // Prevent right-clicks inside the HUD from bubbling up to the document
         this.element.addEventListener('contextmenu', event => event.stopPropagation());
 
-        // Intercept right-clicks in the capture phase to support toggling the context menu off
+        // Intercept right-click mousedown and contextmenu events in the capture phase to support toggling the menu off
+        this.element.addEventListener('mousedown', this._onMouseDownCapture.bind(this), { capture: true });
         this.element.addEventListener('contextmenu', this._onContextMenuCapture.bind(this), { capture: true });
 
         // Initialize the context menu for action items if not already done
@@ -615,15 +616,41 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     }
 
     /**
+     * Intercept mousedown events in the capture phase to detect right-clicks
+     * on the active menu target, preparing to prevent it from reopening.
+     * @param {MouseEvent} event The triggering mousedown event
+     * @private
+     */
+    _onMouseDownCapture(event) {
+        if (event.button !== 2) return; // Only care about right-clicks (button 2)
+        
+        const targetItem = event.target.closest('.bad-action-item');
+        if (targetItem && this._activeMenuTarget === targetItem) {
+            log.debug("Mousedown right-click on active target, preparing to prevent reopen");
+            this._preventReopen = true;
+        }
+    }
+
+    /**
      * Intercept contextmenu events in the capture phase to toggle the menu off
      * if the same item is right-clicked again.
      * @param {Event} event The triggering contextmenu event
      * @private
      */
     _onContextMenuCapture(event) {
+        if (this._preventReopen) {
+            log.debug("Preventing context menu from reopening (toggled off)");
+            this._preventReopen = false;
+            
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            return;
+        }
+
         const targetItem = event.target.closest('.bad-action-item');
         if (targetItem && this._activeMenuTarget === targetItem) {
-            log.debug("Right-clicked the same item, toggling context menu off");
+            log.debug("Right-clicked the same item, toggling context menu off (fallback)");
             this._contextMenu?.close();
             
             event.preventDefault();
