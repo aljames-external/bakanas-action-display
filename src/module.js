@@ -59,23 +59,6 @@ async function registerAdapters() {
 
 // Wrap TokenHUD.clear synchronously during init to ensure it is registered
 // before any instances are created, and fires instantly when the HUD is cleared.
-Hooks.on('init', () => {
-    log.info("Wrapping TokenHUD.prototype.clear");
-    const originalClear = TokenHUD.prototype.clear;
-    TokenHUD.prototype.clear = function (...args) {
-        log.debug("TokenHUD.prototype.clear called");
-        if (activeApp) {
-            log.debug("TokenHUD clear: Instantly hiding and closing activeApp");
-            if (activeApp.element) {
-                activeApp.element.style.display = 'none';
-            }
-            activeApp.close();
-            activeApp = null;
-        }
-        return originalClear.apply(this, args);
-    };
-});
-
 // Initialize hook
 Hooks.once('init', async () => {
     log.info("Initializing Bakana's Action Display");
@@ -93,6 +76,24 @@ Hooks.once('init', async () => {
 // Ready hook
 Hooks.once('ready', async () => {
     log.info("Ready");
+
+    // Wrap the active token HUD instance's clear method directly to support custom system HUDs (like TokenHUDPF)
+    if (canvas.hud?.token) {
+        log.info("Wrapping canvas.hud.token.clear instance method");
+        const originalClear = canvas.hud.token.clear;
+        canvas.hud.token.clear = function (...args) {
+            log.debug("canvas.hud.token.clear called");
+            if (activeApp) {
+                log.debug("TokenHUD clear: Instantly hiding and closing activeApp");
+                if (activeApp.element) {
+                    activeApp.element.style.display = 'none';
+                }
+                activeApp.close();
+                activeApp = null;
+            }
+            return originalClear.apply(this, args);
+        };
+    }
 });
 
 // Hook into Token HUD rendering to display our overlay
