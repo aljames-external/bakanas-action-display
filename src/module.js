@@ -64,6 +64,20 @@ async function registerAdapters() {
 Hooks.once('init', async () => {
     log.info("Initializing Bakana's Action Display");
 
+    // Wrap Token.prototype._onClickRight during init so it is bound correctly by all tokens' InteractionManagers
+    const originalRightClick = Token.prototype._onClickRight;
+    Token.prototype._onClickRight = function (event) {
+        log.debug("Token.prototype._onClickRight called");
+        if (activeApp && activeApp.token === this) {
+            const persist = game.settings.get('bakanas-action-display', 'persistDetached');
+            if (persist && !activeApp.isAttached) {
+                log.debug("Right-clicked the same token with a detached HUD. Setting closeDetachedHUD flag.");
+                closeDetachedHUD = true;
+            }
+        }
+        return originalRightClick.call(this, event);
+    };
+
     // Dynamically load and register active adapters
     await registerAdapters();
 
@@ -93,21 +107,6 @@ Hooks.once('ready', async () => {
                 log.debug("bad.closeHUD | activeApp is null");
             }
         }
-    };
-
-    // Intercept right-clicks on tokens to detect when the user is trying to toggle-close
-    // a detached HUD by right-clicking the same token again.
-    const originalRightClick = Token.prototype._onClickRight;
-    Token.prototype._onClickRight = function (event) {
-        log.debug("Token.prototype._onClickRight called");
-        if (activeApp && activeApp.token === this) {
-            const persist = game.settings.get('bakanas-action-display', 'persistDetached');
-            if (persist && !activeApp.isAttached) {
-                log.debug("Right-clicked the same token with a detached HUD. Setting closeDetachedHUD flag.");
-                closeDetachedHUD = true;
-            }
-        }
-        return originalRightClick.call(this, event);
     };
 
     // Wrap the clear and close methods on the actual HUD class prototype (e.g. TokenHUD or TokenHUDPF)
