@@ -487,9 +487,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      */
     _onRender(context, options) {
         super._onRender(context, options);
+        this._adjustMinHeight();
         this.setPosition();
         this._setupDragListeners();
-        this._adjustMinHeight();
     }
 
     /**
