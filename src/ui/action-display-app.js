@@ -218,11 +218,16 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // 2. Extract unique Action Types (for Right-side Tabs)
         const existingCombinations = new Set();
         for (const action of rawActions) {
-            if (action.tabs && Array.isArray(action.tabs)) {
-                if (action.tabs.length === 2) {
-                    existingCombinations.add(`${action.tabs[0]}/${action.tabs[1]}`);
-                } else if (action.tabs.length === 1) {
-                    existingCombinations.add(action.tabs[0]);
+            if (!action.tabs || !Array.isArray(action.tabs)) continue;
+            
+            // Support both single tab [parent, sub] and multiple tabs [[parent1, sub1], ...]
+            const tabsList = Array.isArray(action.tabs[0]) ? action.tabs : [action.tabs];
+            
+            for (const tab of tabsList) {
+                if (tab.length === 2) {
+                    existingCombinations.add(`${tab[0]}/${tab[1]}`);
+                } else if (tab.length === 1) {
+                    existingCombinations.add(tab[0]);
                 }
             }
         }
@@ -360,15 +365,21 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
             // Filter by Right Side (Action Type)
             if (!action.tabs || !Array.isArray(action.tabs)) return false;
-            const actionParentId = action.tabs[0];
-            const actionSubId = action.tabs[1];
+            const tabsList = Array.isArray(action.tabs[0]) ? action.tabs : [action.tabs];
 
-            const matchesRightParent = this.activeParentType === 'all' || actionParentId === this.activeParentType;
+            const matchesRight = tabsList.some(tab => {
+                const actionParentId = tab[0];
+                const actionSubId = tab[1];
+
+                const matchesParent = this.activeParentType === 'all' || actionParentId === this.activeParentType;
+                let matchesSub = true;
+                if (this.activeParentType !== 'all' && this.activeSubType && this.activeSubType !== 'all') {
+                    matchesSub = actionSubId === this.activeSubType;
+                }
+                return matchesParent && matchesSub;
+            });
             
-            let matchesRightSub = true;
-            if (this.activeParentType !== 'all' && this.activeSubType && this.activeSubType !== 'all') {
-                matchesRightSub = actionSubId === this.activeSubType;
-            }
+            if (!matchesRight) return false;
 
             return matchesLeftParent && matchesLeftSub && matchesRightParent && matchesRightSub;
         });
@@ -478,34 +489,55 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const action = actions.find(a => a.id === actionId);
         
         if (action) {
-            const activities = action.systemData?.activities;
-            if (activities && activities.length > 1) {
-                // Multiple activities for this activation type! Show a left-click dropdown menu.
-                log.debug(`_onRollAction | Item has multiple activities, showing dropdown`, action);
-                
-                const menuItems = activities.map(activity => ({
-                    name: activity.name || activity.type.toUpperCase(),
-                    icon: activity.img ? `<img src="${activity.img}" style="width: 16px; height: 16px; border: none; vertical-align: middle; margin-right: 8px; border-radius: 4px;" />` : '<i class="fas fa-play" style="margin-right: 8px;"></i>',
-                    callback: () => {
-                        log.debug(`Rolling activity: ${activity.name} via dropdown`);
-                        activity.use({ event });
-                    }
-                }));
+            const wrappedActivities = action.systemData?.activities;
+            if (wrappedActivities && wrappedActivities.length > 0) {
+                // Filter activities to only those that match the currently active right-side tab
+                const activeParent = this.activeParentType;
+                const activeSub = this.activeSubType;
 
-                const options = {
-                    onOpen: () => {
-                        this.element.querySelector('.bakanas-action-display-container')?.classList.add('has-context-menu');
-                    },
-                    onClose: () => {
-                        this.element.querySelector('.bakanas-action-display-container')?.classList.remove('has-context-menu');
+                const qualifyingActivities = wrappedActivities.filter(entry => {
+                    const matchesParent = activeParent === 'all' || entry.parentTab === activeParent;
+                    let matchesSub = true;
+                    if (activeParent !== 'all' && activeSub && activeSub !== 'all') {
+                        matchesSub = entry.subTab === activeSub;
                     }
-                };
+                    return matchesParent && matchesSub;
+                });
 
-                // Create and render a temporary ContextMenu at the clicked element
-                const menu = new ContextMenu($(target), null, menuItems, options);
-                menu.render($(target));
+                log.debug(`_onRollAction | activeParent: ${activeParent}, activeSub: ${activeSub}, qualifying: ${qualifyingActivities.length}`, qualifyingActivities);
+
+                if (qualifyingActivities.length > 1) {
+                    // Multiple qualifying activities! Show a left-click dropdown menu.
+                    const menuItems = qualifyingActivities.map(entry => ({
+                        name: entry.activity.name || entry.activity.type.toUpperCase(),
+                        icon: entry.activity.img ? `<img src="${entry.activity.img}" style="width: 16px; height: 16px; border: none; vertical-align: middle; margin-right: 8px; border-radius: 4px;" />` : '<i class="fas fa-play" style="margin-right: 8px;"></i>',
+                        callback: () => {
+                            log.debug(`Rolling activity: ${entry.activity.name} via dropdown`);
+                            entry.activity.use({ event });
+                        }
+                    }));
+
+                    const options = {
+                        onOpen: () => {
+                            this.element.querySelector('.bakanas-action-display-container')?.classList.add('has-context-menu');
+                        },
+                        onClose: () => {
+                            this.element.querySelector('.bakanas-action-display-container')?.classList.remove('has-context-menu');
+                        }
+                    };
+
+                    // Create and render a temporary ContextMenu at the clicked element
+                    const menu = new ContextMenu($(target), null, menuItems, options);
+                    menu.render($(target));
+                } else if (qualifyingActivities.length === 1) {
+                    // Only one qualifying activity: roll directly!
+                    qualifyingActivities[0].activity.use({ event });
+                } else {
+                    // Fallback: roll the first activity
+                    wrappedActivities[0].activity.use({ event });
+                }
             } else {
-                // Single activity or legacy action: roll directly
+                // Legacy/no activities: roll directly
                 action.roll(event);
             }
         }

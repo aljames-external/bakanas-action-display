@@ -43,63 +43,60 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
 
             // 4. Process activities if they exist (D&D 5e v4+)
             const activities = item.system.activities;
-            const activitiesByActivation = {};
-            
-            if (activities && activities.size > 0) {
-                for (const activity of activities.values()) {
-                    const activationType = activity.activation?.type;
-                    if (!activationType || activationType === 'none') continue;
-                    
-                    if (!activitiesByActivation[activationType]) {
-                        activitiesByActivation[activationType] = [];
+            const activeActivities = activities 
+                ? Array.from(activities.values()).filter(a => a.activation?.type && a.activation.type !== 'none')
+                : [];
+
+            if (activeActivities.length > 0) {
+                // Create a SINGLE action for the item, representing all its active activities
+                const activityAction = {
+                    ...action,
+                    name: item.name, // Keep the clean item name
+                    img: item.img, // Use the parent item's icon
+                    uses: this._calculateUses(item, actor), // Use item-level uses
+                    roll: async (event) => {
+                        // Default roll behavior (rolls the first activity directly)
+                        return activeActivities[0].use({ event });
                     }
-                    activitiesByActivation[activationType].push(activity);
-                }
-            }
+                };
 
-            const activeTypes = Object.keys(activitiesByActivation);
-            if (activeTypes.length > 0) {
-                // Create a single action for each activation type, containing all its activities
-                for (const activationType of activeTypes) {
-                    const typeActivities = activitiesByActivation[activationType];
-                    
-                    // Clone the base action
-                    const activityAction = {
-                        ...action,
-                        id: `${action.id}-${activationType}`, // Unique ID per activation type
-                        name: item.name, // Keep the clean item name!
-                        img: item.img, // Use the parent item's icon
-                        uses: this._calculateUses(item, actor), // Use item-level uses
-                        roll: async (event) => {
-                            // Default roll behavior (rolls the first activity directly)
-                            if (typeActivities.length > 0) {
-                                return typeActivities[0].use({ event });
-                            }
-                        }
-                    };
+                // Collect all unique tabs this item's activities belong to
+                const uniqueTabs = [];
+                const seenTabKeys = new Set();
 
-                    // Assign to hierarchical action tabs: [parentTab, subTab] (for right-side tabs)
+                for (const activity of activeActivities) {
+                    const activationType = activity.activation.type;
                     const parentTab = this._getParentTab(activationType);
                     const subTab = this._getSubTab(activationType);
-                    activityAction.tabs = subTab ? [parentTab, subTab] : [parentTab];
-
-                    // Assign to hierarchical item types: [parentType, subType] (for left-side tabs)
-                    if (item.type === 'spell') {
-                        const level = item.system.level ?? 0;
-                        activityAction.itemTypes = ['spell', level.toString()];
-                    } else {
-                        activityAction.itemTypes = [item.type];
+                    
+                    const key = subTab ? `${parentTab}/${subTab}` : parentTab;
+                    if (!seenTabKeys.has(key)) {
+                        seenTabKeys.add(key);
+                        uniqueTabs.push(subTab ? [parentTab, subTab] : [parentTab]);
                     }
-
-                    // Maintain system-specific data (store the activities list!)
-                    activityAction.systemData = {
-                        recharge: item.system.recharge,
-                        activationType: activationType,
-                        activities: typeActivities
-                    };
-
-                    modified.push(activityAction);
                 }
+
+                activityAction.tabs = uniqueTabs; // Store the array of tabs!
+
+                // Assign to hierarchical item types: [parentType, subType] (for left-side tabs)
+                if (item.type === 'spell') {
+                    const level = item.system.level ?? 0;
+                    activityAction.itemTypes = ['spell', level.toString()];
+                } else {
+                    activityAction.itemTypes = [item.type];
+                }
+
+                // Store all active activities wrapped with their resolved tabs for context-aware rolling
+                activityAction.systemData = {
+                    recharge: item.system.recharge,
+                    activities: activeActivities.map(activity => ({
+                        activity,
+                        parentTab: this._getParentTab(activity.activation.type),
+                        subTab: this._getSubTab(activity.activation.type)
+                    }))
+                };
+
+                modified.push(activityAction);
             } else {
                 // 5. Fallback/Legacy: Process as a single action (for items without activities, or passive containers/loot)
                 let activationType = item.system?.activation?.type;
