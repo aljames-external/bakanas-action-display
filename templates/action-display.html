@@ -39,7 +39,7 @@
         {{/each}}
     </div>
 
-    <!-- Main Layout (Center content + Right-side tabs) -->
+    <!-- Main Layout (Center content) -->
     <div class="bad-main-layout">
         <!-- Main Content Area (Flat list of filtered items) -->
         <div class="bad-tab-content">
@@ -67,37 +67,37 @@
                 </div>
             {{/if}}
         </div>
+    </div>
 
-        <!-- Right-side Slide-out Accordion Tabs (Action Types: Standard, Time, Monster, etc.) -->
-        <div class="bad-right-tabs">
-            {{#each actionTypes}}
-            <div class="bad-right-tab-group {{#if this.expanded}}expanded{{/if}}">
-                <!-- Parent Tab -->
-                <div class="bad-right-tab {{#if this.active}}active{{/if}} {{#if this.activeParent}}active-parent{{/if}}" 
-                     data-action="changeActionType" 
-                     data-type="{{this.id}}" 
-                     data-has-sub-tabs="{{#if this.subTabs.length}}true{{else}}false{{/if}}"
-                     title="{{this.label}}">
-                    <div class="bad-right-tab-icon">
-                        <i class="{{this.icon}}"></i>
-                    </div>
-                    <span class="bad-right-tab-text">{{this.label}}</span>
+    <!-- Right-side Slide-out Accordion Tabs (Action Types: Standard, Time, Monster, etc.) -->
+    <div class="bad-right-tabs">
+        {{#each actionTypes}}
+        <div class="bad-right-tab-group {{#if this.expanded}}expanded{{/if}}">
+            <!-- Parent Tab -->
+            <div class="bad-right-tab {{#if this.active}}active{{/if}} {{#if this.activeParent}}active-parent{{/if}}" 
+                 data-action="changeActionType" 
+                 data-type="{{this.id}}" 
+                 data-has-sub-tabs="{{#if this.subTabs.length}}true{{else}}false{{/if}}"
+                 title="{{this.label}}">
+                <div class="bad-right-tab-icon">
+                    <i class="{{this.icon}}"></i>
                 </div>
-                
-                <!-- Sub-tabs (Action/Bonus/Reaction - revealed when parent is expanded) -->
-                {{#if this.subTabs.length}}
-                <div class="bad-right-sub-tabs">
-                    {{#each this.subTabs}}
-                    <button class="bad-right-sub-tab {{#if this.active}}active{{/if}}" 
-                            data-action="changeSubActionType" 
-                            data-type="{{this.id}}">
-                        {{this.label}}
-                    </button>
-                    {{/each}}
-                </div>
-                {{/if}}
+                <span class="bad-right-tab-text">{{this.label}}</span>
             </div>
-            {{/each}}
+            
+            <!-- Sub-tabs (Action/Bonus/Reaction - revealed when parent is expanded) -->
+            {{#if this.subTabs.length}}
+            <div class="bad-right-sub-tabs">
+                {{#each this.subTabs}}
+                <button class="bad-right-sub-tab {{#if this.active}}active{{/if}}" 
+                        data-action="changeSubActionType" 
+                        data-type="{{this.id}}">
+                    {{this.label}}
+                </button>
+                {{/each}}
+            </div>
+            {{/if}}
         </div>
+        {{/each}}
     </div>
 </div>
