@@ -77,6 +77,23 @@ Hooks.once('init', async () => {
 Hooks.once('ready', async () => {
     log.info("Ready");
 
+    // Expose global debug helper
+    globalThis.bad = {
+        closeHUD: () => {
+            console.log("bad.closeHUD() called");
+            if (activeApp) {
+                console.log("bad.closeHUD | activeApp found, closing:", activeApp);
+                if (activeApp.element) {
+                    activeApp.element.style.display = 'none';
+                }
+                activeApp.close();
+                activeApp = null;
+            } else {
+                console.log("bad.closeHUD | activeApp is null");
+            }
+        }
+    };
+
     // Wrap the active token HUD instance's clear method directly to support custom system HUDs (like TokenHUDPF)
     if (canvas.hud?.token) {
         log.info("Wrapping canvas.hud.token.clear instance method");
