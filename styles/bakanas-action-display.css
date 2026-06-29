@@ -5,6 +5,7 @@
     opacity: var(--bad-hud-opacity, 0.88); /* Configurable opacity */
     /* No hardcoded z-index! Let Foundry V12's ApplicationV2 automatically manage the z-index 
        so it behaves like a standard window (renders below focused character sheets, etc.) */
+    font-size: calc(14px * var(--bad-hud-scale, 1.0)); /* Configurable scaling */
 }
 
 .bakanas-action-display-window.window-app {
