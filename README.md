@@ -29,7 +29,7 @@ https://github.com/user-attachments/assets/c842ee1e-783c-4d7e-b55d-de86e5cb0b44
 *   **Dual-Tab Filtering**:
     *   **Left-Side Tabs**: Group actions by item type (Weapons, Spells, Feats, Consumables, etc.).
     *   **Right-Side Tabs**: Group actions by their action economy cost (Actions, Bonus Actions, Reactions, Passives, etc.).
-*   **Right-Click Multi-Select**: Right-click on any sub-tab to toggle it, allowing you to combine categories (e.g., view both **Bonus Actions** and **Reactions** at the same time!).
+*   **Right-Click Multi-Select**: Right-click on any parent tab or sub-tab to toggle it, allowing you to combine categories (e.g., view both **Weapons** and **Spells**, or **Bonus Actions** and **Reactions** at the same time!).
 *   **Floating / Detached Mode**: Drag the HUD anywhere on your screen—it will smoothly glide at 60fps and save its position. Click the anchor icon to re-attach it to tokens.
 *   **Hide Depleted Resources**: Toggle the resource filter to instantly hide spells, activities, or items that have run out of slots, charges, or uses.
 *   **Customizable Visibility**: Right-click any action card in the HUD to hide it. Unhide it anytime via the context menu.
@@ -40,7 +40,7 @@ https://github.com/user-attachments/assets/c842ee1e-783c-4d7e-b55d-de86e5cb0b44
 ## How to Use
 
 *   **Left-Click a Tab**: Selects that category exclusively.
-*   **Right-Click a Tab**: Toggles that category in/out of your multi-select view.
+*   **Right-Click a Tab (Parent or Sub-tab)**: Toggles that category in/out of your multi-select view.
 *   **Left-Click an Action Card**: Rolls the action! If the action has multiple options, it opens a dropdown; click the option you want to roll.
 *   **Right-Click an Action Card**: Opens the context menu to **Hide** or **Unhide** the action, or open the item's sheet.
 *   **Drag the Top Handle**: Detaches the HUD and lets you drag it anywhere.
@@ -66,6 +66,9 @@ Full support for D&D 5e's 4.0 Activity architecture. Items with multiple activit
 You can choose whether to show or hide unprepared spells in the HUD. A quick **right-click shortcut on the "All Spells" tab** allows you to toggle the visibility of unprepared spells instantly without opening the settings menu.
 
 ![D&D 5e Activity Dropdown](docs/readme-assets/unprepared_spells.png)
+
+#### Spell Properties Filter
+A dedicated, collapsible **Spell Components** section appears at the bottom of the right-side tabs (exclusive to the D&D 5e system). It allows you to filter your spells by their casting components: **V** (Verbal), **S** (Somatic), and **M** (Material). Toggling these will restrict the visible spells to only those matching the selected components, helping you quickly identify what you can cast when silenced, bound, or lacking materials.
 
 #### Midi-QOL Integration (Module)
 When the `midi-qol` module is active, the Action Display HUD integrates automatically:
