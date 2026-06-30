@@ -32,6 +32,14 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
     }
 
     /**
+     * Determine if a specific item should be extracted as a base action for PF2e.
+     * Prevents allocating objects for unhandled item types (like equipment/consumables).
+     */
+    shouldExtractItem(item) {
+        return item.type === 'action' || item.type === 'feat' || item.type === 'spell';
+    }
+
+    /**
      * Filter, map, inject, and sort actions for PF2e.
      * @param {Object[]} actions Base action list from the core
      * @param {Actor} actor 
