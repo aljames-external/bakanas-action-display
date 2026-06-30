@@ -1,4 +1,4 @@
-import { BaseSystemAdapter } from './base-system-adapter.js';
+import { BaseSystemAdapter, localize } from './base-system-adapter.js';
 
 /**
  * System adapter for Pathfinder 2nd Edition (PF2e).
@@ -189,14 +189,37 @@ export class Pf2eSystemAdapter extends BaseSystemAdapter {
     }
 
     /**
+     * Get the localized label for a left-side item type (parent tab) in PF2e.
+     */
+    getItemTypeLabel(parentId) {
+        const labels = {
+            'feat': localize('PF2E.Item.Feat.Plural', 'Feats'),
+            'spell': localize('PF2E.Item.Spell.Plural', 'Spells'),
+            'weapon': localize('PF2E.TraitWeapons', 'Weapons')
+        };
+        return labels[parentId] || super.getItemTypeLabel(parentId);
+    }
+
+    /**
+     * Get the CSS icon class for a left-side item type (parent tab) in PF2e.
+     */
+    getItemTypeIcon(parentId) {
+        const icons = {
+            'feat': 'fas fa-award',
+            'spell': 'fas fa-wand-magic-sparkles',
+            'weapon': 'fas fa-sword'
+        };
+        return icons[parentId] || super.getItemTypeIcon(parentId);
+    }
+
+    /**
      * Get the localized label for a right-side action type (parent tab) in PF2e.
      */
     getActionTypeLabel(parentId) {
         const labels = {
-            'all': 'All Actions',
-            'action': 'Actions',
-            'reaction': 'Reactions',
-            'other': 'Free Actions'
+            'action': localize('PF2E.TabActionsLabel', 'Actions'),
+            'reaction': localize('PF2E.ActionsReactionsHeader', 'Reactions'),
+            'other': localize('PF2E.ActionsFreeActionsHeader', 'Free Actions')
         };
         return labels[parentId] || super.getActionTypeLabel(parentId);
     }
