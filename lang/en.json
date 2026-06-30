@@ -44,7 +44,8 @@
             "itemCharges": "Item Charges",
             "prepareSpell": "Prepare Spell",
             "unprepareSpell": "Unprepare Spell",
-            "actionEconomy": "Action Economy"
+            "actionEconomy": "Action Economy",
+            "spellComponents": "Spell Components"
         }
     }
 }

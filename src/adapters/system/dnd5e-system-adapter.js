@@ -647,7 +647,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
 
     getActionSubTabLabel(subId) {
         const labels = {
-            'all': localize('BAD.dnd5e.allActions', 'All Actions'),
+            'all': localize('BAD.hud.allActions', 'All Actions'),
             'action': localize('DND5E.Action', 'Action'),
             'bonus': localize('DND5E.BonusAction', 'Bonus Action'),
             'reaction': localize('DND5E.Reaction', 'Reaction'),
