@@ -4,7 +4,7 @@ A sleek, high-performance, and highly customizable **Action HUD** for **Foundry 
 
 **Bakana's Action Display** dynamically tracks your selected token on the canvas, instantly extracting and displaying their available attacks, spells, feats, and consumables. Designed with a premium, modern aesthetic, it helps players and GMs speed up combat by placing all their tactical options just one (or two) clicks away.
 
-<video src="docs/readme-assets/hud_demo.mp4" width="100%" autoplay loop muted playsinline></video>
+https://github.com/user-attachments/assets/c842ee1e-783c-4d7e-b55d-de86e5cb0b44
 
 ---
 
@@ -47,7 +47,7 @@ A sleek, high-performance, and highly customizable **Action HUD** for **Foundry 
 *   **Click the Anchor Icon ⚓**: Re-attaches the HUD to follow your selected token.
 *   **Click the Checkbox ⚙️**: Toggles the **Hide Depleted Resources** filter.
 
-<video src="docs/readme-assets/drag_hide_demo.mp4" width="100%" autoplay loop muted playsinline></video>
+https://github.com/user-attachments/assets/d7d23743-82ed-4427-836c-dc426ee1be8a
 
 ---
 
