@@ -59,6 +59,18 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         const modified = [];
         const filterNoResources = game.settings.get(MODULE_ID, 'filterNoResources');
 
+        // Pre-calculate ammunition quantities by subtype in a single pass to avoid nested loops (O(I) complexity)
+        const ammoQuantities = new Map();
+        for (const i of actor.items) {
+            if (i.type === 'consumable' && i.system.type?.value === 'ammo') {
+                const subtype = i.system.type.subtype;
+                if (subtype) {
+                    const qty = i.system.quantity ?? 0;
+                    ammoQuantities.set(subtype, (ammoQuantities.get(subtype) || 0) + qty);
+                }
+            }
+        }
+
         for (const action of actions) {
             const item = action.originalItem;
             const type = item.type;
@@ -122,7 +134,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         id: activity.id,
                         name: activity.name || activity.type.toUpperCase(),
                         img: activity.img || item.img,
-                        uses: this._calculateActivityUses(activity, item, actor),
+                        uses: this._calculateActivityUses(activity, item, actor, ammoQuantities),
                         tabs: subTab ? [parentTab, subTab] : [parentTab],
                         roll: async (event) => {
                             const proxiedEvent = this._createRollEvent(event);
@@ -362,10 +374,11 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Activity} activity The activity instance
      * @param {Item} item The parent item
      * @param {Actor} actor The actor
+     * @param {Map<string, number>} ammoQuantities Pre-calculated ammunition quantities
      * @returns {{available: number|null, max: number|null}} The uses count
      * @private
      */
-    _calculateActivityUses(activity, item, actor) {
+    _calculateActivityUses(activity, item, actor, ammoQuantities) {
         const targets = activity.consumption?.targets || [];
         
         // 1. If the activity has its own explicit limited uses
@@ -492,7 +505,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
 
         // Fallback for weapons requiring ammunition if no explicit consumption target was resolved
         if (item.type === 'weapon' && item.system.ammunition?.type) {
-            return this._calculateWeaponAmmunition(item, actor);
+            return this._calculateWeaponAmmunition(item, actor, ammoQuantities);
         }
 
         return { available: null, max: null };
@@ -556,19 +569,9 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      * Used when the Attack activity doesn't have a working item consumption target.
      * @private
      */
-    _calculateWeaponAmmunition(item, actor) {
-        const ammoType = item.system.ammunition.type;
-        let quantity = 0;
-        if (actor) {
-            const ammoItems = actor.items.filter(i => 
-                i.type === 'consumable' && 
-                i.system.type?.value === 'ammo' && 
-                i.system.type?.subtype === ammoType
-            );
-            for (const ammoItem of ammoItems) {
-                quantity += ammoItem.system.quantity ?? 0;
-            }
-        }
+    _calculateWeaponAmmunition(item, actor, ammoQuantities) {
+        const ammoType = item.system.ammunition?.type;
+        const quantity = ammoType ? (ammoQuantities.get(ammoType) ?? 0) : 0;
         return {
             available: quantity,
             max: null
