@@ -83,6 +83,29 @@ Hooks.once('init', async () => {
     game.modules.get(MODULE_ID).api = actionDisplay;
 });
 
+/**
+ * Shared helper to close the HUD if it is attached, if persistence is disabled,
+ * or if a close was explicitly triggered by right-clicking the token.
+ */
+function handleHUDClose() {
+    if (activeApp) {
+        const persist = game.settings.get(MODULE_ID, 'persistDetached');
+        const shouldClose = activeApp.isAttached || !persist || closeDetachedHUD;
+        
+        if (shouldClose) {
+            log.debug(`HUD Hook | Closing activeApp (state: ${activeApp.state})`);
+            if (activeApp.element) {
+                activeApp.element.style.display = 'none';
+            }
+            activeApp.close();
+            activeApp = null;
+        } else {
+            log.debug("HUD Hook | activeApp is detached and persist is enabled, keeping it open");
+        }
+    }
+    closeDetachedHUD = false; // Always reset
+}
+
 // Ready hook
 Hooks.once('ready', async () => {
     log.info("Ready");
@@ -96,46 +119,14 @@ Hooks.once('ready', async () => {
         const originalClear = hudClass.prototype.clear;
         hudClass.prototype.clear = function (...args) {
             log.debug(`${hudClass.name}.prototype.clear called`);
-            if (activeApp) {
-                const persist = game.settings.get(MODULE_ID, 'persistDetached');
-                const shouldClose = activeApp.isAttached || !persist || closeDetachedHUD;
-                
-                if (shouldClose) {
-                    log.debug(`clear hook | Closing activeApp (state: ${activeApp.state})`);
-                    if (activeApp.element) {
-                        log.debug("clear hook | Hiding activeApp element");
-                        activeApp.element.style.display = 'none';
-                    }
-                    activeApp.close();
-                    activeApp = null;
-                } else {
-                    log.debug("clear hook | activeApp is detached and persist is enabled, keeping it open");
-                }
-            }
-            closeDetachedHUD = false; // Always reset
+            handleHUDClose();
             return originalClear.apply(this, args);
         };
 
         const originalClose = hudClass.prototype.close;
         hudClass.prototype.close = function (...args) {
             log.debug(`${hudClass.name}.prototype.close called`);
-            if (activeApp) {
-                const persist = game.settings.get(MODULE_ID, 'persistDetached');
-                const shouldClose = activeApp.isAttached || !persist || closeDetachedHUD;
-                
-                if (shouldClose) {
-                    log.debug(`close hook | Closing activeApp (state: ${activeApp.state})`);
-                    if (activeApp.element) {
-                        log.debug("close hook | Hiding activeApp element");
-                        activeApp.element.style.display = 'none';
-                    }
-                    activeApp.close();
-                    activeApp = null;
-                } else {
-                    log.debug("close hook | activeApp is detached and persist is enabled, keeping it open");
-                }
-            }
-            closeDetachedHUD = false; // Always reset
+            handleHUDClose();
             return originalClose.apply(this, args);
         };
     }
@@ -169,9 +160,17 @@ Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
     activeApp.render({ force: true });
 });
 
-// Re-render the app if the token, actor, or their items are updated
-Hooks.on('updateToken', (tokenDocument) => {
+// Re-render the app if the token is updated, but skip full re-renders for movement/rotation/elevation
+Hooks.on('updateToken', (tokenDocument, change) => {
     if (activeApp && activeApp.token.document.id === tokenDocument.id && activeApp.rendered) {
+        // Skip full DOM re-renders if the update is only movement, rotation, or elevation.
+        // Positioning is already handled at 60fps by the refreshToken hook.
+        const keys = Object.keys(foundry.utils.flattenObject(change));
+        const movementKeys = ['x', 'y', 'rotation', 'elevation', 'animation'];
+        const isMovement = keys.every(k => movementKeys.some(mk => k.startsWith(mk)));
+        if (isMovement) return;
+
+        log.debug("updateToken | Token properties updated, re-rendering HUD");
         activeApp.render();
     }
 });
