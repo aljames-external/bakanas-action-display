@@ -71,6 +71,21 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
             }
         }
 
+        // Pre-calculate the highest available spell slot level in a single pass (O(1) upcast checks later)
+        let highestAvailableSlot = 0;
+        const actorSpells = actor.system.spells;
+        if (actorSpells) {
+            for (let i = 1; i <= 9; i++) {
+                if (actorSpells[`spell${i}`]?.value > 0) {
+                    highestAvailableSlot = i; // Since we loop 1 to 9, this naturally finds the highest
+                }
+            }
+            const pact = actorSpells.pact;
+            if (pact?.value > 0) {
+                highestAvailableSlot = Math.max(highestAvailableSlot, pact.level ?? 0);
+            }
+        }
+
         for (const action of actions) {
             const item = action.originalItem;
             const type = item.type;
@@ -134,7 +149,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         id: activity.id,
                         name: activity.name || activity.type.toUpperCase(),
                         img: activity.img || item.img,
-                        uses: this._calculateActivityUses(activity, item, actor, ammoQuantities),
+                        uses: this._calculateActivityUses(activity, item, actor, ammoQuantities, highestAvailableSlot),
                         tabs: subTab ? [parentTab, subTab] : [parentTab],
                         roll: async (event) => {
                             const proxiedEvent = this._createRollEvent(event);
@@ -212,7 +227,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     // For multiple activities, use item-level uses (e.g. wand charges)
                     // Spells fall back to spell slots
                     if (type === 'spell') {
-                        activityAction.uses = this._calculateSpellSlots(item, actor);
+                        activityAction.uses = this._calculateSpellSlots(item, actor, highestAvailableSlot);
                     } else {
                         activityAction.uses = this._calculateUses(item, actor);
                     }
@@ -375,10 +390,11 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item The parent item
      * @param {Actor} actor The actor
      * @param {Map<string, number>} ammoQuantities Pre-calculated ammunition quantities
+     * @param {number} highestAvailableSlot The highest available spell slot level on the actor
      * @returns {{available: number|null, max: number|null}} The uses count
      * @private
      */
-    _calculateActivityUses(activity, item, actor, ammoQuantities) {
+    _calculateActivityUses(activity, item, actor, ammoQuantities, highestAvailableSlot) {
         const targets = activity.consumption?.targets || [];
         
         // 1. If the activity has its own explicit limited uses
@@ -426,7 +442,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         return { available, max };
                     }
                     
-                    if (this._hasAvailableUpcastSlots(actor, pact?.level ?? 0)) {
+                    if (this._hasAvailableUpcastSlots(pact?.level ?? 0, highestAvailableSlot)) {
                         return {
                             available: localize('BAD.dnd5e.upcast', 'Upcast'),
                             max: null,
@@ -444,7 +460,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         return { available, max };
                     }
                     
-                    if (this._hasAvailableUpcastSlots(actor, lvl)) {
+                    if (this._hasAvailableUpcastSlots(lvl, highestAvailableSlot)) {
                         return {
                             available: localize('BAD.dnd5e.upcast', 'Upcast'),
                             max: null,
@@ -514,9 +530,12 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     /**
      * Fallback method to calculate spell slots for standard slot-based spells.
      * Used when the Cast activity doesn't have an explicit spellSlots consumption target.
+     * @param {Item} item The spell item
+     * @param {Actor} actor The actor
+     * @param {number} highestAvailableSlot The highest available spell slot level on the actor
      * @private
      */
-    _calculateSpellSlots(item, actor) {
+    _calculateSpellSlots(item, actor, highestAvailableSlot) {
         const system = item.system;
         const prepMode = system.method;
         const actorSpells = actor.system.spells;
@@ -531,7 +550,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 return { available, max };
             }
             
-            if (this._hasAvailableUpcastSlots(actor, pact?.level ?? 0)) {
+            if (this._hasAvailableUpcastSlots(pact?.level ?? 0, highestAvailableSlot)) {
                 return {
                     available: localize('BAD.dnd5e.upcast', 'Upcast'),
                     max: null,
@@ -550,7 +569,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     return { available, max };
                 }
                 
-                if (this._hasAvailableUpcastSlots(actor, level)) {
+                if (this._hasAvailableUpcastSlots(level, highestAvailableSlot)) {
                     return {
                         available: localize('BAD.dnd5e.upcast', 'Upcast'),
                         max: null,
@@ -670,28 +689,11 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Check if the actor has any available spell slots (standard or pact) of a given level or higher.
+     * Optimized to O(1) by comparing against the pre-calculated highest available slot.
      * @private
      */
-    _hasAvailableUpcastSlots(actor, level) {
-        if (!actor) return false;
-        const actorSpells = actor.system.spells;
-        if (!actorSpells) return false;
-
-        // 1. Check standard spell slots of equal or higher level (up to 9)
-        for (let i = level; i <= 9; i++) {
-            const slot = actorSpells[`spell${i}`];
-            if (slot && slot.value > 0) {
-                return true;
-            }
-        }
-
-        // 2. Check Pact Magic slots
-        const pact = actorSpells.pact;
-        if (pact && pact.value > 0 && (pact.level ?? 0) >= level) {
-            return true;
-        }
-
-        return false;
+    _hasAvailableUpcastSlots(level, highestAvailableSlot) {
+        return highestAvailableSlot >= level;
     }
 
     /**
