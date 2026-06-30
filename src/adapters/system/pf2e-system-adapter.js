@@ -40,6 +40,18 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
     modifyActions(actions, actor) {
         const modified = [];
 
+        // Pre-calculate ammunition quantities by baseItem in a single pass to avoid nested loops (O(I) complexity)
+        const ammoQuantities = new Map();
+        for (const i of actor.items) {
+            if (i.type === 'ammo') {
+                const baseItem = i.system.baseItem;
+                if (baseItem) {
+                    const qty = i.system.quantity ?? 0;
+                    ammoQuantities.set(baseItem, (ammoQuantities.get(baseItem) || 0) + qty);
+                }
+            }
+        }
+
         // 1. Process existing items (Feats, Actions, Spells)
         for (const action of actions) {
             const item = action.originalItem;
@@ -105,7 +117,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
         // Strikes are dynamically calculated on the actor and are not standard inventory items
         const strikes = actor.system.actions ?? [];
         for (const strike of strikes) {
-            const uses = this._calculateStrikeAmmo(strike, actor);
+            const uses = this._calculateStrikeAmmo(strike, actor, ammoQuantities);
 
             modified.push({
                 id: `strike-${strike.slug ?? strike.name}`,
@@ -299,7 +311,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
      * Calculate remaining ammunition for a PF2e Strike.
      * @private
      */
-    _calculateStrikeAmmo(strike, actor) {
+    _calculateStrikeAmmo(strike, actor, ammoQuantities) {
         const weapon = strike.item;
         if (!weapon || weapon.type !== 'weapon') return { available: null, max: null };
 
@@ -307,18 +319,10 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
         if (ammoConfig && ammoConfig.baseType) {
             // This ranged weapon requires ammunition!
             const baseType = ammoConfig.baseType;
-
-            // Find all ammunition items in the actor's inventory matching this baseType
-            const ammoItems = actor.items.filter(i => i.type === 'ammo' && i.system.baseItem === baseType);
-
-            // Sum their quantities
-            let totalQuantity = 0;
-            for (const ammoItem of ammoItems) {
-                totalQuantity += ammoItem.system.quantity ?? 0;
-            }
+            const quantity = ammoQuantities.get(baseType) ?? 0;
 
             return {
-                available: totalQuantity,
+                available: quantity,
                 max: null
             };
         }
