@@ -18,9 +18,27 @@ export class FantasySystemAdapter extends BaseSystemAdapter {
             'weapon': 'fas fa-sword',
             'spell': 'fas fa-wand-magic-sparkles',
             'feat': 'fas fa-award',
-            'consumable': 'fas fa-flask'
+            'consumable': 'fas fa-flask',
+            'equipment': 'fas fa-shield',
+            'tool': 'fas fa-hammer',
+            'backpack': 'fas fa-sack',
+            'loot': 'fas fa-gem'
         };
         return icons[parentId] || super.getItemTypeIcon(parentId);
+    }
+
+    /**
+     * Get the default CSS icon class for a right-side action type (parent tab) in fantasy systems.
+     */
+    getActionTypeIcon(parentId) {
+        const icons = {
+            'standard': 'fas fa-hand-fist',
+            'special': 'fas fa-star',
+            'action': 'fas fa-bolt',
+            'other': 'fas fa-wind',
+            'passive': 'fas fa-eye'
+        };
+        return icons[parentId] || super.getActionTypeIcon(parentId);
     }
 
     /**

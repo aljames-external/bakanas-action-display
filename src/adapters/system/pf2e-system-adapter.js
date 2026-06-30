@@ -271,9 +271,6 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
         return labels[parentId] || super.getActionTypeLabel(parentId);
     }
 
-    /**
-     * Get the CSS icon class for a right-side action type (parent tab) in PF2e.
-     */
     getActionTypeIcon(parentId) {
         const icons = {
             'all': 'fas fa-border-all',
