@@ -48,12 +48,10 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
                     const seenTabKeys = new Set();
 
                     for (const sub of filteredSubs) {
-                        const parentTab = sub.tabs[0];
-                        const subTab = sub.tabs[1];
-                        const key = subTab ? `${parentTab}/${subTab}` : parentTab;
+                        const key = sub.tabs[1] ? `${sub.tabs[0]}/${sub.tabs[1]}` : sub.tabs[0];
                         if (!seenTabKeys.has(key)) {
                             seenTabKeys.add(key);
-                            uniqueTabs.push(subTab ? [parentTab, subTab] : [parentTab]);
+                            uniqueTabs.push(sub.tabs);
                         }
                     }
                     action.tabs = [...uniqueTabs, ...preservedTabs];
