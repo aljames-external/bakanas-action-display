@@ -1,6 +1,27 @@
 import { FantasySystemAdapter } from './genre/fantasy-system-adapter.js';
 import { localize } from '../../lib/utils.js';
 
+// Static sort order maps to prevent allocations during sorting
+const ACTIVATION_SORT_ORDER = {
+    'action': 1,
+    'bonus': 2,
+    'reaction': 3,
+    'legendary': 4,
+    'lair': 5,
+    'crew': 6,
+    'special': 7,
+    'other': 8
+};
+
+const TYPE_SORT_ORDER = {
+    'weapon': 1,
+    'equipment': 2,
+    'consumable': 3,
+    'feat': 4,
+    'spell': 5,
+    'other': 6
+};
+
 /**
  * System adapter for Pathfinder 2nd Edition (PF2e).
  * Modifies the base actions list by mapping feats and spells, and injecting Strikes (attacks).
@@ -22,8 +43,9 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
         // 1. Process existing items (Feats, Actions, Spells)
         for (const action of actions) {
             const item = action.originalItem;
+            const type = item.type;
 
-            if (['action', 'feat'].includes(item.type)) {
+            if (type === 'action' || type === 'feat') {
                 const actionType = item.system.actionType;
                 const activationType = this._parseActivationType(actionType);
 
@@ -32,7 +54,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
 
                 action.activationType = activationType; // Keep for sorting
                 action.tabs = [['economy', activationType]];
-                action.itemTypes = [item.type === 'action' ? 'feat' : item.type];
+                action.itemTypes = [type === 'action' ? 'feat' : type];
                 action.uses = this._calculateUses(item);
 
                 // Override roll to post the action's chat card (standard PF2e behavior)
@@ -137,29 +159,11 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
     }
 
     _getActivationSort(type) {
-        const order = {
-            'action': 1,
-            'bonus': 2,
-            'reaction': 3,
-            'legendary': 4,
-            'lair': 5,
-            'crew': 6,
-            'special': 7,
-            'other': 8
-        };
-        return order[type] ?? 99;
+        return ACTIVATION_SORT_ORDER[type] ?? 99;
     }
 
     _getTypeSort(type) {
-        const order = {
-            'weapon': 1,
-            'equipment': 2,
-            'consumable': 3,
-            'feat': 4,
-            'spell': 5,
-            'other': 6
-        };
-        return order[type] ?? 99;
+        return TYPE_SORT_ORDER[type] ?? 99;
     }
 
     /**
