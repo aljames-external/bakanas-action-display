@@ -11,14 +11,20 @@ const VERBOSITY_LEVELS = {
  * Get the current log verbosity level from the game settings.
  * Defaults to 'warn' if the setting is not yet registered or unavailable.
  */
+// Cached verbosity level to prevent repeated game.settings.get calls (extremely cheap lookups)
+let cachedVerbosity = null;
+
 function getVerbosityLevel() {
+    if (cachedVerbosity !== null) return cachedVerbosity;
+
     try {
         if (typeof game !== 'undefined' && game.settings) {
             const setting = game.settings.get(MODULE_ID, 'logVerbosity');
-            return VERBOSITY_LEVELS[setting] ?? VERBOSITY_LEVELS['warn'];
+            cachedVerbosity = VERBOSITY_LEVELS[setting] ?? VERBOSITY_LEVELS['warn'];
+            return cachedVerbosity;
         }
     } catch (e) {
-        // Settings not yet registered
+        // Settings not yet registered or game not fully initialized
     }
     return VERBOSITY_LEVELS['warn'];
 }
@@ -69,5 +75,13 @@ export const log = {
         if (groupStack.pop() === true) {
             console.groupEnd();
         }
+    },
+    /**
+     * Dynamically update the cached verbosity level.
+     * Called by the settings onChange callback.
+     * @param {string} level The new verbosity level key
+     */
+    setVerbosity(level) {
+        cachedVerbosity = VERBOSITY_LEVELS[level] ?? VERBOSITY_LEVELS['warn'];
     }
 };

@@ -1,4 +1,5 @@
 import { MODULE_ID } from "./constants.js";
+import { log } from "./lib/logger.js";
 
 Hooks.once('init', () => {
     // Register Log Verbosity Setting
@@ -14,6 +15,9 @@ Hooks.once('init', () => {
             'warn': game.i18n.localize('BAD.settings.logVerbosity.choices.warn'),
             'info': game.i18n.localize('BAD.settings.logVerbosity.choices.info'),
             'debug': game.i18n.localize('BAD.settings.logVerbosity.choices.debug')
+        },
+        onChange: value => {
+            log.setVerbosity(value);
         }
     });
 
