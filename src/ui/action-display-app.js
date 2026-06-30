@@ -336,7 +336,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             const skipAll = ['components'].includes(parent.id);
             
             if (parent.subTabs.length > 0 && !skipAll) {
-                const isActive = this.activeParentTypes.has(parent.id);
+                const isActive = parent.id === this.focusedParentType;
                 const validSubIds = new Set(parent.subTabs.map(t => t.id));
                 const activeSubsForParent = Array.from(this.activeSubTypes).filter(id => validSubIds.has(id));
 
