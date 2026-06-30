@@ -29,6 +29,15 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
     }
 
     /**
+     * Determine if a specific item should be extracted as a base action for PF1e.
+     * Prevents allocating objects for unhandled item types (like equipment/containers).
+     */
+    shouldExtractItem(item) {
+        const type = item.type;
+        return type === 'spell' || type === 'attack' || type === 'weapon' || type === 'consumable' || type === 'feat' || type === 'buff';
+    }
+
+    /**
      * Filter, map, and sort actions for PF1e.
      * @param {Object[]} actions Base action list from the core
      * @param {Actor} actor 
