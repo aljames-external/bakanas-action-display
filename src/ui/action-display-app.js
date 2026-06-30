@@ -6,6 +6,18 @@ import { MODULE_ID } from '../constants.js';
 // Cache to persist tab states per actor across HUD rebuilds
 const activeTabCache = new Map();
 
+// Static sort order maps for high-performance O(1) tab sorting (prevents GC allocations on every render)
+const LEFT_ORDER_MAP = {
+    'all': 0, 'weapon': 1, 'spell': 2, 'feat': 3, 'buff': 4,
+    'equipment': 5, 'consumable': 6, 'tool': 7, 'backpack': 8,
+    'loot': 9, 'other': 10, 'hidden': 11
+};
+
+const RIGHT_ORDER_MAP = {
+    'all': 0, 'economy': 1, 'components': 2, 'standard': 3, 'action': 4, 'bonus': 5,
+    'reaction': 6, 'free': 7, 'time': 8, 'monster': 9, 'vehicle': 10, 'special': 11, 'none': 12
+};
+
 /**
  * Modern ApplicationV2-based HUD overlay for Bakana's Action Display.
  * Uses HandlebarsApplicationMixin for rendering and the Actions API for event handling.
@@ -138,14 +150,40 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.actions = rawActions; // Cache the processed actions for high-performance UI lookups
         const adapter = actionDisplay.activeSystemAdapter;
 
-        // 1. Extract unique Item Types (for Left-side Tabs)
         const existingItemCombinations = new Set();
+        const existingCombinations = new Set();
+        const filteredActions = [];
+
+        // 1. Single-pass loop: Extract unique tabs and filter actions simultaneously (O(N) vs O(3N))
         for (const action of rawActions) {
+            // Extract unique Item Types (for Left-side Tabs)
             if (action.itemTypes && Array.isArray(action.itemTypes)) {
                 if (action.itemTypes.length === 2) {
                     existingItemCombinations.add(`${action.itemTypes[0]}/${action.itemTypes[1]}`);
                 } else if (action.itemTypes.length === 1) {
                     existingItemCombinations.add(action.itemTypes[0]);
+                }
+            }
+
+            // Extract unique Action Types (for Right-side Tabs)
+            if (action.tabs && Array.isArray(action.tabs)) {
+                // Support both single tab [parent, sub] and multiple tabs [[parent1, sub1], ...]
+                const tabsList = Array.isArray(action.tabs[0]) ? action.tabs : null;
+                if (tabsList) {
+                    for (const tab of tabsList) {
+                        if (tab.length === 2) {
+                            existingCombinations.add(`${tab[0]}/${tab[1]}`);
+                        } else if (tab.length === 1) {
+                            existingCombinations.add(tab[0]);
+                        }
+                    }
+                } else {
+                    const tab = action.tabs;
+                    if (tab.length === 2) {
+                        existingCombinations.add(`${tab[0]}/${tab[1]}`);
+                    } else if (tab.length === 1) {
+                        existingCombinations.add(tab[0]);
+                    }
                 }
             }
         }
@@ -156,7 +194,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             existingItemCombinations.add('hidden');
         }
 
-        // Build the left-side hierarchy dynamically using the adapter
+        // 2. Build the left-side hierarchy dynamically using the adapter
         const leftGroups = {};
         
         // Always ensure 'all' parent is present if we have actions
@@ -201,14 +239,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             }
         }
 
-        // Convert to array and sort by a predefined order
-        const leftOrder = ['all', 'weapon', 'spell', 'feat', 'buff', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'other', 'hidden'];
+        // Convert to array and sort by our static O(1) order map
         const itemTypes = Object.values(leftGroups);
         itemTypes.sort((a, b) => {
-            const idxA = leftOrder.indexOf(a.id);
-            const idxB = leftOrder.indexOf(b.id);
-            const sortA = idxA === -1 ? 999 : idxA;
-            const sortB = idxB === -1 ? 999 : idxB;
+            const sortA = LEFT_ORDER_MAP[a.id] ?? 999;
+            const sortB = LEFT_ORDER_MAP[b.id] ?? 999;
             return sortA - sortB;
         });
 
@@ -254,24 +289,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             this.activeLeftSubTypes.clear();
         }
 
-        // 2. Extract unique Action Types (for Right-side Tabs)
-        const existingCombinations = new Set();
-        for (const action of rawActions) {
-            if (!action.tabs || !Array.isArray(action.tabs)) continue;
-            
-            // Support both single tab [parent, sub] and multiple tabs [[parent1, sub1], ...]
-            const tabsList = Array.isArray(action.tabs[0]) ? action.tabs : [action.tabs];
-            
-            for (const tab of tabsList) {
-                if (tab.length === 2) {
-                    existingCombinations.add(`${tab[0]}/${tab[1]}`);
-                } else if (tab.length === 1) {
-                    existingCombinations.add(tab[0]);
-                }
-            }
-        }
-
-        // Build the right-side hierarchy dynamically using the adapter
+        // 3. Build the right-side hierarchy dynamically using the adapter
         const parentGroups = {};
         
         // Always ensure 'all' parent is present if we have actions
@@ -318,14 +336,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             }
         }
 
-        // Convert to array and sort by a predefined order
-        const parentOrder = ['all', 'economy', 'components', 'standard', 'action', 'bonus', 'reaction', 'free', 'time', 'monster', 'vehicle', 'special', 'none'];
+        // Convert to array and sort by our static O(1) order map
         const actionTypes = Object.values(parentGroups);
         actionTypes.sort((a, b) => {
-            const idxA = parentOrder.indexOf(a.id);
-            const idxB = parentOrder.indexOf(b.id);
-            const sortA = idxA === -1 ? 999 : idxA;
-            const sortB = idxB === -1 ? 999 : idxB;
+            const sortA = RIGHT_ORDER_MAP[a.id] ?? 999;
+            const sortB = RIGHT_ORDER_MAP[b.id] ?? 999;
             return sortA - sortB;
         });
 
@@ -415,124 +430,13 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             this.activeSubTypes.clear();
         }
 
-        // 3. Filter actions by both active Left-side (Item Type/Spell Level) and active Right-side (Action/Sub-action)
-        const filteredActions = rawActions.filter(action => {
-            // Filter by Left Side (Item Type)
-            if (!action.itemTypes || !Array.isArray(action.itemTypes)) return false;
-            const itemParentId = action.itemTypes[0];
-            const itemSubId = action.itemTypes[1];
-
-            // If the item is hidden, it only matches if the "Hidden" tab is selected.
-            // If the "Hidden" tab is selected, only hidden items match.
-            const isHiddenActive = this.activeLeftParentTypes.has('hidden');
-            if (itemParentId === 'hidden' && !isHiddenActive) return false;
-            if (itemParentId !== 'hidden' && isHiddenActive) return false;
-
-            let matchesLeft = false;
-            
-            // 1. Direct parent match
-            if (this.activeLeftParentTypes.has(itemParentId)) {
-                const parentGroup = leftGroups[itemParentId];
-                const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
-                const activeSubsForParent = Array.from(this.activeLeftSubTypes).filter(id => validSubIds.has(id));
-                
-                if (activeSubsForParent.length === 0) {
-                    matchesLeft = true;
-                } else {
-                    matchesLeft = this.activeLeftSubTypes.has(itemSubId);
-                }
+        // 4. Second pass: Filter actions now that tab groups are fully populated
+        const filteredActions = [];
+        for (const action of rawActions) {
+            if (this._matchesFilters(action)) {
+                filteredActions.push(action);
             }
-            
-            // 2. 'all' parent match (shows other items, but respects specific sub-tab filters on active parents)
-            if (!matchesLeft && this.activeLeftParentTypes.has('all') && !action.excludeFromAll) {
-                const isParentActive = this.activeLeftParentTypes.has(itemParentId);
-                if (!isParentActive) {
-                    matchesLeft = true;
-                } else {
-                    const parentGroup = leftGroups[itemParentId];
-                    const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
-                    const activeSubsForParent = Array.from(this.activeLeftSubTypes).filter(id => validSubIds.has(id));
-                    if (activeSubsForParent.length === 0) {
-                        matchesLeft = true;
-                    }
-                }
-            }
-            
-            if (!matchesLeft) return false;
-
-            // Filter by Right Side (Action Type)
-            if (!action.tabs || !Array.isArray(action.tabs)) return false;
-            const tabsList = Array.isArray(action.tabs[0]) ? action.tabs : [action.tabs];
-
-            // Spell Components Filter (restrictive AND-filter, only for spells)
-            if (action.originalItem?.type === 'spell') {
-                const isComponentsActive = this.activeParentTypes.has('components');
-                if (isComponentsActive) {
-                    const parentGroup = parentGroups['components'];
-                    const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
-                    const activeCompSubs = Array.from(this.activeSubTypes).filter(id => validSubIds.has(id));
-                    
-                    if (activeCompSubs.length > 0) {
-                        const spellCompSubs = new Set(
-                            tabsList
-                                .filter(tab => tab[0] === 'components')
-                                .map(tab => tab[1])
-                        );
-                        const hasBannedComponent = Array.from(spellCompSubs).some(comp => activeCompSubs.includes(comp));
-                        if (hasBannedComponent) return false;
-                    }
-                }
-            }
-
-            // Check if we have any active economy/time parents
-            const activeEconomyParents = Array.from(this.activeParentTypes).filter(p => p !== 'components' && p !== 'all');
-            
-            let matchesRight = true;
-            if (activeEconomyParents.length > 0 || this.activeParentTypes.has('all')) {
-                matchesRight = tabsList.some(tab => {
-                    const actionParentId = tab[0];
-                    const actionSubId = tab[1];
-
-                    // Ignore components parent in the OR-filter
-                    if (actionParentId === 'components') return false;
-
-                    let matchesParent = false;
-                    
-                    // 1. Direct parent match
-                    if (this.activeParentTypes.has(actionParentId)) {
-                        const parentGroup = parentGroups[actionParentId];
-                        const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
-                        const activeSubsForParent = Array.from(this.activeSubTypes).filter(id => validSubIds.has(id));
-                        
-                        if (activeSubsForParent.length === 0) {
-                            matchesParent = true;
-                        } else {
-                            matchesParent = this.activeSubTypes.has(actionSubId);
-                        }
-                    }
-                    
-                    // 2. 'all' parent match
-                    if (!matchesParent && this.activeParentTypes.has('all')) {
-                        const isParentActive = this.activeParentTypes.has(actionParentId);
-                        if (!isParentActive) {
-                            matchesParent = true;
-                        } else {
-                            const parentGroup = parentGroups[actionParentId];
-                            const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
-                            const activeSubsForParent = Array.from(this.activeSubTypes).filter(id => validSubIds.has(id));
-                            if (activeSubsForParent.length === 0) {
-                                matchesParent = true;
-                            }
-                        }
-                    }
-                    
-                    return matchesParent;
-                });
-            }
-            
-            return matchesRight;
-        });
-
+        }
         // Inject data and attachment state into context
         context.itemTypes = itemTypes;
         context.actionTypes = actionTypes;
@@ -555,6 +459,129 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         adapter?.modifyContext?.(context, this);
 
         return context;
+    }
+
+    /**
+     * Check if an action matches the currently active left and right tab filters.
+     * @param {Object} action The action to check
+     * @returns {boolean} True if the action matches the filters
+     * @private
+     */
+    _matchesFilters(action) {
+        // Filter by Left Side (Item Type)
+        if (!action.itemTypes || !Array.isArray(action.itemTypes)) return false;
+        const itemParentId = action.itemTypes[0];
+        const itemSubId = action.itemTypes[1];
+
+        // If the item is hidden, it only matches if the "Hidden" tab is selected.
+        // If the "Hidden" tab is selected, only hidden items match.
+        const isHiddenActive = this.activeLeftParentTypes.has('hidden');
+        if (itemParentId === 'hidden' && !isHiddenActive) return false;
+        if (itemParentId !== 'hidden' && isHiddenActive) return false;
+
+        let matchesLeft = false;
+        
+        // 1. Direct parent match
+        if (this.activeLeftParentTypes.has(itemParentId)) {
+            const parentGroup = this.leftGroups?.[itemParentId];
+            const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
+            const activeSubsForParent = Array.from(this.activeLeftSubTypes).filter(id => validSubIds.has(id));
+            
+            if (activeSubsForParent.length === 0) {
+                matchesLeft = true;
+            } else {
+                matchesLeft = this.activeLeftSubTypes.has(itemSubId);
+            }
+        }
+        
+        // 2. 'all' parent match (shows other items, but respects specific sub-tab filters on active parents)
+        if (!matchesLeft && this.activeLeftParentTypes.has('all') && !action.excludeFromAll) {
+            const isParentActive = this.activeLeftParentTypes.has(itemParentId);
+            if (!isParentActive) {
+                matchesLeft = true;
+            } else {
+                const parentGroup = this.leftGroups?.[itemParentId];
+                const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
+                const activeSubsForParent = Array.from(this.activeLeftSubTypes).filter(id => validSubIds.has(id));
+                if (activeSubsForParent.length === 0) {
+                    matchesLeft = true;
+                }
+            }
+        }
+        
+        if (!matchesLeft) return false;
+
+        // Filter by Right Side (Action Type)
+        if (!action.tabs || !Array.isArray(action.tabs)) return false;
+        const tabsList = Array.isArray(action.tabs[0]) ? action.tabs : [action.tabs];
+
+        // Spell Components Filter (restrictive AND-filter, only for spells)
+        if (action.originalItem?.type === 'spell') {
+            const isComponentsActive = this.activeParentTypes.has('components');
+            if (isComponentsActive) {
+                const parentGroup = this.parentGroups?.['components'];
+                const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
+                const activeCompSubs = Array.from(this.activeSubTypes).filter(id => validSubIds.has(id));
+                
+                if (activeCompSubs.length > 0) {
+                    const spellCompSubs = new Set(
+                        tabsList
+                            .filter(tab => tab[0] === 'components')
+                            .map(tab => tab[1])
+                    );
+                    const hasBannedComponent = Array.from(spellCompSubs).some(comp => activeCompSubs.includes(comp));
+                    if (hasBannedComponent) return false;
+                }
+            }
+        }
+
+        // Check if we have any active economy/time parents
+        const activeEconomyParents = Array.from(this.activeParentTypes).filter(p => p !== 'components' && p !== 'all');
+        
+        let matchesRight = true;
+        if (activeEconomyParents.length > 0 || this.activeParentTypes.has('all')) {
+            matchesRight = tabsList.some(tab => {
+                const actionParentId = tab[0];
+                const actionSubId = tab[1];
+
+                // Ignore components parent in the OR-filter
+                if (actionParentId === 'components') return false;
+
+                let matchesParent = false;
+                
+                // 1. Direct parent match
+                if (this.activeParentTypes.has(actionParentId)) {
+                    const parentGroup = this.parentGroups?.[actionParentId];
+                    const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
+                    const activeSubsForParent = Array.from(this.activeSubTypes).filter(id => validSubIds.has(id));
+                    
+                    if (activeSubsForParent.length === 0) {
+                        matchesParent = true;
+                    } else {
+                        matchesParent = this.activeSubTypes.has(actionSubId);
+                    }
+                }
+                
+                // 2. 'all' parent match
+                if (!matchesParent && this.activeParentTypes.has('all')) {
+                    const isParentActive = this.activeParentTypes.has(actionParentId);
+                    if (!isParentActive) {
+                        matchesParent = true;
+                    } else {
+                        const parentGroup = this.parentGroups?.[actionParentId];
+                        const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
+                        const activeSubsForParent = Array.from(this.activeSubTypes).filter(id => validSubIds.has(id));
+                        if (activeSubsForParent.length === 0) {
+                            matchesParent = true;
+                        }
+                    }
+                }
+                
+                return matchesParent;
+            });
+        }
+        
+        return matchesRight;
     }
 
     /* -------------------------------------------- */
