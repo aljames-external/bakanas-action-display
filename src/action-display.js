@@ -81,21 +81,22 @@ class ActionDisplay {
             }
         }
 
-        // 4. User-Hidden Items: Override itemTypes to ['hidden'] if the item is flagged as hidden by the user
+        // 4. Filter out system-hidden actions and apply user-hidden overrides in a single pass (O(1) lookups)
         const hiddenIds = actor.getFlag(MODULE_ID, 'hiddenItems') || [];
-        if (hiddenIds.length > 0) {
-            actions = actions.map(action => {
-                const itemId = action.originalItem?.id || action.id;
-                if (hiddenIds.includes(itemId)) {
-                    action.isHidden = true;
-                    action.itemTypes = ['hidden'];
-                }
-                return action;
-            });
-        }
+        const hiddenSet = new Set(hiddenIds);
+        const filtered = [];
 
-        // Filter out hidden actions (system-hidden)
-        const filtered = actions.filter(a => !a.hidden);
+        for (const action of actions) {
+            if (action.hidden) continue;
+
+            const itemId = action.originalItem?.id || action.id;
+            if (hiddenSet.has(itemId)) {
+                action.isHidden = true;
+                action.itemTypes = ['hidden'];
+            }
+
+            filtered.push(action);
+        }
         
         log.debug(`getActions | actor: ${actor.name}, base actions: ${totalBase}, final actions: ${filtered.length} (activeSystemAdapter: ${this.activeSystemAdapter?.systemId})`);
         
