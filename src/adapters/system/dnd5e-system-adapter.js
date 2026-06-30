@@ -605,15 +605,21 @@ export class Dnd5eSystemAdapter extends BaseSystemAdapter {
         return icons[parentId] ?? super.getItemTypeIcon(parentId);
     }
 
-    getSpellLevelLabel(level) {
-        if (level === 'itemCharges') {
-            return localize('BAD.dnd5e.itemCharges', 'Item Charges');
+    /**
+     * Get the localized label for a left-side item sub-tab for DnD5e.
+     */
+    getItemSubTabLabel(parentId, subId) {
+        if (parentId === 'spell') {
+            if (subId === 'itemCharges') {
+                return localize('BAD.dnd5e.itemCharges', 'Item Charges');
+            }
+            if (subId === '0') {
+                return localize('DND5E.SpellCantrip', 'Cantrip');
+            }
+            const key = `DND5E.SpellLevel${subId}`;
+            return (game.i18n && game.i18n.has(key)) ? game.i18n.localize(key) : `${subId} Level`;
         }
-        if (level === '0') {
-            return localize('DND5E.SpellCantrip', 'Cantrip');
-        }
-        const key = `DND5E.SpellLevel${level}`;
-        return (game.i18n && game.i18n.has(key)) ? game.i18n.localize(key) : super.getSpellLevelLabel(level);
+        return super.getItemSubTabLabel(parentId, subId);
     }
 
     /**

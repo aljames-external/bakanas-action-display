@@ -169,11 +169,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 };
             }
 
-            if (parentId === 'spell' && subId) {
+            if (subId) {
                 leftGroups[parentId].subTabs.push({
                     id: subId,
-                    label: adapter.getSpellLevelLabel(subId),
-                    active: this.activeLeftParentType === 'spell' && this.activeLeftSubTypes.has(subId)
+                    label: adapter.getItemSubTabLabel(parentId, subId),
+                    active: this.activeLeftParentType === parentId && this.activeLeftSubTypes.has(subId)
                 });
             }
         }
@@ -192,18 +192,17 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // System-specific sorting and tab injection is now delegated to the system adapter in modifyContext
 
         // Prune active left sub-tabs that are no longer available for this actor (prevents stuck empty filters)
-        if (this.activeLeftParentType === 'spell') {
-            const spellParent = leftGroups['spell'];
-            if (spellParent && spellParent.subTabs.length > 0) {
-                const availableLeftSubs = new Set(spellParent.subTabs.map(t => t.id));
-                for (const activeSub of this.activeLeftSubTypes) {
-                    if (activeSub !== 'all' && !availableLeftSubs.has(activeSub)) {
-                        this.activeLeftSubTypes.delete(activeSub);
-                    }
+        // Prune active left sub-tabs that are no longer available for this actor (prevents stuck empty filters)
+        const activeLeftParentGroup = leftGroups[this.activeLeftParentType];
+        if (activeLeftParentGroup && activeLeftParentGroup.subTabs.length > 0) {
+            const availableLeftSubs = new Set(activeLeftParentGroup.subTabs.map(t => t.id));
+            for (const activeSub of this.activeLeftSubTypes) {
+                if (activeSub !== 'all' && !availableLeftSubs.has(activeSub)) {
+                    this.activeLeftSubTypes.delete(activeSub);
                 }
-            } else {
-                this.activeLeftSubTypes.clear();
             }
+        } else {
+            this.activeLeftSubTypes.clear();
         }
 
         log.debug(`_prepareContext | activeLeftParentType: ${this.activeLeftParentType}, available tabs: ${itemTypes.map(t => t.id).join(', ')}`);
@@ -348,7 +347,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 : itemParentId === this.activeLeftParentType;
             
             let matchesLeftSub = true;
-            if (this.activeLeftParentType === 'spell' && this.activeLeftSubTypes.size > 0) {
+            if (this.activeLeftSubTypes.size > 0) {
                 matchesLeftSub = this.activeLeftSubTypes.has(itemSubId);
             }
 

@@ -73,12 +73,13 @@ export class BaseSystemAdapter {
     }
 
     /**
-     * Get the localized label for a spell level (left-side sub-tab).
-     * @param {string} level 
+     * Get the localized label for a left-side item sub-tab.
+     * @param {string} parentId The parent tab ID (e.g. 'spell', 'weapon')
+     * @param {string} subId The sub-tab ID (e.g. '0', 'melee')
      * @returns {string}
      */
-    getSpellLevelLabel(level) {
-        return `${level} Level`;
+    getItemSubTabLabel(parentId, subId) {
+        return subId.toUpperCase();
     }
 
     /**
