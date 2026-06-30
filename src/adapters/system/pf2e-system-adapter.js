@@ -263,6 +263,26 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
     }
 
     /**
+     * Modify the rendering context before it is sent to the template.
+     * Used here to sort the spell sub-tabs (Cantrips, Ranks 1-10, Focus, Innate, Rituals) in the correct order.
+     */
+    modifyContext(context, app) {
+        super.modifyContext?.(context, app);
+        
+        const spellGroup = context.itemTypes?.find(g => g.id === 'spell');
+        if (spellGroup && spellGroup.subTabs.length > 0) {
+            const order = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'focus', 'innate', 'ritual'];
+            spellGroup.subTabs.sort((a, b) => {
+                const idxA = order.indexOf(a.id);
+                const idxB = order.indexOf(b.id);
+                const sortA = idxA === -1 ? 999 : idxA;
+                const sortB = idxB === -1 ? 999 : idxB;
+                return sortA - sortB;
+            });
+        }
+    }
+
+    /**
      * Calculate remaining ammunition for a PF2e Strike.
      * @private
      */

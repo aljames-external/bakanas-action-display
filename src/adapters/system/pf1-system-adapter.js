@@ -468,6 +468,26 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
     }
 
     /**
+     * Modify the rendering context before it is sent to the template.
+     * Used here to sort the spell sub-tabs (Cantrips, Orisons, Levels, SLAs) in the correct order.
+     */
+    modifyContext(context, app) {
+        super.modifyContext?.(context, app);
+        
+        const spellGroup = context.itemTypes?.find(g => g.id === 'spell');
+        if (spellGroup && spellGroup.subTabs.length > 0) {
+            const order = ['cantrip', 'orison', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'sla'];
+            spellGroup.subTabs.sort((a, b) => {
+                const idxA = order.indexOf(a.id);
+                const idxB = order.indexOf(b.id);
+                const sortA = idxA === -1 ? 999 : idxA;
+                const sortB = idxB === -1 ? 999 : idxB;
+                return sortA - sortB;
+            });
+        }
+    }
+
+    /**
      * Sort order for PF1e action types.
      */
     _getActivationSort(type) {
