@@ -60,6 +60,13 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         
         // Dragging state
         this._dragData = null;
+
+        // Bind listeners once for event delegation and capture phases to prevent GC churn
+        this._boundOnPointerDownCapture = this._onPointerDownCapture.bind(this);
+        this._boundOnContextMenuCapture = this._onContextMenuCapture.bind(this);
+        this._onDragStart = this._onDragStart.bind(this);
+        this._onDragMove = this._onDragMove.bind(this);
+        this._onDragEnd = this._onDragEnd.bind(this);
     }
 
     /**
@@ -1006,35 +1013,42 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     /* -------------------------------------------- */
 
     /**
-     * Hook into the render lifecycle to position the element and set up drag listeners.
+     * Hook into the first render to set up permanent event listeners and context menus.
      */
-    _onRender(context, options) {
-        super._onRender(context, options);
-        log.debug(`_onRender | token: ${this.token?.name}, state: ${this.state}, isAttached: ${this.isAttached}`);
-        this.setPosition();
-        this._setupDragListeners();
-        this._adjustMinHeight();
+    _onFirstRender(context, options) {
+        super._onFirstRender(context, options);
+        log.debug(`_onFirstRender | token: ${this.token?.name}`);
 
-        // Initialize bound listeners once to prevent accumulation across re-renders
-        if (!this._boundStopPropagation) {
-            this._boundStopPropagation = (event) => event.stopPropagation();
-            this._boundOnPointerDownCapture = this._onPointerDownCapture.bind(this);
-            this._boundOnContextMenuCapture = this._onContextMenuCapture.bind(this);
-        }
-
-        // Prevent clicks inside the HUD from bubbling up to the document
-        this.element.addEventListener('click', this._boundStopPropagation);
+        // Prevent clicks inside the HUD from bubbling up to the canvas/document
+        this.element.addEventListener('click', (event) => event.stopPropagation());
 
         // Intercept right-click pointerdown and contextmenu events in the capture phase to support toggling the menu off
         this.element.addEventListener('pointerdown', this._boundOnPointerDownCapture, { capture: true });
         this.element.addEventListener('contextmenu', this._boundOnContextMenuCapture, { capture: true });
 
-        // Initialize the context menu for action items if not already done
-        if (!this._contextMenu) {
-            this._contextMenu = this._createContextMenu();
-        }
+        // Event Delegation for Dragging: attach mousedown to the outer element and filter by the handle
+        this.element.addEventListener('mousedown', (event) => {
+            const handle = event.target.closest('.bad-drag-handle');
+            if (handle) this._onDragStart(event);
+        });
 
+        // Initialize the context menu for action items once
+        this._contextMenu = this._createContextMenu();
+    }
 
+    /**
+     * Hook into the render lifecycle to position the element and measure its dimensions.
+     */
+    _onRender(context, options) {
+        super._onRender(context, options);
+        log.debug(`_onRender | token: ${this.token?.name}, state: ${this.state}, isAttached: ${this.isAttached}`);
+        
+        // Measure and cache the fresh dimensions after rendering to prevent layout thrashing at 60fps
+        this._width = this.element.offsetWidth;
+        this._height = this.element.offsetHeight;
+
+        this.setPosition();
+        this._adjustMinHeight();
     }
 
     _clearMenuState() {
@@ -1326,22 +1340,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.render();
     }
 
-    /**
-     * Set up mouse listeners for dragging the HUD.
-     */
-    _setupDragListeners() {
-        const el = this.element;
-        if (!el) return;
-        
-        const handle = el.querySelector('.bad-drag-handle');
-        if (!handle) return;
-        
-        // Remove existing listener to prevent duplicates on re-render
-        handle.removeEventListener('mousedown', this._onDragStart);
-        
-        this._onDragStart = this._onDragStart.bind(this);
-        handle.addEventListener('mousedown', this._onDragStart);
-    }
+
 
     _onDragStart(event) {
         event.preventDefault();
@@ -1355,9 +1354,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             startLeft: el.offsetLeft,
             startTop: el.offsetTop
         };
-
-        this._onDragMove = this._onDragMove.bind(this);
-        this._onDragEnd = this._onDragEnd.bind(this);
 
         document.addEventListener('mousemove', this._onDragMove);
         document.addEventListener('mouseup', this._onDragEnd);
@@ -1440,8 +1436,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             const tokenLeft = tokenTransform.tx;
             const tokenTop = tokenTransform.ty;
             
-            // Read the actual scaled width from the DOM, or fallback to the calculated default
-            const appWidth = el.offsetWidth || (320 * scale);
+            // Use cached width if available to prevent layout thrashing (reflow) at 60fps
+            const appWidth = this._width || el.offsetWidth || (320 * scale);
 
             const spaceAbove = tokenTop;
             const spaceBelow = window.innerHeight - (tokenTop + tokenHeight);
@@ -1466,12 +1462,10 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
             if (side === 'above') {
                 const bottomOffset = window.innerHeight - tokenTop + 10;
-                log.debug(`setPosition (Attached/Above) | token: ${this.token.name}, left: ${left}px, bottomOffset: ${bottomOffset}px (tokenTop: ${tokenTop}px, windowHeight: ${window.innerHeight}px)`);
                 el.style.bottom = `${bottomOffset}px`;
                 el.style.top = '';
             } else {
                 const topOffset = tokenTop + tokenHeight + 10;
-                log.debug(`setPosition (Attached/Below) | token: ${this.token.name}, left: ${left}px, topOffset: ${topOffset}px (tokenTop: ${tokenTop}px, tokenHeight: ${tokenHeight}px)`);
                 el.style.top = `${topOffset}px`;
                 el.style.bottom = '';
             }
@@ -1481,14 +1475,12 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             // --- DETACHED MODE (Floating / Fixed Position) ---
             const savedPos = game.settings.get(MODULE_ID, 'hudDetachedPosition');
             
-            // Read the actual scaled width/height from the DOM, or fallback to the calculated default
-            const appWidth = el.offsetWidth || (320 * scale);
-            const appHeight = (el.offsetHeight || 200) * (el.offsetHeight ? 1 : scale);
+            // Use cached dimensions if available to prevent layout thrashing (reflow) at 60fps
+            const appWidth = this._width || el.offsetWidth || (320 * scale);
+            const appHeight = this._height || (el.offsetHeight || 200) * (el.offsetHeight ? 1 : scale);
             
             let left = savedPos?.left ?? 100;
             let top = savedPos?.top ?? 100;
-            
-            log.debug(`setPosition (Detached) | left: ${left}px, top: ${top}px, appWidth: ${appWidth}px, appHeight: ${appHeight}px`);
 
             // Clamp to screen bounds to ensure it's always visible (handles resolution changes)
             left = Math.max(10, Math.min(window.innerWidth - appWidth - 10, left));
