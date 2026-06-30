@@ -1,6 +1,5 @@
 import { actionDisplay } from '../action-display.js';
 import { log } from '../lib/logger.js';
-import { localize } from '../lib/utils.js';
 
 // Cache to persist tab states per actor across HUD rebuilds
 const activeTabCache = new Map();

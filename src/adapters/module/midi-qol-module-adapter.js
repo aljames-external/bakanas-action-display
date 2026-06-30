@@ -60,13 +60,6 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
                 }
             }
 
-            // 2. Keep the existing midiAutomated flag logic for the item
-            const midiFlags = item.flags?.['midi-qol'];
-            action.extra = action.extra ?? {};
-            if (midiFlags) {
-                action.extra.midiAutomated = true;
-            }
-
             modified.push(action);
         }
 
