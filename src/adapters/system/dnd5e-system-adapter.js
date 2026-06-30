@@ -85,7 +85,12 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     unprepared: isSpellUnprepared,
                     roll: async (event) => {
                         // Default roll behavior (rolls the first activity directly)
-                        return activeActivities[0].use({ event });
+                        const syntheticEvent = {
+                            altKey: event?.altKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.ALT),
+                            ctrlKey: event?.ctrlKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.CONTROL),
+                            shiftKey: event?.shiftKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT)
+                        };
+                        return activeActivities[0].use({ event: syntheticEvent }, { event: syntheticEvent });
                     }
                 };
 
@@ -139,7 +144,14 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         img: activity.img || item.img,
                         uses: this._calculateActivityUses(activity, item, actor),
                         tabs: subTab ? [parentTab, subTab] : [parentTab],
-                        roll: async (event) => activity.use({ event }),
+                        roll: async (event) => {
+                            const syntheticEvent = {
+                                altKey: event?.altKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.ALT),
+                                ctrlKey: event?.ctrlKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.CONTROL),
+                                shiftKey: event?.shiftKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT)
+                            };
+                            return activity.use({ event: syntheticEvent }, { event: syntheticEvent });
+                        },
                         originalActivity: activity // Store for module adapters (like midi-qol)
                     };
                 });
