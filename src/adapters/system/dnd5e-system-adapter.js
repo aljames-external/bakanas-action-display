@@ -50,6 +50,22 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     }
 
     /**
+     * Determine if a specific item should be extracted as a base action for DnD5e.
+     * Prevents allocating objects for unallowed types, cached helper items, and unequipped gear.
+     */
+    shouldExtractItem(item) {
+        const type = item.type;
+        if (!ALLOWED_TYPES.has(type)) return false;
+        if (item.getFlag('dnd5e', 'cachedFor')) return false;
+
+        const isEquipped = item.system.equipped !== false;
+        if ((type === 'weapon' || type === 'equipment' || type === 'consumable' || type === 'tool') && !isEquipped) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Filter, map, and sort the base actions list for DnD5e.
      * @param {Object[]} actions Base action list from the core
      * @param {Actor} actor 
@@ -89,7 +105,6 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         for (const action of actions) {
             const item = action.originalItem;
             const type = item.type;
-            
             // Extract spell components if it's a spell (for the Spell Components tab)
             const props = item.system?.properties;
             const spellComponents = [];
@@ -105,19 +120,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 if (hasProp('material')) spellComponents.push(['components', 'material']);
             }
 
-            // 1. Filter by allowed item types (O(1) Set lookup)
-            if (!ALLOWED_TYPES.has(type)) continue;
-
-            // Filter out cached helper items (e.g. spells cached for activities on feats/equipment)
-            if (item.getFlag('dnd5e', 'cachedFor')) continue;
-
-            // 2. Filter out unequipped items for weapons, equipment, consumables, and tools
-            const isEquipped = item.system.equipped !== false;
-            if ((type === 'weapon' || type === 'equipment' || type === 'consumable' || type === 'tool') && !isEquipped) {
-                continue;
-            }
-
-            // 3. Filter out unprepared spells (unless innate/at-will/pact, or showUnprepared is enabled)
+            // 1. Filter out unprepared spells (unless innate/at-will/pact, or showUnprepared is enabled)
             let isSpellUnprepared = false;
             if (type === 'spell') {
                 const prepMode = item.system.method;
