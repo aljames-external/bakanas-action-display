@@ -22,6 +22,16 @@ export class BaseSystemAdapter {
     }
 
     /**
+     * Determine if a specific item should be extracted as a base action.
+     * Overridden by system adapters to prevent allocating objects for items that will be discarded.
+     * @param {Item} item The Foundry Item instance
+     * @returns {boolean} True if the item should be extracted
+     */
+    shouldExtractItem(item) {
+        return true;
+    }
+
+    /**
      * Modify the base list of actions.
      * @param {Object[]} actions Base actions extracted by the core
      * @param {Actor} actor The actor these actions belong to

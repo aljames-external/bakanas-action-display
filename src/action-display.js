@@ -110,8 +110,10 @@ class ActionDisplay {
      */
     _extractBaseActions(actor) {
         const baseActions = [];
+        const adapter = this.activeSystemAdapter;
         for (const item of actor.items) {
             if (!item.name) continue;
+            if (adapter && !adapter.shouldExtractItem(item)) continue;
 
             baseActions.push({
                 id: item.id,
