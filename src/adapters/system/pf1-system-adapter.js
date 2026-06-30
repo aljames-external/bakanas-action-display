@@ -143,11 +143,13 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
 
                 const uses = this._calculateUses(item, actor);
 
-                action.subActions = itemActions.map(act => {
+                const subActions = [];
+                for (const act of itemActions) {
                     const actType = act.activation?.type;
                     const activationType = this._parseActivationType(actType);
-                    
-                    return {
+                    if (!activationType) continue;
+
+                    subActions.push({
                         id: act._id,
                         name: act.name || item.name,
                         img: item.img,
@@ -161,13 +163,12 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                                 item.roll({ actionId: act._id, event });
                             }
                         }
-                    };
-                });
+                    });
+                }
 
-                action.subActions = action.subActions.filter(sub => sub.activationType !== null);
-                if (action.subActions.length === 0) continue;
-
-                const firstSub = action.subActions[0];
+                if (subActions.length === 0) continue;
+                action.subActions = subActions;
+                const firstSub = subActions[0];
                 action.activationType = firstSub.activationType;
                 action.tabs = [['economy', firstSub.activationType]];
                 action.itemTypes = ['weapon']; // Group under weapons/attacks
@@ -251,11 +252,13 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
 
                 const uses = this._calculateUses(item, actor);
 
-                action.subActions = itemActions.map(act => {
+                const subActions = [];
+                for (const act of itemActions) {
                     const actType = act.activation?.type;
                     const activationType = this._parseActivationType(actType);
-                    
-                    return {
+                    if (!activationType) continue;
+
+                    subActions.push({
                         id: act._id,
                         name: act.name || item.name,
                         img: item.img,
@@ -269,13 +272,12 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                                 item.roll({ actionId: act._id, event });
                             }
                         }
-                    };
-                });
+                    });
+                }
 
-                action.subActions = action.subActions.filter(sub => sub.activationType !== null);
-                if (action.subActions.length === 0) continue;
-
-                const firstSub = action.subActions[0];
+                if (subActions.length === 0) continue;
+                action.subActions = subActions;
+                const firstSub = subActions[0];
                 action.activationType = firstSub.activationType;
                 action.tabs = [['economy', firstSub.activationType]];
                 action.itemTypes = [item.type];
