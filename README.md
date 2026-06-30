@@ -33,14 +33,14 @@ https://github.com/user-attachments/assets/c842ee1e-783c-4d7e-b55d-de86e5cb0b44
 *   **Floating / Detached Mode**: Drag the HUD anywhere on your screen—it will smoothly glide at 60fps and save its position. Click the anchor icon to re-attach it to tokens.
 *   **Hide Depleted Resources**: Toggle the resource filter to instantly hide spells, activities, or items that have run out of slots, charges, or uses.
 *   **Customizable Visibility**: Right-click any action card in the HUD to hide it. Unhide it anytime via the context menu.
-*   **Left-Click Smart Dropdowns**: For items with multiple options (like a spell with multiple casting levels or a weapon with multiple activities), left-clicking opens a sleek dropdown to let you choose your option.
+*   **Left-Click Smart Dropdowns**: For items with multiple options (like a spell with multiple casting levels or a weapon with multiple activities), left-clicking opens a sleek dropdown to let you choose your option. Even if active filters limit a multi-option item down to a single qualifying choice, the dropdown is still shown to provide clear feedback on what is being cast.
 
 ---
 
 ## How to Use
 
-*   **Left-Click a Tab**: Selects that category exclusively.
-*   **Right-Click a Tab (Parent or Sub-tab)**: Toggles that category in/out of your multi-select view.
+*   **Left-Click a Tab**: Selects that category exclusively. If multiple sub-tabs are already active, left-clicking one of them will **isolate** it (deselecting all others, making it the sole active filter) rather than toggling it off.
+*   **Right-Click a Tab**: Toggles that sub-tab in/out of your active filters. Right-clicking a **parent tab header** (like *Action Economy* or *Spell Components*) acts as a **reset shortcut**, returning that tab group to its default state (all selected for Action Economy, none banned for Spell Components).
 *   **Left-Click an Action Card**: Rolls the action! If the action has multiple options, it opens a dropdown; click the option you want to roll.
 *   **Right-Click an Action Card**: Opens the context menu to **Hide** or **Unhide** the action, or open the item's sheet.
 *   **Drag the Top Handle**: Detaches the HUD and lets you drag it anywhere.
@@ -68,7 +68,11 @@ You can choose whether to show or hide unprepared spells in the HUD. A quick **r
 ![D&D 5e Activity Dropdown](docs/readme-assets/unprepared_spells.png)
 
 #### Spell Properties Filter
-A dedicated, collapsible **Spell Components** section appears at the bottom of the right-side tabs (exclusive to the D&D 5e system). It allows you to filter your spells by their casting components: **V** (Verbal), **S** (Somatic), and **M** (Material). Toggling these will restrict the visible spells to only those matching the selected components, helping you quickly identify what you can cast when silenced, bound, or lacking materials.
+A dedicated, collapsible **Spell Components** section appears at the bottom of the right-side tabs (exclusive to the D&D 5e system). Unlike other filters, it operates as a **negative/exclusion filter** to help you quickly identify what you can cast under constraints (such as being silenced, bound, or stripped of materials):
+*   **Grey (Default)**: Allowed. The component is permitted, and spells requiring it are shown.
+*   **Red Outline + Diagonal (Banned)**: Banned. Toggling a component (Verbal, Somatic, Material, or None) bans it. Any spells requiring that component will be instantly hidden from the HUD.
+*   **"None" Option**: Located at the bottom, this allows you to ban or isolate spells that have no casting components at all.
+*   **Persistent Expansion**: While any component is banned, the *Spell Components* tab will remain expanded on your screen even if you left-click to focus the *Action Economy* tab, allowing you to combine filters.
 
 #### Midi-QOL Integration (Module)
 When the `midi-qol` module is active, the Action Display HUD integrates automatically:
