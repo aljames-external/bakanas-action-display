@@ -18,6 +18,20 @@ const RIGHT_ORDER_MAP = {
     'reaction': 6, 'free': 7, 'time': 8, 'monster': 9, 'vehicle': 10, 'special': 11, 'none': 12
 };
 
+// Static sub-tab sort order maps for high-performance O(1) sorting
+const SUB_TAB_ORDER_MAPS = {
+    'economy': {
+        'all': 0, 'action': 1, 'bonus': 2, 'reaction': 3, 'other': 4, 'special': 5,
+        'legendary': 6, 'mythic': 7, 'crew': 8, 'lair': 9, 'minute': 10, 'hour': 11,
+        'day': 12, 'none': 13
+    },
+    'components': { 'vocal': 0, 'somatic': 1, 'material': 2 },
+    'standard': { 'all': 0, 'action': 1, 'bonus': 2, 'reaction': 3 },
+    'time': { 'all': 0, 'minute': 1, 'hour': 2, 'day': 3 },
+    'monster': { 'all': 0, 'legendary': 1, 'mythic': 2, 'lair': 3 },
+    'vehicle': { 'all': 0, 'crew': 1 }
+};
+
 /**
  * Modern ApplicationV2-based HUD overlay for Bakana's Action Display.
  * Uses HandlebarsApplicationMixin for rendering and the Actions API for event handling.
@@ -152,7 +166,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
         const existingItemCombinations = new Set();
         const existingCombinations = new Set();
-        const filteredActions = [];
 
         // 1. Single-pass loop: Extract unique tabs and filter actions simultaneously (O(N) vs O(3N))
         for (const action of rawActions) {
@@ -345,15 +358,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         });
 
         // Sort sub-tabs within each parent and add 'All'
-        const subOrder = {
-            'economy': ['all', 'action', 'bonus', 'reaction', 'other', 'special', 'legendary', 'mythic', 'crew', 'lair', 'minute', 'hour', 'day', 'none'],
-            'components': ['vocal', 'somatic', 'material'],
-            'standard': ['all', 'action', 'bonus', 'reaction'],
-            'time': ['all', 'minute', 'hour', 'day'],
-            'monster': ['all', 'legendary', 'mythic', 'lair'],
-            'vehicle': ['all', 'crew']
-        };
-
         for (const parent of actionTypes) {
             const skipAll = ['components'].includes(parent.id);
             
@@ -368,11 +372,19 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                     active: isActive && activeSubsForParent.length === 0
                 });
                 
-                const order = subOrder[parent.id] ?? [];
-                parent.subTabs.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+                const orderMap = SUB_TAB_ORDER_MAPS[parent.id] ?? {};
+                parent.subTabs.sort((a, b) => {
+                    const sortA = orderMap[a.id] ?? 999;
+                    const sortB = orderMap[b.id] ?? 999;
+                    return sortA - sortB;
+                });
             } else if (skipAll) {
-                const order = subOrder[parent.id] ?? [];
-                parent.subTabs.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+                const orderMap = SUB_TAB_ORDER_MAPS[parent.id] ?? {};
+                parent.subTabs.sort((a, b) => {
+                    const sortA = orderMap[a.id] ?? 999;
+                    const sortB = orderMap[b.id] ?? 999;
+                    return sortA - sortB;
+                });
             }
         }
 
