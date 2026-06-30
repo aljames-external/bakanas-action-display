@@ -667,9 +667,10 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      */
     _onToggleRightParent(parentId) {
         // Right-click on a parent tab: clear all its sub-tab filters (resets both to their defaults!)
+        this.focusedParentType = parentId; // Set as focused so it remains open!
+        
         if (parentId === 'all') {
             this.activeSubTypes.clear();
-            this.focusedParentType = 'all';
         } else {
             const parentGroup = this.parentGroups?.[parentId];
             if (parentGroup) {
