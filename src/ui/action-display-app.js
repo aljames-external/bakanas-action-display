@@ -1008,8 +1008,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             }
         };
 
-        const container = this.element.querySelector('.bakanas-action-display-container') || this.element;
-        return new foundry.applications.ux.ContextMenu.implementation(container, ".bad-action-item", menuItems, options);
+        return new foundry.applications.ux.ContextMenu.implementation(this.element, ".bad-action-item", menuItems, options);
     }
 
     /**
@@ -1053,8 +1052,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         };
 
         // Bind only to sub-tabs on the left side (specifically 'All Spells')
-        const container = this.element.querySelector('.bakanas-action-display-container') || this.element;
-        return new foundry.applications.ux.ContextMenu.implementation(container, ".bad-left-sub-tab", menuItems, options);
+        return new foundry.applications.ux.ContextMenu.implementation(this.element, ".bad-left-sub-tab", menuItems, options);
     }
 
     /**
