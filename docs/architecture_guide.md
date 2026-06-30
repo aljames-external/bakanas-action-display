@@ -23,7 +23,7 @@ The module is built using a clean **pipes-and-filters / adapter** architecture, 
                            ▼
 ┌────────────────────────────────────────────────────────┐
 │                  System Adapter Layer                  │
-│        (BaseSystemAdapter ◄─── Dnd5eSystemAdapter)      │
+│  (BaseSystemAdapter ◄─ FantasySystemAdapter ◄─ Dnd5e) │
 └──────────────────────────┬─────────────────────────────┘
                            │ modifies & categorizes
                            ▼
@@ -43,14 +43,14 @@ The module is built using a clean **pipes-and-filters / adapter** architecture, 
     *   Performs the **Core Extraction**: iterates over all items on an actor and extracts a basic, system-agnostic list of actions (name, image, item ID, and roll functions).
     *   Runs the pipeline: `Core Extraction ──► System Adapter ──► Module Adapters ──► Core Post-Processing (User-Hidden Filters)`.
 
-### 2. System Adapter Layer (`BaseSystemAdapter`)
+### 2. System Adapter Layer (`BaseSystemAdapter` & `FantasySystemAdapter`)
 *   **Role**: Handles system-specific rules, resource calculations, and terminology.
 *   **Responsibilities**:
-    *   Maps raw items into system-specific categories (e.g., separating weapons, spells, and features in D&D 5e).
-    *   Extracts and calculates resource uses (e.g., spell slots, item charges, ammunition, or D&D 5e v4+ Activity uses).
-    *   Populates a generic **`subActions`** array on actions that have multiple options (like D&D 5e activities), converting them into a system-agnostic format.
-    *   Filters out depleted actions if the "Filter Depleted Actions" setting is enabled, using system-specific rules (e.g., checking D&D 5e activities).
-    *   Provides system-specific localization labels and icons for the left-side and right-side tabs (falling back to hardcoded English in the base class if no specific adapter exists).
+    *   **`BaseSystemAdapter`**: The core, genre-agnostic base class. It defines the interface for all adapters and provides fallback localizations for generic HUD tabs (like "All Items", "Other").
+    *   **`FantasySystemAdapter`**: An intermediate class extending the base adapter. It houses shared defaults for fantasy RPG systems, such as default icon mappings for weapons, spells, feats, and consumables, as well as the numerical spell-level sorting algorithm.
+    *   **Concrete Adapters** (e.g., `Dnd5eSystemAdapter`, `Pf1SystemAdapter`, `Pf2eSystemAdapter`): Inherit from `FantasySystemAdapter` to leverage shared fantasy defaults, while implementing system-specific resource calculations (like spell slots, activities, or ammunition) and custom tab mappings.
+    *   Populates a generic **`subActions`** array on actions that have multiple options, converting them into a system-agnostic format.
+    *   Filters out depleted actions if the "Filter Depleted Actions" setting is enabled, using system-specific rules.
 
 ### 3. Module Adapter Layer (`BaseModuleAdapter`)
 *   **Role**: Handles third-party module integrations (like `midi-qol`) without cluttering the core or system layers.
@@ -96,6 +96,11 @@ classDiagram
         +getActionSubTabLabel(subId)
     }
 
+    class FantasySystemAdapter {
+        +getItemTypeIcon(parentId)
+        +modifyContext(context)
+    }
+
     class Dnd5eSystemAdapter {
         +modifyActions(actions, actor)
         +getItemTypeLabel(parentId)
@@ -107,6 +112,16 @@ classDiagram
         -_calculateSpellSlots(item, actor)
         -_calculateWeaponAmmunition(item, actor)
         -_hasAvailableUpcastSlots(actor, level)
+    }
+
+    class Pf2eSystemAdapter {
+        +modifyActions(actions, actor)
+    }
+
+    class Pf1SystemAdapter {
+        +modifyActions(actions, actor)
+        +getItemTypeIcon(parentId)
+        -_calculateUses(item, actor)
     }
 
     class BaseModuleAdapter {
@@ -132,7 +147,6 @@ classDiagram
         -_onContextMenuCapture(event)
         -_clearMenuState()
         -_createContextMenu()
-        -_createTabContextMenu()
         -_toggleActionHidden(actionId, shouldHide)
     }
 
@@ -140,7 +154,10 @@ classDiagram
     ActionDisplayApp --> BaseSystemAdapter : queries tab labels/icons
     ActionDisplay *-- BaseSystemAdapter : owns
     ActionDisplay *-- BaseModuleAdapter : owns
-    BaseSystemAdapter <|-- Dnd5eSystemAdapter : extends
+    BaseSystemAdapter <|-- FantasySystemAdapter : extends
+    FantasySystemAdapter <|-- Dnd5eSystemAdapter : extends
+    FantasySystemAdapter <|-- Pf2eSystemAdapter : extends
+    FantasySystemAdapter <|-- Pf1SystemAdapter : extends
     BaseModuleAdapter <|-- MidiQolModuleAdapter : extends
 ```
 
