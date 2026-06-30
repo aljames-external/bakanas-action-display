@@ -53,7 +53,18 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
                 const spellLevel = item.rank ?? 0;
                 action.tabs = ['action']; // Spells are active actions
                 action.activationType = 'action';
-                action.itemTypes = ['spell', spellLevel.toString()];
+                
+                let subTab = spellLevel.toString();
+                if (entry.isFocusPool) {
+                    subTab = 'focus';
+                } else if (entry.isInnate) {
+                    subTab = 'innate';
+                } else if (entry.isRitual) {
+                    subTab = 'ritual';
+                } else if (spellLevel === 0) {
+                    subTab = '0';
+                }
+                action.itemTypes = ['spell', subTab];
                 action.roll = (event) => {
                     if (typeof entry.cast === 'function') {
                         entry.cast(item, { event });
@@ -199,6 +210,30 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
             'weapon': localize('PF2E.TraitWeapons', 'Weapons')
         };
         return labels[parentId] || super.getItemTypeLabel(parentId);
+    }
+
+    /**
+     * Get the localized label for a left-side item sub-tab (spell rank) in PF2e.
+     */
+    getItemSubTabLabel(parentId, subId) {
+        if (parentId === 'spell') {
+            if (subId === 'focus') {
+                return localize('PF2E.Focus.Spells', 'Focus Spells');
+            }
+            if (subId === 'innate') {
+                return localize('PF2E.PreparationTypeInnate', 'Innate Spells');
+            }
+            if (subId === 'ritual') {
+                return localize('PF2E.Actor.Character.Spellcasting.Tab.Rituals', 'Rituals');
+            }
+            if (subId === '0') {
+                return localize('PF2E.TraitCantrip', 'Cantrip');
+            }
+
+            const key = `PF2E.Item.Spell.Rank.${subId}`;
+            return localize(key, `${subId} Rank`);
+        }
+        return super.getItemSubTabLabel(parentId, subId);
     }
 
 
