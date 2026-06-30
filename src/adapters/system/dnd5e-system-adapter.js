@@ -617,15 +617,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         return labels[parentId] ?? super.getItemTypeLabel(parentId);
     }
 
-    getItemTypeIcon(parentId) {
-        const icons = {
-            'equipment': 'fas fa-shield',
-            'tool': 'fas fa-hammer',
-            'backpack': 'fas fa-sack',
-            'loot': 'fas fa-gem'
-        };
-        return icons[parentId] ?? super.getItemTypeIcon(parentId);
-    }
+
 
     /**
      * Get the localized label for a left-side item sub-tab for DnD5e.
@@ -657,9 +649,6 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         return labels[parentId] ?? super.getActionTypeLabel(parentId);
     }
 
-    /**
-     * Get the CSS icon class for a right-side action type (parent tab) for DnD5e.
-     */
     getActionTypeIcon(parentId) {
         const icons = {
             'economy': 'fas fa-stopwatch',
