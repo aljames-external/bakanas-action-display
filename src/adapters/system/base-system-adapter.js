@@ -94,9 +94,6 @@ export class BaseSystemAdapter {
      * @returns {string}
      */
     getSpellLevelLabel(level) {
-        if (level === '0') {
-            return 'Cantrip';
-        }
         return `${level} Level`;
     }
 
