@@ -1,8 +1,8 @@
 <div class="bakanas-action-display-container">
     <!-- Control Bar (Grip + Pin Button) -->
     <div class="bad-control-bar">
-        <div class="bad-drag-handle" title="Drag to move"><i class="fas fa-grip"></i></div>
-        <button class="bad-control-btn bad-pin-btn" data-action="toggleAnchor" title="{{#if isAttached}}Detach HUD (make floating){{else}}Attach HUD to token{{/if}}">
+        <div class="bad-drag-handle" title="{{localize "BAD.hud.dragToMove"}}"><i class="fas fa-grip"></i></div>
+        <button class="bad-control-btn bad-pin-btn" data-action="toggleAnchor" title="{{#if isAttached}}{{localize "BAD.hud.detachHud"}}{{else}}{{localize "BAD.hud.attachHud"}}{{/if}}">
             <i class="fas {{#if isAttached}}fa-link{{else}}fa-unlink{{/if}}"></i>
         </button>
     </div>
@@ -63,7 +63,7 @@
                 {{/each}}
             {{else}}
                 <div class="bad-no-actions">
-                    <i class="fas fa-info-circle"></i> No actions available.
+                    <i class="fas fa-info-circle"></i> {{localize "BAD.hud.noActions"}}
                 </div>
             {{/if}}
         </div>

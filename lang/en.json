@@ -33,7 +33,11 @@
             "filterNoResources": "Hide Depleted",
             "hidden": "Hidden",
             "hideAction": "Hide Action",
-            "unhideAction": "Unhide Action"
+            "unhideAction": "Unhide Action",
+            "dragToMove": "Drag to move",
+            "detachHud": "Detach HUD (make floating)",
+            "attachHud": "Attach HUD to token",
+            "noActions": "No actions available."
         },
         "dnd5e": {
             "upcast": "Upcast",
