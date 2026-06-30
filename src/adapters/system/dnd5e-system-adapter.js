@@ -197,11 +197,8 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      * Determine the parent action tab based on DnD5e activation type.
      */
     _getParentTab(type) {
-        if (type === 'minute' || type === 'hour' || type === 'day') {
-            return 'time';
-        }
-        // Everything else (action, bonus, reaction, legendary, mythic, lair, crew, special, none/empty)
-        // goes under 'economy' (Action Economy)
+        // Everything (including times, actions, legendary, special, none)
+        // now goes under 'economy' (Action Economy)
         return 'economy';
     }
 
@@ -229,8 +226,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
 
     _getParentSort(type) {
         const order = {
-            'economy': 1,
-            'time': 2
+            'economy': 1
         };
         return order[type] ?? 99;
     }
@@ -246,12 +242,10 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 'legendary': 6,
                 'mythic': 7,
                 'crew': 8,
-                'lair': 9
-            },
-            'time': {
-                'minute': 1,
-                'hour': 2,
-                'day': 3
+                'lair': 9,
+                'minute': 10,
+                'hour': 11,
+                'day': 12
             }
         };
         return orders[parent]?.[sub] ?? 99;
@@ -611,8 +605,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      */
     getActionTypeLabel(parentId) {
         const labels = {
-            'economy': localize('BAD.dnd5e.actionEconomy', 'Action Economy'),
-            'time': localize('DND5E.ACTIVATION.Category.Time', 'Time')
+            'economy': localize('BAD.dnd5e.actionEconomy', 'Action Economy')
         };
         return labels[parentId] ?? super.getActionTypeLabel(parentId);
     }
@@ -622,8 +615,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      */
     getActionTypeIcon(parentId) {
         const icons = {
-            'economy': 'fas fa-stopwatch',
-            'time': 'fas fa-clock'
+            'economy': 'fas fa-stopwatch'
         };
         return icons[parentId] ?? super.getActionTypeIcon(parentId);
     }
