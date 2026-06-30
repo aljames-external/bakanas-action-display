@@ -142,7 +142,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 // Passive containers and loot (no activities) are shown in the inventory
                 const passiveAction = {
                     ...action,
-                    tabs: ['none'],
+                    tabs: [['economy', 'none']],
                     itemTypes: [item.type],
                     uses: { available: null, max: null }
                 };
