@@ -160,14 +160,17 @@ Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
     activeApp.render({ force: true });
 });
 
+// Static set of movement-related keys to avoid allocations and enable O(1) lookups during token updates
+const MOVEMENT_KEYS = new Set(['x', 'y', 'rotation', 'elevation', 'animation']);
+
 // Re-render the app if the token is updated, but skip full re-renders for movement/rotation/elevation
 Hooks.on('updateToken', (tokenDocument, change) => {
     if (activeApp && activeApp.token.document.id === tokenDocument.id && activeApp.rendered) {
         // Skip full DOM re-renders if the update is only movement, rotation, or elevation.
         // Positioning is already handled at 60fps by the refreshToken hook.
-        const keys = Object.keys(foundry.utils.flattenObject(change));
-        const movementKeys = ['x', 'y', 'rotation', 'elevation', 'animation'];
-        const isMovement = keys.every(k => movementKeys.some(mk => k.startsWith(mk)));
+        // We check the top-level keys of the change object directly, avoiding expensive object flattening.
+        const keys = Object.keys(change);
+        const isMovement = keys.every(k => MOVEMENT_KEYS.has(k));
         if (isMovement) return;
 
         log.debug("updateToken | Token properties updated, re-rendering HUD");
