@@ -60,6 +60,18 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
             }
         }
 
+        // Pre-calculate a map of spell ID to spellcasting entry to avoid nested searches in the loop (O(1) lookups)
+        const spellToEntryMap = new Map();
+        if (actor.spellcasting) {
+            for (const entry of actor.spellcasting) {
+                if (entry.spells) {
+                    for (const spell of entry.spells) {
+                        spellToEntryMap.set(spell.id, entry);
+                    }
+                }
+            }
+        }
+
         // 1. Process existing items (Feats, Actions, Spells)
         for (const action of actions) {
             const item = action.originalItem;
@@ -88,8 +100,8 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
 
                 modified.push(action);
             } else if (item.type === 'spell') {
-                // Find the spellcasting entry this spell belongs to
-                const entry = actor.spellcasting?.find(e => e.spells?.has(item.id));
+                // Find the spellcasting entry this spell belongs to (O(1) lookup)
+                const entry = spellToEntryMap.get(item.id);
                 if (!entry) continue;
 
                 const spellLevel = item.rank ?? 0;
