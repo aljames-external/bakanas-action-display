@@ -77,7 +77,8 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 action.activationType = 'action';
                 
                 const level = item.system.level ?? 0;
-                action.itemTypes = ['spell', level.toString()];
+                const subTab = spellbookId === 'sla' ? 'sla' : level.toString();
+                action.itemTypes = ['spell', subTab];
                 
                 // Calculate uses (slots or prepared casts)
                 action.uses = this._calculateSpellUses(spellbook, item, actor);
@@ -425,6 +426,20 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
             'consumable': localize('PF1.InventoryConsumables', 'Consumables')
         };
         return labels[parentId] || super.getItemTypeLabel(parentId);
+    }
+
+    /**
+     * Get the localized label for a left-side item sub-tab (spell level/spellbook) in PF1e.
+     */
+    getItemSubTabLabel(parentId, subId) {
+        if (parentId === 'spell') {
+            if (subId === 'sla') {
+                return localize('PF1.SpellBookSpelllike', 'Spell-like');
+            }
+            const key = `PF1.SpellLevels.${subId}`;
+            return localize(key, `${subId} Level`);
+        }
+        return super.getItemSubTabLabel(parentId, subId);
     }
 
     /**
