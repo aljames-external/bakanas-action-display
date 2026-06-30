@@ -538,7 +538,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             activeTabCache.set(this.actor.uuid, {
                 leftParents: Array.from(this.activeLeftParentTypes),
                 leftSubTypes: Array.from(this.activeLeftSubTypes),
-                parents: Array.from(this.activeParentTypes),
+                rightParents: Array.from(this.activeParentTypes),
                 subTypes: Array.from(this.activeSubTypes),
                 focusedParent: this.focusedParentType
             });
