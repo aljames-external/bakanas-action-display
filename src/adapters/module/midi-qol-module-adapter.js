@@ -37,8 +37,11 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
                 if (filteredSubs.length < subActions.length) {
                     action.subActions = filteredSubs;
 
-                    // Preserve non-activation tabs (like spell components)
-                    const preservedTabs = action.tabs?.filter(tab => tab[0] === 'components') ?? [];
+                    // Identify which parent tabs are managed by the sub-actions (e.g. 'economy')
+                    const managedParents = new Set(subActions.map(sub => sub.tabs[0]));
+
+                    // Preserve any tabs that are NOT managed by the sub-actions (like spell components)
+                    const preservedTabs = action.tabs?.filter(tab => !managedParents.has(tab[0])) ?? [];
 
                     // Recalculate unique activation tabs based on the remaining sub-actions
                     const uniqueTabs = [];
