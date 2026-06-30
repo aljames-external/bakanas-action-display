@@ -85,12 +85,8 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     unprepared: isSpellUnprepared,
                     roll: async (event) => {
                         // Default roll behavior (rolls the first activity directly)
-                        const syntheticEvent = {
-                            altKey: event?.altKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.ALT),
-                            ctrlKey: event?.ctrlKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.CONTROL),
-                            shiftKey: event?.shiftKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT)
-                        };
-                        return activeActivities[0].use({ event: syntheticEvent }, { event: syntheticEvent });
+                        const proxiedEvent = this._createRollEvent(event);
+                        return activeActivities[0].use({ event: proxiedEvent }, { event: proxiedEvent });
                     }
                 };
 
@@ -145,12 +141,8 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         uses: this._calculateActivityUses(activity, item, actor),
                         tabs: subTab ? [parentTab, subTab] : [parentTab],
                         roll: async (event) => {
-                            const syntheticEvent = {
-                                altKey: event?.altKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.ALT),
-                                ctrlKey: event?.ctrlKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.CONTROL),
-                                shiftKey: event?.shiftKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT)
-                            };
-                            return activity.use({ event: syntheticEvent }, { event: syntheticEvent });
+                            const proxiedEvent = this._createRollEvent(event);
+                            return activity.use({ event: proxiedEvent }, { event: proxiedEvent });
                         },
                         originalActivity: activity // Store for module adapters (like midi-qol)
                     };
@@ -790,6 +782,35 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Event} event The event
      * @returns {boolean} True if handled
      */
+    /**
+     * Create a proxy around a browser event to inject keyboard modifiers (Alt/Ctrl/Shift)
+     * while preserving all other native event properties and methods (like target, preventDefault).
+     * @param {Event} event The original browser event
+     * @returns {Event|object} A proxy event or empty object
+     * @private
+     */
+    _createRollEvent(event) {
+        if (!event) return {};
+        return new Proxy(event, {
+            get: (target, prop) => {
+                if (prop === 'altKey') {
+                    return event.altKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.ALT);
+                }
+                if (prop === 'ctrlKey') {
+                    return event.ctrlKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.CONTROL);
+                }
+                if (prop === 'shiftKey') {
+                    return event.shiftKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT);
+                }
+                const val = Reflect.get(target, prop);
+                if (typeof val === 'function') {
+                    return val.bind(target);
+                }
+                return val;
+            }
+        });
+    }
+
     onTabRightClick(app, el, event) {
         if (el.dataset.type === 'all') {
             const parentGroup = el.closest('.bad-left-tab-group');
