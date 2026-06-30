@@ -77,7 +77,16 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 action.activationType = 'action';
                 
                 const level = item.system.level ?? 0;
-                const subTab = spellbookId === 'sla' ? 'sla' : level.toString();
+                let subTab = level.toString();
+                if (spellbookId === 'spelllike' || spellbookId === 'sla') {
+                    subTab = 'sla';
+                } else if (level === 0 && spellbook) {
+                    if (spellbook.kind === 'arcane') {
+                        subTab = 'cantrip';
+                    } else if (spellbook.kind === 'divine') {
+                        subTab = 'orison';
+                    }
+                }
                 action.itemTypes = ['spell', subTab];
                 
                 // Calculate uses (slots or prepared casts)
@@ -435,6 +444,12 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
         if (parentId === 'spell') {
             if (subId === 'sla') {
                 return localize('PF1.SpellBookSpelllike', 'Spell-like');
+            }
+            if (subId === 'cantrip') {
+                return localize('PF1.Cantrip', localize('PF1.Cantrips', 'Cantrips'));
+            }
+            if (subId === 'orison') {
+                return localize('PF1.Orison', localize('PF1.Orisons', 'Orisons'));
             }
             const key = `PF1.SpellLevels.${subId}`;
             return localize(key, `${subId} Level`);
