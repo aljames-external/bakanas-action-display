@@ -2,6 +2,23 @@ import { FantasySystemAdapter } from './genre/fantasy-system-adapter.js';
 import { localize } from '../../lib/utils.js';
 import { log } from '../../lib/logger.js';
 
+// Static sort order maps to prevent allocations during sorting
+const ACTIVATION_SORT_ORDER = {
+    'action': 1,
+    'bonus': 2,
+    'reaction': 3,
+    'other': 4
+};
+
+const TYPE_SORT_ORDER = {
+    'weapon': 1,
+    'attack': 1,
+    'spell': 2,
+    'feat': 3,
+    'buff': 4,
+    'consumable': 5
+};
+
 /**
  * System adapter for Pathfinder 1st Edition (PF1e).
  * Handles PF1e's multi-action items, prepared/spontaneous spellcasting, and toggleable buffs.
@@ -64,7 +81,8 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
 
         for (const action of actions) {
             const item = action.originalItem;
-            log.debug(`Pf1SystemAdapter.modifyActions | Processing action row: "${item.name}" (${item.type}, ID: ${item.id})`);
+            const type = item.type;
+            log.debug(`Pf1SystemAdapter.modifyActions | Processing action row: "${item.name}" (${type}, ID: ${item.id})`);
 
             if (item.type === 'spell') {
                 // 1. Spells in PF1e
@@ -217,7 +235,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 action.uses = uses;
                 modified.push(action);
 
-            } else if (['consumable', 'feat'].includes(item.type)) {
+            } else if (type === 'consumable' || type === 'feat') {
                 // 4. Consumables and Feats
                 const itemActions = item.system.actions ?? [];
                 if (itemActions.length === 0) continue;
@@ -499,28 +517,11 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
      * Sort order for PF1e action types.
      */
     _getActivationSort(type) {
-        const order = {
-            'action': 1,
-            'bonus': 2,
-            'reaction': 3,
-            'other': 4
-        };
-        return order[type] ?? 99;
+        return ACTIVATION_SORT_ORDER[type] ?? 99;
     }
 
-    /**
-     * Sort order for PF1e item types.
-     */
     _getTypeSort(type) {
-        const order = {
-            'weapon': 1,
-            'attack': 1,
-            'spell': 2,
-            'feat': 3,
-            'buff': 4,
-            'consumable': 5
-        };
-        return order[type] ?? 99;
+        return TYPE_SORT_ORDER[type] ?? 99;
     }
 
 }
