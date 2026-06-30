@@ -59,10 +59,13 @@ The module is built on a modular adapter pattern, allowing it to hook deeply int
 
 #### 4.0 Activity System
 Full support for D&D 5e's 4.0 Activity architecture. Items with multiple activities (e.g. a spell with an attack and a saving throw, or a sword with a cleave and a slash) are presented as a single card. Left-clicking the card expands it into a dropdown showing all its active activities, allowing you to choose which one to roll.
+
 ![D&D 5e Activity Dropdown](docs/readme-assets/blind_defened.png)
 
 #### Prepared Spells Toggle
 You can choose whether to show or hide unprepared spells in the HUD. A quick **right-click shortcut on the "All Spells" tab** allows you to toggle the visibility of unprepared spells instantly without opening the settings menu.
+
+![D&D 5e Activity Dropdown](docs/readme-assets/unprepared_spells.png)
 
 #### Midi-QOL Integration (Module)
 When the `midi-qol` module is active, the Action Display HUD integrates automatically:
