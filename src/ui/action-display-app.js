@@ -41,6 +41,18 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // Track the explicitly focused parent tab
         this.focusedParentType = cached?.focusedParent || (initialRightParents.includes('all') ? 'all' : initialRightParents[0]);
         
+        // Track parent tabs toggled via right-click (for tabs without sub-tabs)
+        this.toggledParentTypes = new Set();
+        if (cached?.toggledParentTypes) {
+            this.toggledParentTypes = new Set(cached.toggledParentTypes);
+        } else if (initialRightParents.length > 1) {
+            for (const p of initialRightParents) {
+                if (p !== 'all' && p !== this.focusedParentType) {
+                    this.toggledParentTypes.add(p);
+                }
+            }
+        }
+        
         let initialRightSubs = [];
         if (cached?.subTypes) initialRightSubs = cached.subTypes;
         else if (cached?.rightSub) initialRightSubs = [cached.rightSub];
@@ -366,10 +378,10 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                     parentsWithFilters.add(parent.id);
                 }
                 
-                parent.active = parent.id === this.focusedParentType;
+                parent.active = parent.id === this.focusedParentType || this.toggledParentTypes.has(parent.id);
                 parent.expanded = parent.active || activeSubsForParent.length > 0;
             } else {
-                parent.active = parent.id === this.focusedParentType;
+                parent.active = parent.id === this.focusedParentType || this.toggledParentTypes.has(parent.id);
                 parent.expanded = parent.active;
             }
         }
@@ -378,6 +390,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.activeParentTypes.clear();
         this.activeParentTypes.add(this.focusedParentType);
         for (const pId of parentsWithFilters) {
+            this.activeParentTypes.add(pId);
+        }
+        for (const pId of this.toggledParentTypes) {
             this.activeParentTypes.add(pId);
         }
 
@@ -539,6 +554,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 leftParents: Array.from(this.activeLeftParentTypes),
                 leftSubTypes: Array.from(this.activeLeftSubTypes),
                 rightParents: Array.from(this.activeParentTypes),
+                toggledParentTypes: Array.from(this.toggledParentTypes),
                 subTypes: Array.from(this.activeSubTypes),
                 focusedParent: this.focusedParentType
             });
@@ -661,6 +677,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const parentId = target.dataset.type;
         
         this.focusedParentType = parentId;
+        this.toggledParentTypes.clear();
         
         log.debug(`Focused action parent to: ${parentId}`);
         this.render();
@@ -670,23 +687,43 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      * Toggle a right-side parent tab in the active set (for right-click multi-select).
      */
     _onToggleRightParent(parentId) {
-        // Right-click on a parent tab: clear all its sub-tab filters (resets both to their defaults!)
-        this.focusedParentType = parentId; // Set as focused so it remains open!
-        
         if (parentId === 'all') {
+            this.toggledParentTypes.clear();
             this.activeSubTypes.clear();
+            this.focusedParentType = 'all';
         } else {
             const parentGroup = this.parentGroups?.[parentId];
-            if (parentGroup) {
+            const hasSubTabs = parentGroup && parentGroup.subTabs && parentGroup.subTabs.length > 0;
+            
+            if (hasSubTabs) {
+                // Parent tabs with sub-tabs: reset sub-tabs to default
+                this.focusedParentType = parentId;
                 const validSubIds = new Set(parentGroup.subTabs.map(t => t.id));
                 for (const subId of this.activeSubTypes) {
                     if (validSubIds.has(subId)) {
                         this.activeSubTypes.delete(subId);
                     }
                 }
+            } else {
+                // Parent tabs without sub-tabs: toggle the parent tab itself!
+                if (this.toggledParentTypes.has(parentId)) {
+                    this.toggledParentTypes.delete(parentId);
+                    if (this.focusedParentType === parentId) {
+                        if (this.toggledParentTypes.size > 0) {
+                            this.focusedParentType = Array.from(this.toggledParentTypes)[0];
+                        } else {
+                            this.focusedParentType = 'all';
+                        }
+                    }
+                } else {
+                    this.toggledParentTypes.add(parentId);
+                    if (this.focusedParentType === 'all') {
+                        this.focusedParentType = parentId;
+                    }
+                }
             }
         }
-        log.debug(`Reset parent ${parentId} to defaults`);
+        log.debug(`Toggled right parent: ${parentId}, toggledParentTypes:`, Array.from(this.toggledParentTypes));
         this.render();
     }
 
