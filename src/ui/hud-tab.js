@@ -125,22 +125,30 @@ export class HUDTab {
     }
 
     /**
+     * Get the top-level (level 0) root parent tab node.
+     * Delegates up the parent chain recursively.
+     * @type {HUDTab}
+     */
+    get rootParent() {
+        return this.parent ? this.parent.rootParent : this;
+    }
+
+    /**
      * Handle left-click on this tab.
      * @param {ApplicationV2} app 
      * @param {TabSideState} sideState 
-     * @param {string|Object} parentIdOrGroups Parent tab ID for level 1+ sub-tabs, or groups object for level 0 parent tabs
-     * @param {Object} [groups] Tab groups object (when level >= 1)
+     * @param {Object} groups Tab groups dictionary
      * @param {Event} [event] 
      */
-    onLeftClick(app, sideState, parentIdOrGroups, groups, event) {
+    onLeftClick(app, sideState, groups, event) {
         if (this.customOnLeftClick) {
-            const handled = this.customOnLeftClick(app, sideState, parentIdOrGroups, groups, event);
+            const handled = this.customOnLeftClick(app, sideState, groups, event);
             if (handled) return;
         }
         if (this.isTopLevel) {
-            sideState.selectParent(this.id, parentIdOrGroups);
+            sideState.selectParent(this.id, groups);
         } else {
-            sideState.selectSub(parentIdOrGroups, this.id, groups);
+            sideState.selectSub(this.rootParent.id, this.id, groups);
         }
     }
 
@@ -148,19 +156,18 @@ export class HUDTab {
      * Handle right-click on this tab.
      * @param {ApplicationV2} app 
      * @param {TabSideState} sideState 
-     * @param {string|Object} parentIdOrGroups Parent tab ID for level 1+ sub-tabs, or groups object for level 0 parent tabs
-     * @param {Object} [groups] Tab groups object (when level >= 1)
+     * @param {Object} groups Tab groups dictionary
      * @param {Event} [event] 
      */
-    onRightClick(app, sideState, parentIdOrGroups, groups, event) {
+    onRightClick(app, sideState, groups, event) {
         if (this.customOnRightClick) {
-            const handled = this.customOnRightClick(app, sideState, parentIdOrGroups, groups, event);
+            const handled = this.customOnRightClick(app, sideState, groups, event);
             if (handled) return;
         }
         if (this.isTopLevel) {
-            sideState.toggleParent(this.id, parentIdOrGroups);
+            sideState.toggleParent(this.id, groups);
         } else {
-            sideState.toggleSub(parentIdOrGroups, this.id, groups);
+            sideState.toggleSub(this.rootParent.id, this.id, groups);
         }
     }
 }
