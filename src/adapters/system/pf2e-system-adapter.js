@@ -242,7 +242,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
      */
     getActionTypeLabel(parentId) {
         const labels = {
-            'economy': localize('BAD.pf2e.actionEconomy', 'Action Economy')
+            'economy': localize('BAD.common.actionEconomy', 'Action Economy')
         };
         return labels[parentId] || super.getActionTypeLabel(parentId);
     }

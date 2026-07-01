@@ -39,19 +39,15 @@
             "allActions": "All Actions",
             "none": "None"
         },
+        "common": {
+            "actionEconomy": "Action Economy"
+        },
         "dnd5e": {
             "upcast": "Upcast",
             "itemCharges": "Item Charges",
             "prepareSpell": "Prepare Spell",
             "unprepareSpell": "Unprepare Spell",
-            "actionEconomy": "Action Economy",
             "spellComponents": "Spell Components"
         },
-        "pf1": {
-            "actionEconomy": "Action Economy"
-        },
-        "pf2e": {
-            "actionEconomy": "Action Economy"
-        }
     }
 }
