@@ -21,18 +21,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         
         const cached = activeTabCache.get(this.actor?.uuid);
 
-        // Normalize legacy cache schema if migrating from older flat cache format
-        const cachedLeft = cached?.left || (cached ? {
-            parents: cached.leftParents || (cached.leftParent ? [cached.leftParent] : undefined),
-            focusedParent: cached.focusedLeftParent,
-            subTypes: cached.leftSubTypes || (cached.leftSub ? [cached.leftSub] : undefined)
-        } : null);
-
-        const cachedRight = cached?.right || (cached ? {
-            parents: cached.rightParents || (cached.rightParent ? [cached.rightParent] : undefined),
-            focusedParent: cached.focusedParent,
-            subTypes: cached.subTypes || (cached.rightSub ? [cached.rightSub] : undefined)
-        } : null);
+        const cachedLeft = cached?.left;
+        const cachedRight = cached?.right;
 
         // Encapsulated tab side state managers
         this.leftTabs = new HUDTabColumn({

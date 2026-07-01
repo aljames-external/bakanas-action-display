@@ -64,7 +64,7 @@ export class HUDTabColumn {
         }
 
         const group = groups?.[parentId];
-        const validSubIds = group ? new Set(group.subTabs.map(t => t.id)) : new Set();
+        const validSubIds = new Set(group?.subTabs?.map(t => t.id) ?? []);
         const hasActiveSubs = Array.from(this.activeSubTypes).some(id => validSubIds.has(id));
 
         const isSoleActive = this.activeParents.size === 1 && this.activeParents.has(parentId);
