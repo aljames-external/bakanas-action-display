@@ -397,37 +397,63 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      * @returns {{available: number|null, max: number|null}} The uses count
      * @private
      */
-    _calculateActivityUses(activity, item, actor, ammoQuantities, highestAvailableSlot) {
-        const targets = activity.consumption?.targets || [];
-        
-        // 1. If the activity has its own explicit limited uses
-        if (activity.uses && activity.uses.max && activity.uses.max !== "0") {
-            let max = activity.uses.max;
+    /**
+     * Parse and calculate limited uses configuration.
+     * @private
+     */
+    _calculateLimitedUses(uses) {
+        if (uses && uses.max && uses.max !== "0") {
+            let max = uses.max;
             if (typeof max === 'string') {
                 max = parseInt(max, 10) || 0;
             }
             if (max > 0) {
-                const spent = activity.uses.spent ?? 0;
-                const available = activity.uses.value !== undefined ? activity.uses.value : (max - spent);
+                const spent = uses.spent ?? 0;
+                const available = uses.value !== undefined ? uses.value : (max - spent);
                 return { available, max };
             }
         }
+        return null;
+    }
+
+    /**
+     * Resolve target item reference using direct ID or relative UUID.
+     * @private
+     */
+    _resolveTargetItem(targetId, item, actor) {
+        if (!targetId) return null;
+        return targetId.includes('.')
+            ? (foundry.utils.fromUuidSync(targetId, { relative: item })
+               || foundry.utils.fromUuidSync(targetId, { relative: actor })
+               || actor.items.get(targetId))
+            : actor.items.get(targetId);
+    }
+
+    /**
+     * Calculate available and maximum uses for a D&D 5e Activity.
+     * @param {Activity} activity The activity instance
+     * @param {Item} item The parent item
+     * @param {Actor} actor The actor
+     * @param {Map<string, number>} ammoQuantities Pre-calculated ammunition quantities
+     * @param {number} highestAvailableSlot The highest available spell slot level on the actor
+     * @returns {{available: number|null, max: number|null}} The uses count
+     * @private
+     */
+    _calculateActivityUses(activity, item, actor, ammoQuantities, highestAvailableSlot) {
+        const targets = activity.consumption?.targets || [];
+        
+        // 1. If the activity has its own explicit limited uses
+        const selfUses = this._calculateLimitedUses(activity.uses);
+        if (selfUses) return selfUses;
         
         // 2. Resolve based on consumption targets
         for (const target of targets) {
             if (target.type === 'activityUses') {
                 // Consumes another activity's uses (or self if target is empty)
                 const targetActivity = target.target ? item.system.activities.get(target.target) : activity;
-                if (targetActivity && targetActivity.uses && targetActivity.uses.max && targetActivity.uses.max !== "0") {
-                    let max = targetActivity.uses.max;
-                    if (typeof max === 'string') {
-                        max = parseInt(max, 10) || 0;
-                    }
-                    if (max > 0) {
-                        const spent = targetActivity.uses.spent ?? 0;
-                        const available = targetActivity.uses.value !== undefined ? targetActivity.uses.value : (max - spent);
-                        return { available, max };
-                    }
+                if (targetActivity) {
+                    const actUses = this._calculateLimitedUses(targetActivity.uses);
+                    if (actUses) return actUses;
                 }
             } else if (target.type === 'itemUses') {
                 // Consumes the parent item's uses
@@ -438,12 +464,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 return this._getSpellSlotUses(actor, level, highestAvailableSlot);
             } else if (target.type === 'item') {
                 // Consumes quantity of another item (e.g. ammunition) or charges of another item
-                // Robust resolution: Check if the target is a UUID or a plain ID, resolving relative to item/actor
-                const targetItem = target.target?.includes('.')
-                    ? (foundry.utils.fromUuidSync(target.target, { relative: item })
-                       || foundry.utils.fromUuidSync(target.target, { relative: actor })
-                       || actor.items.get(target.target))
-                    : actor.items.get(target.target);
+                const targetItem = this._resolveTargetItem(target.target, item, actor);
 
                 if (targetItem) {
                     const consumed = target.value || 1;
@@ -464,11 +485,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 }
             } else if (target.type === 'material') {
                 // Consumes quantity of another item (specifically spell components)
-                const targetItem = target.target?.includes('.')
-                    ? (foundry.utils.fromUuidSync(target.target, { relative: item })
-                       || foundry.utils.fromUuidSync(target.target, { relative: actor })
-                       || actor.items.get(target.target))
-                    : actor.items.get(target.target);
+                const targetItem = this._resolveTargetItem(target.target, item, actor);
 
                 if (targetItem) {
                     const qty = targetItem.system.quantity ?? 0;
