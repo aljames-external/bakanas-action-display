@@ -140,7 +140,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
         // Strikes are dynamically calculated on the actor and are not standard inventory items
         const strikes = actor.system.actions ?? [];
         for (const strike of strikes) {
-            const uses = this._calculateStrikeAmmo(strike, actor, ammoQuantities);
+            const uses = this._calculateStrikeAmmo(strike, ammoQuantities);
 
             modified.push({
                 id: `strike-${strike.slug ?? strike.name}`,
@@ -334,7 +334,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
      * Calculate remaining ammunition for a PF2e Strike.
      * @private
      */
-    _calculateStrikeAmmo(strike, actor, ammoQuantities) {
+    _calculateStrikeAmmo(strike, ammoQuantities) {
         const weapon = strike.item;
         if (!weapon || weapon.type !== 'weapon') return { available: null, max: null };
 

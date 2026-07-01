@@ -236,8 +236,8 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
 
                 // Assign to hierarchical item types: [parentType, subType] (for left-side tabs)
                 const hasCastActivity = filteredActivities.some(sub => sub.originalActivity?.type === 'cast');
-                const isItemCharges = (type === 'equipment' && this._hasLimitedUses(item, actor))
-                    || (['feat', 'weapon', 'consumable', 'tool'].includes(type) && this._hasLimitedUses(item, actor) && hasCastActivity);
+                const isItemCharges = (type === 'equipment' && this._hasLimitedUses(item))
+                    || (['feat', 'weapon', 'consumable', 'tool'].includes(type) && this._hasLimitedUses(item) && hasCastActivity);
 
                 if (type === 'spell') {
                     const level = item.system.level ?? 0;
@@ -257,7 +257,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     if (type === 'spell') {
                         activityAction.uses = this._calculateSpellSlots(item, actor, highestAvailableSlot);
                     } else {
-                        activityAction.uses = this._calculateUses(item, actor);
+                        activityAction.uses = this._calculateUses(item);
                     }
                 }
 
@@ -342,7 +342,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     /**
      * Calculate available and maximum uses for an item.
      */
-    _calculateUses(item, actor) {
+    _calculateUses(item) {
         const system = item.system;
 
         // 1. Limited Uses (standard item charges/uses)
@@ -390,7 +390,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      * @returns {boolean} True if the item has limited uses
      * @private
      */
-    _hasLimitedUses(item, actor) {
+    _hasLimitedUses(item) {
         const system = item.system;
         
         // 1. Check item-level uses
@@ -483,7 +483,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 }
             } else if (target.type === 'itemUses') {
                 // Consumes the parent item's uses
-                return this._calculateUses(item, actor);
+                return this._calculateUses(item);
             } else if (target.type === 'spellSlots') {
                 // Consumes actor spell slots
                 const level = target.target || item.system.level; // Fallback to spell's base level if target is empty (dynamic slots)
@@ -495,7 +495,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 if (targetItem) {
                     const consumed = target.value || 1;
                     // If the target item has its own limited uses (like a wand), use those
-                    const uses = this._calculateUses(targetItem, actor);
+                    const uses = this._calculateUses(targetItem);
                     if (uses.available !== null) {
                         return {
                             available: Math.floor(uses.available / consumed),
@@ -531,7 +531,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
 
         // Fallback for weapons requiring ammunition if no explicit consumption target was resolved
         if (item.type === 'weapon' && item.system.ammunition?.type) {
-            return this._calculateWeaponAmmunition(item, actor, ammoQuantities);
+            return this._calculateWeaponAmmunition(item, ammoQuantities);
         }
 
         return { available: null, max: null };
@@ -610,7 +610,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      * Used when the Attack activity doesn't have a working item consumption target.
      * @private
      */
-    _calculateWeaponAmmunition(item, actor, ammoQuantities) {
+    _calculateWeaponAmmunition(item, ammoQuantities) {
         const ammoType = item.system.ammunition?.type;
         const quantity = ammoType ? (ammoQuantities.get(ammoType) ?? 0) : 0;
         return {

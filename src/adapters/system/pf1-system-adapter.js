@@ -118,7 +118,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 action.itemTypes = ['spell', subTab];
                 
                 // Calculate uses (slots or prepared casts)
-                action.uses = this._calculateSpellUses(spellbook, item, actor);
+                action.uses = this._calculateSpellUses(spellbook, item);
                 
                 // Roll function
                 action.roll = (event) => {
@@ -392,7 +392,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Calculate spell slot / prepared uses for PF1e spells.
      */
-    _calculateSpellUses(spellbook, spell, actor) {
+    _calculateSpellUses(spellbook, spell) {
         const level = spell.system.level ?? 0;
         
         // Cantrips (level 0) have infinite uses
