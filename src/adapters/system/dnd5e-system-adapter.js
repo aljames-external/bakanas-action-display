@@ -212,7 +212,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     name: item.name, // Keep the clean item name
                     img: item.img, // Use the parent item's icon
                     unprepared: isSpellUnprepared,
-                    subActions: filteredActivities,
+                    activities: filteredActivities,
                     roll: async (event) => {
                         // Roll the first active activity directly
                         return filteredActivities[0].roll(event);

@@ -231,7 +231,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["User Left-Clicks Action Card"] --> B["ActionDisplayApp._onRollAction(event)"]
-    B --> C{"Has multiple subActions?"}
+    B --> C{"Has multiple activities?"}
     C -- No (Single Action) --> D["Execute action.rollAction()"]
     C -- Yes (Multi-Option Item) --> E{"Clicked main card or option?"}
     E -- Main Card --> F["ActionDisplayApp._onToggleSubActionDropdown()"]
@@ -243,7 +243,7 @@ flowchart TD
 **Flowchart 3 Source Code References:**
 | Diagram Step | Function / Method | Source File & Line Number |
 | :--- | :--- | :--- |
-| **B, C** | `ActionDisplayApp._onRollAction()` & subActions check | [`src/ui/action-display-app.js`](../src/ui/action-display-app.js#L678-L700) |
+| **B, C** | `ActionDisplayApp._onRollAction()` & `item.activities` check | [`src/ui/action-display-app.js`](../src/ui/action-display-app.js#L678-L700) |
 | **D** | `action.roll()` (Single Action) | [`src/action-display.js`](../src/action-display.js#L127-L135) / [`src/ui/action-display-app.js`](../src/ui/action-display-app.js#L841) |
 | **E, F, G** | Multi-Option Dropdown Menu | [`src/ui/action-display-app.js`](../src/ui/action-display-app.js#L761-L831) |
 | **H, I** | Sub-Action Option Roll | [`src/ui/action-display-app.js`](../src/ui/action-display-app.js#L785-L788) |

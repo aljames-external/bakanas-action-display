@@ -19,8 +19,8 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
         const modified = [];
 
         for (const item of actions) {
-            // Check if the 5e item has mapped D&D 5e Activities (subActions)
-            const activities = item.subActions;
+            // Check if the 5e item has mapped D&D 5e Activities
+            const activities = item.activities;
             if (activities && activities.length > 0) {
                 // Filter out D&D 5e Activities that are marked as automationOnly by Midi-QOL
                 const filteredActivities = activities.filter(activity => !this.isAutomationOnly(activity));
@@ -30,9 +30,9 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
                     continue; // Skip this item entirely (filters it out of the HUD)
                 }
 
-                // If some activities were filtered out, update the item's activities (subActions) and tabs
+                // If some activities were filtered out, update the item's activities and tabs
                 if (filteredActivities.length < activities.length) {
-                    item.subActions = filteredActivities;
+                    item.activities = filteredActivities;
 
                     // Identify which parent tabs are managed by the activities (e.g. 'economy')
                     const managedParents = new Set(activities.map(act => act.tabs[0]));

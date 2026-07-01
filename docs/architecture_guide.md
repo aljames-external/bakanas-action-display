@@ -49,16 +49,16 @@ The module is built using a clean **pipes-and-filters / adapter** architecture, 
     *   **`BaseSystemAdapter`**: The core, genre-agnostic base class. It defines the interface for all adapters, provides item filtering hooks (`shouldExtractItem`), and fallback localizations for generic HUD tabs (like "All Items", "Other").
     *   **`FantasySystemAdapter`**: An intermediate class extending the base adapter. It houses shared defaults for fantasy RPG systems, such as default icon mappings for weapons, spells, feats, and consumables, as well as the numerical spell-level sorting algorithm and tab context modification (`modifyContext`).
     *   **Concrete Adapters** (e.g., `Dnd5eSystemAdapter`, `Pf1SystemAdapter`, `Pf2eSystemAdapter`): Inherit from `FantasySystemAdapter` to leverage shared fantasy defaults, while implementing system-specific resource calculations (like spell slots, activities, or ammunition) and custom tab mappings.
-    *   Maps system-native entities into the generic HUD model (`action` = Item Card, `subActions` = Sub-options):
-        *   **D&D 5e**: `action` ──► `Item5e`, `subActions` ──► `Activity5e` instances.
-        *   **Pathfinder 2e**: `action` ──► `ItemPF2e` / `Strike`, `subActions` ──► Strike options / weapon modes.
-        *   **Pathfinder 1e**: `action` ──► `ItemPF1`, `subActions` ──► Linked attack items / multi-action formulas.
+    *   Maps system-native entities into the generic HUD model (`item` = Item Card, `activities` = Sub-options/Activities):
+        *   **D&D 5e**: `item` ──► `Item5e`, `activities` ──► `Activity5e` instances.
+        *   **Pathfinder 2e**: `item` ──► `ItemPF2e` / `Strike`, `activities` ──► Strike options / weapon modes.
+        *   **Pathfinder 1e**: `item` ──► `ItemPF1`, `activities` ──► Linked attack items / multi-action formulas.
     *   Filters out depleted actions if the "Filter Depleted Actions" setting is enabled, using system-specific rules.
 
 ### 3. Module Adapter Layer (`BaseModuleAdapter`)
 *   **Role**: Handles third-party module integrations (like `midi-qol`) without cluttering the core or system layers.
 *   **Responsibilities**:
-    *   Inspects active module flags on actions and modifies them (e.g., filtering out Midi-QOL "automation-only" sub-actions from the player-facing HUD).
+    *   Inspects active module flags on actions and modifies them (e.g., filtering out Midi-QOL "automation-only" activities from the player-facing HUD).
 
 ### 4. UI Layer (`ActionDisplayApp`, `TabSideState`, & `HUDTab`)
 *   **Role**: The rendering engine and state management system, built on Foundry VTT's modern `ApplicationV2` (`HandlebarsApplication`) framework.
@@ -67,7 +67,7 @@ The module is built using a clean **pipes-and-filters / adapter** architecture, 
     *   **`TabSideState`**: Encapsulates left and right column tab states (active parents, focused parent, active sub-types) and enforces click interaction rules (exclusive left-click parent selection, multi-stage right-click toggles, sub-tab isolation).
     *   **`HUDTab`**: A unified, recursive tab model representing top-level parent tabs, sub-tabs, and deeply nested sub-tabs with depth levels (`level` 0, 1, 2+), parent/rootParent pointers, and click event handlers (`onLeftClick`, `onRightClick`).
     *   In `_prepareContext()`, it requests the processed actions from the Coordinator, queries the active system adapter for tab layouts, delegates tab context modification, filters actions to match active tabs, and renders `templates/action-display.html`.
-    *   In `_onRollAction()`, it checks if an action has multiple `subActions` and dynamically renders a left-click dropdown menu if needed.
+    *   In `_onRollAction()`, it checks if an item has multiple `activities` and dynamically renders a left-click dropdown menu if needed.
 
 ---
 

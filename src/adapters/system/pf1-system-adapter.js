@@ -143,7 +143,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
 
                 const uses = this._calculateUses(item, actor);
 
-                action.subActions = itemActions.map(act => {
+                action.activities = itemActions.map(act => {
                     const actType = act.activation?.type;
                     const activationType = this._parseActivationType(actType);
                     
@@ -164,10 +164,10 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                     };
                 });
 
-                action.subActions = action.subActions.filter(sub => sub.activationType !== null);
-                if (action.subActions.length === 0) continue;
+                action.activities = action.activities.filter(sub => sub.activationType !== null);
+                if (action.activities.length === 0) continue;
 
-                const firstSub = action.subActions[0];
+                const firstSub = action.activities[0];
                 action.activationType = firstSub.activationType;
                 action.tabs = [['economy', firstSub.activationType]];
                 action.itemTypes = ['weapon']; // Group under weapons/attacks
@@ -179,7 +179,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 const uses = this._calculateUses(item, actor);
                 const linkedAttacks = weaponLinkedAttacks.get(item.id) ?? [];
 
-                let subActions = [];
+                let itemActionsList = [];
 
                 if (linkedAttacks.length > 0) {
                     // Merge actions from all linked attack items
@@ -190,7 +190,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                             const activationType = this._parseActivationType(actType);
                             if (!activationType) continue;
 
-                            subActions.push({
+                            itemActionsList.push({
                                 id: act._id,
                                 // If multiple attacks are linked, prefix with attack name for clarity
                                 name: linkedAttacks.length > 1 ? `${attackItem.name}: ${act.name || 'Attack'}` : (act.name || attackItem.name),
@@ -216,7 +216,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                         const activationType = this._parseActivationType(actType);
                         if (!activationType) continue;
 
-                        subActions.push({
+                        itemActionsList.push({
                             id: act._id,
                             name: act.name || item.name,
                             img: item.img,
@@ -234,10 +234,10 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                     }
                 }
 
-                if (subActions.length === 0) continue; // Skip if no active actions
+                if (itemActionsList.length === 0) continue; // Skip if no active actions
 
-                action.subActions = subActions;
-                const firstSub = subActions[0];
+                action.activities = itemActionsList;
+                const firstSub = itemActionsList[0];
                 action.activationType = firstSub.activationType;
                 action.tabs = [['economy', firstSub.activationType]];
                 action.itemTypes = ['weapon'];
@@ -251,7 +251,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
 
                 const uses = this._calculateUses(item, actor);
 
-                action.subActions = itemActions.map(act => {
+                action.activities = itemActions.map(act => {
                     const actType = act.activation?.type;
                     const activationType = this._parseActivationType(actType);
                     
@@ -272,10 +272,10 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                     };
                 });
 
-                action.subActions = action.subActions.filter(sub => sub.activationType !== null);
-                if (action.subActions.length === 0) continue;
+                action.activities = action.activities.filter(sub => sub.activationType !== null);
+                if (action.activities.length === 0) continue;
 
-                const firstSub = action.subActions[0];
+                const firstSub = action.activities[0];
                 action.activationType = firstSub.activationType;
                 action.tabs = [['economy', firstSub.activationType]];
                 action.itemTypes = [item.type];

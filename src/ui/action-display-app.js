@@ -695,8 +695,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         const action = actions.find(a => a.id === actionId);
         
         if (action) {
-            const subActions = action.subActions;
-            if (subActions && subActions.length > 0) {
+            const itemActivities = action.activities;
+            if (itemActivities && itemActivities.length > 0) {
                 // Filter sub-actions to only those that match the currently active right-side tabs
                 const activeParents = this.activeParentTypes;
                 const activeSubs = this.activeSubTypes;
@@ -704,7 +704,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
                 const activeEconomyParents = Array.from(activeParents).filter(p => p !== 'components' && p !== 'all');
 
-                const qualifyingSubActions = subActions.filter(sub => {
+                const qualifyingSubActions = itemActivities.filter(sub => {
                     const actionParentId = sub.tabs[0];
                     const actionSubId = sub.tabs[1];
 
@@ -756,7 +756,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
                 log.debug(`_onRollAction | activeParents: ${Array.from(activeParents).join(', ')}, activeSubs: ${Array.from(activeSubs).join(', ')}, qualifying: ${qualifyingSubActions.length}`, qualifyingSubActions);
 
-                const showDropdown = qualifyingSubActions.length > 1 || (subActions.length > 1 && qualifyingSubActions.length === 1);
+                const showDropdown = qualifyingSubActions.length > 1 || (itemActivities.length > 1 && qualifyingSubActions.length === 1);
 
                 if (showDropdown) {
                     // Show a left-click dropdown menu.
@@ -834,7 +834,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                     qualifyingSubActions[0].roll(event);
                 } else {
                     // Fallback: roll the first sub-action
-                    subActions[0].roll(event);
+                    itemActivities[0].roll(event);
                 }
             } else {
                 // No sub-actions: roll directly
