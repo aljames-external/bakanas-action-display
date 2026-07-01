@@ -760,18 +760,20 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     }
 
     modifyContext(context, app) {
-        super.modifyContext(context, app); // Automatically sorts spell sub-tabs!
         const spellParent = context.itemTypes.find(t => t.id === 'spell');
         if (spellParent && spellParent.subTabs.length > 0) {
-            // Inject "All Spells" at the beginning
+            // Inject "All Spells" sub-tab before sorting
             const showUnprepared = app.actor.getFlag(MODULE_ID, 'showUnprepared') ?? false;
-            spellParent.addSubTab({
+            const allSpellsTab = new HUDTab({
                 id: 'all',
                 label: 'All Spells',
                 active: app.activeLeftParentTypes.has('spell') && app.activeLeftSubTypes.size === 0,
                 showUnprepared: showUnprepared
             });
+            allSpellsTab.parent = spellParent;
+            spellParent.subTabs.unshift(allSpellsTab);
         }
+        super.modifyContext(context, app); // Sorts spell sub-tabs with 'all' (sort index 0) at the top!
     }
 
     /**
