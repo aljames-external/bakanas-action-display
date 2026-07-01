@@ -39,8 +39,6 @@ export class HUDTab {
         this.icon = icon;
         this._level = level;
         this.parent = null;
-        this.prev = null;
-        this.next = null;
         this.active = active;
         this.expanded = expanded;
         this.activeParent = activeParent;
@@ -81,7 +79,7 @@ export class HUDTab {
 
     /**
      * Add a child sub-tab under this tab.
-     * Automatically establishes parent link, derives child depth level, and updates sibling linked list.
+     * Automatically establishes parent link and derives child depth level.
      * @param {Object|HUDTab} subTabConfig Sub-tab configuration or instance
      * @returns {HUDTab} The created or added child HUDTab instance
      */
@@ -90,14 +88,6 @@ export class HUDTab {
             ? subTabConfig 
             : new HUDTab(subTabConfig);
         subTab.parent = this;
-        
-        // Link to previous sibling
-        const prevSibling = this.subTabs[this.subTabs.length - 1];
-        if (prevSibling) {
-            prevSibling.next = subTab;
-            subTab.prev = prevSibling;
-        }
-        
         this.subTabs.push(subTab);
         return subTab;
     }
@@ -112,26 +102,12 @@ export class HUDTab {
 
     /**
      * Update and re-order child sub-tabs using an array of ordered sub-tab IDs.
-     * Re-links sibling pointers (prev / next) to maintain linked-list relationships.
      * @param {string[]} orderArray Array of sub-tab IDs in the desired display order
      */
     updateOrder(orderArray) {
         if (!Array.isArray(orderArray) || this.subTabs.length === 0) return;
-
         const orderMap = new Map(orderArray.map((id, index) => [id, index]));
-
-        this.subTabs.sort((a, b) => {
-            const indexA = orderMap.has(a.id) ? orderMap.get(a.id) : 999;
-            const indexB = orderMap.has(b.id) ? orderMap.get(b.id) : 999;
-            return indexA - indexB;
-        });
-
-        // Update linked list pointers (prev / next)
-        for (let i = 0; i < this.subTabs.length; i++) {
-            const current = this.subTabs[i];
-            current.prev = i > 0 ? this.subTabs[i - 1] : null;
-            current.next = i < this.subTabs.length - 1 ? this.subTabs[i + 1] : null;
-        }
+        this.subTabs.sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999));
     }
 
     /**

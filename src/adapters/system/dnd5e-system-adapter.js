@@ -47,6 +47,14 @@ const SUB_SORT_ORDERS = {
     ]
 };
 
+// Precomputed index maps for instant O(1) sort lookups
+const SUB_SORT_MAPS = Object.fromEntries(
+    Object.entries(SUB_SORT_ORDERS).map(([key, list]) => [
+        key,
+        new Map(list.map((id, index) => [id, index]))
+    ])
+);
+
 const TYPE_SORT_ORDER = {
     'weapon': 1,
     'equipment': 2,
@@ -619,19 +627,17 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     }
 
     getItemSubTabSortOrder(parentId, subId) {
-        const list = SUB_SORT_ORDERS[parentId];
-        if (list) {
-            const idx = list.indexOf(subId);
-            return idx !== -1 ? idx : 999;
+        const map = SUB_SORT_MAPS[parentId];
+        if (map) {
+            return map.get(subId) ?? 999;
         }
         return super.getItemSubTabSortOrder(parentId, subId);
     }
 
     getActionSubTabSortOrder(parentId, subId) {
-        const list = SUB_SORT_ORDERS[parentId];
-        if (list) {
-            const idx = list.indexOf(subId);
-            return idx !== -1 ? idx : 999;
+        const map = SUB_SORT_MAPS[parentId];
+        if (map) {
+            return map.get(subId) ?? 999;
         }
         return super.getActionSubTabSortOrder(parentId, subId);
     }
