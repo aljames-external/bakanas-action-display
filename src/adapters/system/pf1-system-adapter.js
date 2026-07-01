@@ -73,7 +73,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 if (!spellbook) continue;
 
                 // Spells are active actions
-                action.tabs = ['action'];
+                action.tabs = [['economy', 'action']];
                 action.activationType = 'action';
                 
                 const level = item.system.level ?? 0;
@@ -125,7 +125,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                         name: act.name || item.name,
                         img: item.img,
                         activationType: activationType,
-                        tabs: [activationType],
+                        tabs: [['economy', activationType]],
                         uses: uses,
                         roll: (event) => {
                             if (typeof item.use === 'function') {
@@ -142,7 +142,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
 
                 const firstSub = action.subActions[0];
                 action.activationType = firstSub.activationType;
-                action.tabs = [firstSub.activationType];
+                action.tabs = [['economy', firstSub.activationType]];
                 action.itemTypes = ['weapon']; // Group under weapons/attacks
                 action.uses = uses;
                 modified.push(action);
@@ -169,7 +169,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                                 name: linkedAttacks.length > 1 ? `${attackItem.name}: ${act.name || 'Attack'}` : (act.name || attackItem.name),
                                 img: attackItem.img || item.img,
                                 activationType: activationType,
-                                tabs: [activationType],
+                                tabs: [['economy', activationType]],
                                 uses: uses, // Shares weapon's ammunition/charges
                                 roll: (event) => {
                                     if (typeof attackItem.use === 'function') {
@@ -194,7 +194,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                             name: act.name || item.name,
                             img: item.img,
                             activationType: activationType,
-                            tabs: [activationType],
+                            tabs: [['economy', activationType]],
                             uses: uses,
                             roll: (event) => {
                                 if (typeof item.use === 'function') {
@@ -212,7 +212,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 action.subActions = subActions;
                 const firstSub = subActions[0];
                 action.activationType = firstSub.activationType;
-                action.tabs = [firstSub.activationType];
+                action.tabs = [['economy', firstSub.activationType]];
                 action.itemTypes = ['weapon'];
                 action.uses = uses;
                 modified.push(action);
@@ -233,7 +233,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                         name: act.name || item.name,
                         img: item.img,
                         activationType: activationType,
-                        tabs: [activationType],
+                        tabs: [['economy', activationType]],
                         uses: uses,
                         roll: (event) => {
                             if (typeof item.use === 'function') {
@@ -250,14 +250,14 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
 
                 const firstSub = action.subActions[0];
                 action.activationType = firstSub.activationType;
-                action.tabs = [firstSub.activationType];
+                action.tabs = [['economy', firstSub.activationType]];
                 action.itemTypes = [item.type];
                 action.uses = uses;
                 modified.push(action);
 
             } else if (item.type === 'buff') {
                 // 5. Buffs
-                action.tabs = ['other'];
+                action.tabs = [['economy', 'other']];
                 action.activationType = 'other';
                 action.itemTypes = ['buff'];
                 
@@ -279,7 +279,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
 
         // Sort actions: activation type first, then item type, then name
         return filtered.sort((a, b) => {
-            const actSort = this._getActivationSort(a.activationType ?? a.tabs[0]) - this._getActivationSort(b.activationType ?? b.tabs[0]);
+            const actSort = this._getActivationSort(a.activationType ?? (Array.isArray(a.tabs[0]) ? a.tabs[0][1] : a.tabs[0])) - this._getActivationSort(b.activationType ?? (Array.isArray(b.tabs[0]) ? b.tabs[0][1] : b.tabs[0]));
             if (actSort !== 0) return actSort;
 
             const typeSort = this._getTypeSort(a.type) - this._getTypeSort(b.type);
@@ -401,10 +401,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
      */
     getActionTypeLabel(parentId) {
         const labels = {
-            'action': localize('PF1.Activation.action.Plural', 'Actions'),
-            'bonus': localize('PF1.Activation.swift.Single', 'Swift'),
-            'reaction': localize('PF1.Activation.immediate.Single', 'Immediate'),
-            'other': localize('PF1.Activation.free.Single', 'Free')
+            'economy': localize('BAD.pf1.actionEconomy', 'Action Economy')
         };
         return labels[parentId] || super.getActionTypeLabel(parentId);
     }
@@ -415,12 +412,23 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
     getActionTypeIcon(parentId) {
         const icons = {
             'all': 'fas fa-border-all',
-            'action': 'fas fa-bolt',
-            'bonus': 'fas fa-gauge-high',
-            'reaction': 'fas fa-exclamation',
-            'other': 'fas fa-wind'
+            'economy': 'fas fa-stopwatch'
         };
         return icons[parentId] || super.getActionTypeIcon(parentId);
+    }
+
+    /**
+     * Get the localized label for a right-side action sub-tab in PF1e.
+     */
+    getActionSubTabLabel(subId) {
+        const labels = {
+            'all': localize('BAD.hud.allActions', 'All Actions'),
+            'action': localize('PF1.Activation.action.Plural', 'Actions'),
+            'bonus': localize('PF1.Activation.swift.Single', 'Swift'),
+            'reaction': localize('PF1.Activation.immediate.Single', 'Immediate'),
+            'other': localize('PF1.Activation.free.Single', 'Free')
+        };
+        return labels[subId] || super.getActionSubTabLabel(subId);
     }
 
     /**

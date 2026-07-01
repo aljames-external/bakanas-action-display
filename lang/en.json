@@ -47,6 +47,9 @@
             "actionEconomy": "Action Economy",
             "spellComponents": "Spell Components"
         },
+        "pf1": {
+            "actionEconomy": "Action Economy"
+        },
         "pf2e": {
             "actionEconomy": "Action Economy"
         }
