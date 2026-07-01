@@ -327,12 +327,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 const validSubIds = new Set(parent.subTabs.map(t => t.id));
                 const activeSubsForParent = Array.from(this.activeSubTypes).filter(id => validSubIds.has(id));
 
-                parent.subTabs.unshift(new HUDTab({
+                parent.addSubTab({
                     id: 'all',
                     label: adapter.getActionSubTabLabel('all') ?? 'All',
-                    active: isActive && activeSubsForParent.length === 0,
-                    level: 1
-                }));
+                    active: isActive && activeSubsForParent.length === 0
+                }, { atBeginning: true });
                 
                 parent.subTabs.sort((a, b) => adapter.getActionSubTabSortOrder(parent.id, a.id) - adapter.getActionSubTabSortOrder(parent.id, b.id));
             } else if (skipAll) {

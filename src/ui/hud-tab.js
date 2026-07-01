@@ -37,15 +37,36 @@ export class HUDTab {
         this.id = id;
         this.label = label;
         this.icon = icon;
-        this.level = level;
+        this._level = level;
+        this.parent = null;
         this.active = active;
         this.expanded = expanded;
         this.activeParent = activeParent;
         this.excluded = excluded;
         this.showUnprepared = showUnprepared;
-        this.subTabs = subTabs.map(st => st instanceof HUDTab ? st : new HUDTab({ ...st, level: level + 1 }));
         this.customOnLeftClick = onLeftClick;
         this.customOnRightClick = onRightClick;
+
+        this.subTabs = [];
+        for (const st of subTabs) {
+            this.addSubTab(st);
+        }
+    }
+
+    /**
+     * Depth level of this tab (0 = top-level parent tab, 1 = sub-tab, 2+ = nested sub-tab).
+     * Automatically derived from parent hierarchy if part of a tab tree.
+     * @type {number}
+     */
+    get level() {
+        if (this.parent) {
+            return this.parent.level + 1;
+        }
+        return this._level;
+    }
+
+    set level(val) {
+        this._level = val;
     }
 
     /**
@@ -58,14 +79,22 @@ export class HUDTab {
 
     /**
      * Add a child sub-tab under this tab.
-     * @param {Object|HUDTab} subTabConfig 
+     * Automatically establishes parent link and derives child depth level.
+     * @param {Object|HUDTab} subTabConfig Sub-tab configuration or instance
+     * @param {Object} [options]
+     * @param {boolean} [options.atBeginning=false] Whether to unshift to the beginning of subTabs
      * @returns {HUDTab} The created or added child HUDTab instance
      */
-    addSubTab(subTabConfig) {
+    addSubTab(subTabConfig, { atBeginning = false } = {}) {
         const subTab = subTabConfig instanceof HUDTab 
             ? subTabConfig 
-            : new HUDTab({ ...subTabConfig, level: this.level + 1 });
-        this.subTabs.push(subTab);
+            : new HUDTab(subTabConfig);
+        subTab.parent = this;
+        if (atBeginning) {
+            this.subTabs.unshift(subTab);
+        } else {
+            this.subTabs.push(subTab);
+        }
         return subTab;
     }
 

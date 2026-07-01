@@ -765,13 +765,12 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         if (spellParent && spellParent.subTabs.length > 0) {
             // Inject "All Spells" at the beginning
             const showUnprepared = app.actor.getFlag(MODULE_ID, 'showUnprepared') ?? false;
-            spellParent.subTabs.unshift(new HUDTab({
+            spellParent.addSubTab({
                 id: 'all',
                 label: 'All Spells',
                 active: app.activeLeftParentTypes.has('spell') && app.activeLeftSubTypes.size === 0,
-                showUnprepared: showUnprepared,
-                level: 1
-            }));
+                showUnprepared: showUnprepared
+            }, { atBeginning: true });
         }
     }
 
