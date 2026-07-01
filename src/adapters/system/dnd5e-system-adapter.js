@@ -10,20 +10,41 @@ const PARENT_SORT_ORDER = {
 };
 
 const SUB_SORT_ORDERS = {
-    'economy': {
-        'action': 1,
-        'bonus': 2,
-        'reaction': 3,
-        'special': 4,
-        'legendary': 5,
-        'mythic': 6,
-        'crew': 7,
-        'lair': 8,
-        'minute': 9,
-        'hour': 10,
-        'day': 11,
-        'none': 12
-    }
+    'spell': [
+        'all',
+        '0',
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+        '8',
+        '9',
+        'itemCharges'
+    ],
+    'economy': [
+        'all',
+        'action',
+        'bonus',
+        'reaction',
+        'other',
+        'special',
+        'legendary',
+        'mythic',
+        'crew',
+        'lair',
+        'minute',
+        'hour',
+        'day',
+        'none'
+    ],
+    'components': [
+        'vocal',
+        'somatic',
+        'material'
+    ]
 };
 
 const TYPE_SORT_ORDER = {
@@ -597,6 +618,24 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         return TYPE_SORT_ORDER[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
+    getItemSubTabSortOrder(parentId, subId) {
+        const list = SUB_SORT_ORDERS[parentId];
+        if (list) {
+            const idx = list.indexOf(subId);
+            return idx !== -1 ? idx : 999;
+        }
+        return super.getItemSubTabSortOrder(parentId, subId);
+    }
+
+    getActionSubTabSortOrder(parentId, subId) {
+        const list = SUB_SORT_ORDERS[parentId];
+        if (list) {
+            const idx = list.indexOf(subId);
+            return idx !== -1 ? idx : 999;
+        }
+        return super.getActionSubTabSortOrder(parentId, subId);
+    }
+
     getItemTypeLabel(parentId) {
         const labels = {
             'all': 'All Items',
@@ -760,20 +799,21 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     }
 
     modifyContext(context, app) {
+        super.modifyContext(context, app);
         const spellParent = context.itemTypes.find(t => t.id === 'spell');
         if (spellParent && spellParent.subTabs.length > 0) {
-            // Inject "All Spells" sub-tab before sorting
+            // Inject "All Spells" sub-tab
             const showUnprepared = app.actor.getFlag(MODULE_ID, 'showUnprepared') ?? false;
-            const allSpellsTab = new HUDTab({
+            spellParent.addSubTab({
                 id: 'all',
                 label: 'All Spells',
                 active: app.activeLeftParentTypes.has('spell') && app.activeLeftSubTypes.size === 0,
                 showUnprepared: showUnprepared
             });
-            allSpellsTab.parent = spellParent;
-            spellParent.subTabs.unshift(allSpellsTab);
+
+            // Re-order spell sub-tabs explicitly using updateOrder
+            spellParent.updateOrder(SUB_SORT_ORDERS['spell']);
         }
-        super.modifyContext(context, app); // Sorts spell sub-tabs with 'all' (sort index 0) at the top!
     }
 
     /**
