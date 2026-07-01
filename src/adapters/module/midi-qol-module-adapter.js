@@ -23,10 +23,7 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
             const activities = item.subActions;
             if (activities && activities.length > 0) {
                 // Filter out D&D 5e Activities that are marked as automationOnly by Midi-QOL
-                const filteredActivities = activities.filter(activity => {
-                    const isAutomationOnlyActivity = activity.originalActivity?.midiProperties?.automationOnly === true;
-                    return !isAutomationOnlyActivity;
-                });
+                const filteredActivities = activities.filter(activity => !this.isAutomationOnly(activity));
 
                 // If all D&D 5e Activities on the item are automation-only, hide the entire item card!
                 if (filteredActivities.length === 0) {
@@ -64,5 +61,21 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
         }
 
         return modified;
+    }
+
+    /* -------------------------------------------- */
+    /*  Module Data Structure Accessors / Path Helpers */
+    /* -------------------------------------------- */
+
+    /**
+     * Check if a D&D 5e activity is flagged as automation-only by Midi-QOL.
+     * Localizes third-party data path access (`activity.originalActivity.midiProperties.automationOnly`)
+     * in case Midi-QOL changes its flag structure in future updates.
+     *
+     * @param {Object} activity The subAction / activity object
+     * @returns {boolean} True if the activity should be hidden from player view
+     */
+    isAutomationOnly(activity) {
+        return activity?.originalActivity?.midiProperties?.automationOnly === true;
     }
 }
