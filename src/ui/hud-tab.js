@@ -38,7 +38,8 @@ export class HUDTab {
         this.label = label;
         this.icon = icon;
         this._level = level;
-        this.parent = null;
+        this._parent = null;
+        this.rootParent = this;
         this.active = active;
         this.expanded = expanded;
         this.activeParent = activeParent;
@@ -50,6 +51,34 @@ export class HUDTab {
         this.subTabs = [];
         for (const st of subTabs) {
             this.addSubTab(st);
+        }
+    }
+
+    /**
+     * Parent HUDTab reference. Automatically updates depth level and rootParent pointers.
+     * @type {HUDTab|null}
+     */
+    get parent() {
+        return this._parent;
+    }
+
+    set parent(parentTab) {
+        this._parent = parentTab;
+        const newRoot = parentTab ? (parentTab.rootParent || parentTab) : this;
+        this._setRootParent(newRoot);
+    }
+
+    /**
+     * Internal helper to assign rootParent pointer down the child sub-tree.
+     * @param {HUDTab} root 
+     * @private
+     */
+    _setRootParent(root) {
+        this.rootParent = root;
+        if (this.subTabs && this.subTabs.length > 0) {
+            for (const child of this.subTabs) {
+                child._setRootParent(root);
+            }
         }
     }
 
@@ -122,15 +151,6 @@ export class HUDTab {
             if (found) return found;
         }
         return undefined;
-    }
-
-    /**
-     * Get the top-level (level 0) root parent tab node.
-     * Delegates up the parent chain recursively.
-     * @type {HUDTab}
-     */
-    get rootParent() {
-        return this.parent ? this.parent.rootParent : this;
     }
 
     /**
