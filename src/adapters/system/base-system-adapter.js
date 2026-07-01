@@ -67,7 +67,7 @@ export class BaseSystemAdapter {
             'other': localize('BAD.hud.other', 'Other'),
             'hidden': localize('BAD.hud.hidden', 'Hidden')
         };
-        return labels[parentId] || parentId.toUpperCase();
+        return labels[parentId] ?? parentId.toUpperCase();
     }
 
     /**
@@ -81,7 +81,7 @@ export class BaseSystemAdapter {
             'other': 'fas fa-ellipsis',
             'hidden': 'fas fa-eye-slash'
         };
-        return icons[parentId] || 'fas fa-question';
+        return icons[parentId] ?? 'fas fa-question';
     }
 
     /**
@@ -104,7 +104,7 @@ export class BaseSystemAdapter {
             'all': localize('BAD.hud.allActions', 'All Actions'),
             'none': localize('BAD.hud.none', 'None')
         };
-        return labels[parentId] || parentId.toUpperCase();
+        return labels[parentId] ?? parentId.toUpperCase();
     }
 
     /**
@@ -117,7 +117,7 @@ export class BaseSystemAdapter {
             'all': 'fas fa-border-all',
             'none': 'fas fa-ban'
         };
-        return icons[parentId] || 'fas fa-question';
+        return icons[parentId] ?? 'fas fa-question';
     }
 
     /**

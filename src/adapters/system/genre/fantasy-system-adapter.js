@@ -34,7 +34,7 @@ export class FantasySystemAdapter extends BaseSystemAdapter {
             'feat': 'fas fa-award',
             'consumable': 'fas fa-flask'
         };
-        return icons[parentId] || super.getItemTypeIcon(parentId);
+        return icons[parentId] ?? super.getItemTypeIcon(parentId);
     }
 
     /**

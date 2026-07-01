@@ -475,7 +475,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
         const labels = {
             'economy': localize('BAD.common.actionEconomy', 'Action Economy')
         };
-        return labels[parentId] || super.getActionTypeLabel(parentId);
+        return labels[parentId] ?? super.getActionTypeLabel(parentId);
     }
 
     /**
@@ -486,7 +486,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
             'all': 'fas fa-border-all',
             'economy': 'fas fa-stopwatch'
         };
-        return icons[parentId] || super.getActionTypeIcon(parentId);
+        return icons[parentId] ?? super.getActionTypeIcon(parentId);
     }
 
     /**
@@ -500,7 +500,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
             'reaction': localize('PF1.Activation.immediate.Single', 'Immediate'),
             'other': localize('PF1.Activation.free.Single', 'Free')
         };
-        return labels[subId] || super.getActionSubTabLabel(subId);
+        return labels[subId] ?? super.getActionSubTabLabel(subId);
     }
 
     /**
@@ -514,7 +514,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
             'buff': localize('PF1.Buffs', 'Buffs'),
             'consumable': localize('PF1.InventoryConsumables', 'Consumables')
         };
-        return labels[parentId] || super.getItemTypeLabel(parentId);
+        return labels[parentId] ?? super.getItemTypeLabel(parentId);
     }
 
     /**
@@ -544,7 +544,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
         const icons = {
             'buff': 'fas fa-sparkles'
         };
-        return icons[parentId] || super.getItemTypeIcon(parentId);
+        return icons[parentId] ?? super.getItemTypeIcon(parentId);
     }
 
     /**

@@ -18,7 +18,7 @@ export class HUDTabColumn {
         const initialParents = cached?.parents ?? ['all'];
         this.activeParents = new Set(initialParents);
 
-        this.focusedParent = cached?.focusedParent || (initialParents.includes('all') ? 'all' : initialParents[0]);
+        this.focusedParent = cached?.focusedParent ?? (initialParents.includes('all') ? 'all' : initialParents[0]);
 
         const initialSubs = cached?.subTypes ?? [];
         this.activeSubTypes = new Set(initialSubs);

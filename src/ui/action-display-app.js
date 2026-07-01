@@ -581,8 +581,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this._activeLeftClickMenu = null;
 
         const actionId = target.dataset.actionId;
-        const actions = this.actions || [];
-        const action = actions.find(a => a.id === actionId);
+        const action = this.actions?.find(a => a.id === actionId);
         
         if (action) {
             const itemActivities = action.activities;
@@ -970,9 +969,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 icon: '<i class="fas fa-eye-slash"></i>',
                 condition: el => {
                     if (!this.actor?.isOwner) return false;
-                    const actionId = el.dataset.actionId;
-                    const actions = this.actions || [];
-                    const action = actions.find(a => a.id === actionId);
+                    const action = this.actions?.find(a => a.id === el.dataset.actionId);
                     return action && !action.isHidden;
                 },
                 callback: el => {
@@ -984,9 +981,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 icon: '<i class="fas fa-eye"></i>',
                 condition: el => {
                     if (!this.actor?.isOwner) return false;
-                    const actionId = el.dataset.actionId;
-                    const actions = this.actions || [];
-                    const action = actions.find(a => a.id === actionId);
+                    const action = this.actions?.find(a => a.id === el.dataset.actionId);
                     return action && action.isHidden;
                 },
                 callback: el => {
@@ -1042,12 +1037,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     async _toggleActionHidden(actionId, shouldHide) {
         if (!actionId || !this.actor) return;
 
-        const actions = this.actions || [];
-        const action = actions.find(a => a.id === actionId);
+        const action = this.actions?.find(a => a.id === actionId);
         if (!action) return;
 
-        const itemId = action.originalItem?.id || action.id;
-        const hiddenItems = this.actor.getFlag(MODULE_ID, 'hiddenItems') || [];
+        const itemId = action.originalItem?.id ?? action.id;
+        const hiddenItems = this.actor.getFlag(MODULE_ID, 'hiddenItems') ?? [];
         
         let newHiddenItems = [...hiddenItems];
         if (shouldHide) {
@@ -1203,8 +1197,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             const savedPos = game.settings.get(MODULE_ID, 'hudDetachedPosition');
             
             // Use cached dimensions if available to prevent layout thrashing (reflow) at 60fps
-            const appWidth = this._width || el.offsetWidth || (320 * scale);
-            const appHeight = this._height || (el.offsetHeight || 200) * (el.offsetHeight ? 1 : scale);
+            const appWidth = this._width ?? el.offsetWidth ?? (320 * scale);
+            const appHeight = this._height ?? (el.offsetHeight ?? 200) * (el.offsetHeight ? 1 : scale);
             
             let left = savedPos?.left ?? 100;
             let top = savedPos?.top ?? 100;

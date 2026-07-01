@@ -191,7 +191,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
             'spell': localize('PF2E.Item.Spell.Plural', 'Spells'),
             'weapon': localize('PF2E.TraitWeapons', 'Weapons')
         };
-        return labels[parentId] || super.getItemTypeLabel(parentId);
+        return labels[parentId] ?? super.getItemTypeLabel(parentId);
     }
 
     /**
@@ -225,7 +225,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
         const labels = {
             'economy': localize('BAD.common.actionEconomy', 'Action Economy')
         };
-        return labels[parentId] || super.getActionTypeLabel(parentId);
+        return labels[parentId] ?? super.getActionTypeLabel(parentId);
     }
 
     /**
@@ -236,7 +236,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
             'all': 'fas fa-border-all',
             'economy': 'fas fa-stopwatch'
         };
-        return icons[parentId] || super.getActionTypeIcon(parentId);
+        return icons[parentId] ?? super.getActionTypeIcon(parentId);
     }
 
     /**
@@ -249,7 +249,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
             'reaction': localize('PF2E.ActionsReactionsHeader', 'Reactions'),
             'other': localize('PF2E.ActionsFreeActionsHeader', 'Free Actions')
         };
-        return labels[subId] || super.getActionSubTabLabel(subId);
+        return labels[subId] ?? super.getActionSubTabLabel(subId);
     }
 
     /**
