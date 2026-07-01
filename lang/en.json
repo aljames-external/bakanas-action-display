@@ -48,6 +48,6 @@
             "prepareSpell": "Prepare Spell",
             "unprepareSpell": "Unprepare Spell",
             "spellComponents": "Spell Components"
-        },
+        }
     }
 }
