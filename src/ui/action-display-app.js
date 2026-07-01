@@ -1,7 +1,7 @@
 import { actionDisplay } from '../action-display.js';
 import { log } from '../lib/logger.js';
-
 import { MODULE_ID } from '../constants.js';
+import { TabSideState } from './tab-side-state.js';
 
 // Cache to persist tab states per actor across HUD rebuilds
 const activeTabCache = new Map();
@@ -30,47 +30,20 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.token = token;
         this.actor = token.actor;
         
-        // Active filter states - Left Side (Item Types)
         const cached = activeTabCache.get(this.actor?.uuid);
-        
-        let initialLeftParents = ['all'];
-        if (cached?.leftParents) initialLeftParents = cached.leftParents;
-        else if (cached?.leftParent) initialLeftParents = [cached.leftParent];
-        this.activeLeftParentTypes = new Set(initialLeftParents);
-        
-        this.focusedLeftParentType = cached?.focusedLeftParent || (initialLeftParents.includes('all') ? 'all' : initialLeftParents[0]);
 
-        // Migrate from single string to Set for multi-select support
-        let initialLeftSubs = [];
-        if (cached?.leftSubTypes) initialLeftSubs = cached.leftSubTypes;
-        else if (cached?.leftSub) initialLeftSubs = [cached.leftSub];
-        this.activeLeftSubTypes = new Set(initialLeftSubs);
+        // Encapsulated tab side state managers
+        this.leftTabs = new TabSideState({
+            side: 'left',
+            cached: cached?.left || cached,
+            getDefaultSubTypes: () => actionDisplay.activeSystemAdapter?.getDefaultActiveLeftSubTypes() ?? []
+        });
 
-        // Active filter states - Right Side (Action Types)
-        let initialRightParents = ['all'];
-        if (cached?.rightParents) initialRightParents = cached.rightParents;
-        else if (cached?.rightParent) initialRightParents = [cached.rightParent];
-        this.activeParentTypes = new Set(initialRightParents);
-
-        // Track the explicitly focused parent tab
-        this.focusedParentType = cached?.focusedParent || (initialRightParents.includes('all') ? 'all' : initialRightParents[0]);
-        
-        let initialRightSubs = [];
-        if (cached?.subTypes) initialRightSubs = cached.subTypes;
-        else if (cached?.rightSub) initialRightSubs = [cached.rightSub];
-        this.activeSubTypes = new Set(initialRightSubs);
-
-        // Default active sub-types from system adapter
-        if (!cached) {
-            const leftDefaults = actionDisplay.activeSystemAdapter?.getDefaultActiveLeftSubTypes() ?? [];
-            for (const sub of leftDefaults) {
-                this.activeLeftSubTypes.add(sub);
-            }
-            const rightDefaults = actionDisplay.activeSystemAdapter?.getDefaultActiveSubTypes() ?? [];
-            for (const sub of rightDefaults) {
-                this.activeSubTypes.add(sub);
-            }
-        }
+        this.rightTabs = new TabSideState({
+            side: 'right',
+            cached: cached?.right || cached,
+            getDefaultSubTypes: () => actionDisplay.activeSystemAdapter?.getDefaultActiveSubTypes() ?? []
+        });
 
         // HUD Attachment/Position Mode (persisted client-side)
         this.positionMode = game.settings.get(MODULE_ID, 'hudPositionMode') || 'attached';
@@ -86,6 +59,17 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this._onDragMove = this._onDragMove.bind(this);
         this._onDragEnd = this._onDragEnd.bind(this);
     }
+
+    // Backwards-compatibility property getters/setters
+    get activeLeftParentTypes() { return this.leftTabs.activeParents; }
+    get focusedLeftParentType() { return this.leftTabs.focusedParent; }
+    set focusedLeftParentType(val) { this.leftTabs.focusedParent = val; }
+    get activeLeftSubTypes() { return this.leftTabs.activeSubTypes; }
+
+    get activeParentTypes() { return this.rightTabs.activeParents; }
+    get focusedParentType() { return this.rightTabs.focusedParent; }
+    set focusedParentType(val) { this.rightTabs.focusedParent = val; }
+    get activeSubTypes() { return this.rightTabs.activeSubTypes; }
 
     /**
      * Close the application, logging the transition.
@@ -269,31 +253,16 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.leftGroups = leftGroups;
 
         // Prune active left sub-tabs that are no longer available in any active parent
-        const allAvailableLeftSubs = new Set();
-        for (const parentId of this.activeLeftParentTypes) {
-            const group = leftGroups[parentId];
-            if (group && group.subTabs.length > 0) {
-                for (const sub of group.subTabs) {
-                    allAvailableLeftSubs.add(sub.id);
-                }
-            }
-        }
-        for (const activeSub of this.activeLeftSubTypes) {
-            if (activeSub !== 'all' && !allAvailableLeftSubs.has(activeSub)) {
-                this.activeLeftSubTypes.delete(activeSub);
-            }
-        }
+        this.leftTabs.prune(leftGroups);
 
         // If no active left parent type is available, default to 'all'
-        if (itemTypes.length && !itemTypes.some(p => this.activeLeftParentTypes.has(p.id))) {
-            this.activeLeftParentTypes.clear();
-            this.activeLeftParentTypes.add('all');
+        if (itemTypes.length && !itemTypes.some(p => this.leftTabs.activeParents.has(p.id))) {
+            this.leftTabs.resetToDefault();
             const allTab = itemTypes.find(t => t.id === 'all');
             if (allTab) {
                 allTab.active = true;
                 allTab.expanded = true;
             }
-            this.activeLeftSubTypes.clear();
         }
 
         // 3. Build the right-side hierarchy dynamically using the adapter
@@ -414,27 +383,13 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.parentGroups = parentGroups;
 
         // Prune active right sub-tabs that are no longer available in any parent group
-        const allAvailableRightSubs = new Set();
-        for (const group of Object.values(parentGroups)) {
-            if (group.subTabs.length > 0) {
-                for (const sub of group.subTabs) {
-                    allAvailableRightSubs.add(sub.id);
-                }
-            }
-        }
-        for (const activeSub of this.activeSubTypes) {
-            if (activeSub !== 'all' && !allAvailableRightSubs.has(activeSub)) {
-                this.activeSubTypes.delete(activeSub);
-            }
-        }
+        this.rightTabs.prune(parentGroups);
 
-        // If the active parent type is no longer available, default to the first available
-        if (actionTypes.length && !actionTypes.some(p => this.activeParentTypes.has(p.id))) {
-            this.activeParentTypes.clear();
-            this.activeParentTypes.add(actionTypes[0].id);
+        // If the active parent type is no longer available, default to 'all'
+        if (actionTypes.length && !actionTypes.some(p => this.rightTabs.activeParents.has(p.id))) {
+            this.rightTabs.resetToDefault();
             actionTypes[0].active = true;
             actionTypes[0].expanded = true;
-            this.activeSubTypes.clear();
         }
 
         // 4. Second pass: Filter actions now that tab groups are fully populated
@@ -454,12 +409,15 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // Persist the validated tab states for this actor
         if (this.actor?.uuid) {
             activeTabCache.set(this.actor.uuid, {
-                leftParents: Array.from(this.activeLeftParentTypes),
-                focusedLeftParent: this.focusedLeftParentType,
-                leftSubTypes: Array.from(this.activeLeftSubTypes),
-                rightParents: Array.from(this.activeParentTypes),
-                subTypes: Array.from(this.activeSubTypes),
-                focusedParent: this.focusedParentType
+                left: this.leftTabs.serialize(),
+                right: this.rightTabs.serialize(),
+                // Keep flat array fallbacks for external or legacy module consumers
+                leftParents: Array.from(this.leftTabs.activeParents),
+                focusedLeftParent: this.leftTabs.focusedParent,
+                leftSubTypes: Array.from(this.leftTabs.activeSubTypes),
+                rightParents: Array.from(this.rightTabs.activeParents),
+                subTypes: Array.from(this.rightTabs.activeSubTypes),
+                focusedParent: this.rightTabs.focusedParent
             });
         }
 
@@ -597,74 +555,13 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     /* -------------------------------------------- */
 
     /**
-     * Reset left-side item tabs to their default state ('all' and default sub-types).
-     */
-    _resetLeftTabsToDefault() {
-        this.focusedLeftParentType = 'all';
-        this.activeLeftParentTypes.clear();
-        this.activeLeftParentTypes.add('all');
-        this.activeLeftSubTypes.clear();
-        const defaults = actionDisplay.activeSystemAdapter?.getDefaultActiveLeftSubTypes() ?? [];
-        for (const sub of defaults) {
-            this.activeLeftSubTypes.add(sub);
-        }
-        log.debug("Reset left parents and sub-types to default state ('all')");
-    }
-
-    /**
-     * Reset right-side action tabs to their default state ('all' and default sub-types).
-     */
-    _resetRightTabsToDefault() {
-        this.focusedParentType = 'all';
-        this.activeParentTypes.clear();
-        this.activeParentTypes.add('all');
-        this.activeSubTypes.clear();
-        const defaults = actionDisplay.activeSystemAdapter?.getDefaultActiveSubTypes() ?? [];
-        for (const sub of defaults) {
-            this.activeSubTypes.add(sub);
-        }
-        log.debug("Reset right parents and sub-types to default state ('all')");
-    }
-
-    /**
      * Handle left-side item type (parent) selection clicks.
      * 'this' refers to the application instance.
      */
     static async _onChangeLeftItemType(event, target) {
         event.preventDefault();
         this._clearMenuState();
-        const parentId = target.dataset.type;
-        
-        if (parentId === 'all') {
-            this._resetLeftTabsToDefault();
-        } else {
-            const parentGroup = this.leftGroups?.[parentId];
-            const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
-            const hasActiveSubs = Array.from(this.activeLeftSubTypes).some(id => validSubIds.has(id));
-            
-            const isEnabled = this.activeLeftParentTypes.has(parentId);
-            
-            if (!isEnabled) {
-                // Not enabled: change focus to it and enable it
-                this.activeLeftParentTypes.add(parentId);
-                this.activeLeftParentTypes.delete('all');
-                this.focusedLeftParentType = parentId;
-            } else if (hasActiveSubs) {
-                // Enabled with active subtabs: just change focus to it
-                this.focusedLeftParentType = parentId;
-            } else {
-                // Enabled with NO active subtabs: disable it and change focus
-                this.activeLeftParentTypes.delete(parentId);
-                const remaining = Array.from(this.activeLeftParentTypes).filter(p => p !== 'all');
-                if (remaining.length > 0) {
-                    this.focusedLeftParentType = remaining[remaining.length - 1];
-                } else {
-                    this._resetLeftTabsToDefault();
-                }
-            }
-        }
-        
-        log.debug(`Changed item parent filter to:`, Array.from(this.activeLeftParentTypes), `focus: ${this.focusedLeftParentType}`);
+        this.leftTabs.selectParent(target.dataset.type, this.leftGroups);
         this.render();
     }
 
@@ -675,27 +572,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     static async _onChangeLeftSubItemType(event, target) {
         event.preventDefault();
         this._clearMenuState();
-        const type = target.dataset.type;
-        
         const parentGroup = target.closest('.bad-left-tab-group');
         const parentId = parentGroup?.querySelector('.bad-left-tab')?.dataset.type;
-        
-        if (parentId) {
-            this.activeLeftParentTypes.add(parentId);
-            this.activeLeftParentTypes.delete('all');
-            this.focusedLeftParentType = parentId;
-        }
-        
-        if (type === 'all') {
-            this.activeLeftSubTypes.clear();
-        } else if (this.activeLeftSubTypes.has(type) && this.activeLeftSubTypes.size === 1) {
-            this.activeLeftSubTypes.clear();
-        } else {
-            this.activeLeftSubTypes.clear();
-            this.activeLeftSubTypes.add(type);
-        }
-        
-        log.debug(`Changed item sub filter to:`, Array.from(this.activeLeftSubTypes));
+        this.leftTabs.selectSub(parentId, target.dataset.type, this.leftGroups);
         this.render();
     }
 
@@ -703,45 +582,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      * Toggle a left-side parent tab in the active set (for right-click multi-select).
      */
     _onToggleLeftParent(parentId) {
-        if (parentId === 'all') {
-            this._resetLeftTabsToDefault();
-        } else {
-            const parentGroup = this.leftGroups?.[parentId];
-            let hadActiveSubs = false;
-            if (parentGroup) {
-                const validSubIds = new Set(parentGroup.subTabs.map(t => t.id));
-                for (const subId of this.activeLeftSubTypes) {
-                    if (validSubIds.has(subId)) {
-                        hadActiveSubs = true;
-                        this.activeLeftSubTypes.delete(subId);
-                    }
-                }
-            }
-            
-            if (hadActiveSubs) {
-                // First right-click cleared subtabs, make sure the parent is active
-                this.activeLeftParentTypes.add(parentId);
-                this.activeLeftParentTypes.delete('all');
-                this.focusedLeftParentType = parentId;
-                log.debug(`Cleared subtabs for left parent ${parentId}`);
-            } else {
-                // Already in cleared state, toggle parent selection
-                if (this.activeLeftParentTypes.has(parentId)) {
-                    this.activeLeftParentTypes.delete(parentId);
-                    log.debug(`Toggled OFF left parent ${parentId}`);
-                } else {
-                    this.activeLeftParentTypes.add(parentId);
-                    this.activeLeftParentTypes.delete('all');
-                    this.focusedLeftParentType = parentId;
-                    log.debug(`Toggled ON left parent ${parentId}`);
-                }
-            }
-            
-            // Fall back to 'all' if no parents remain selected
-            if (this.activeLeftParentTypes.size === 0) {
-                this._resetLeftTabsToDefault();
-            }
-        }
+        this.leftTabs.toggleParent(parentId, this.leftGroups);
         this.render();
     }
 
@@ -751,23 +592,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     _onToggleLeftSub(target, type) {
         const parentGroup = target.closest('.bad-left-tab-group');
         const parentId = parentGroup?.querySelector('.bad-left-tab')?.dataset.type;
-        
-        if (parentId) {
-            this.activeLeftParentTypes.add(parentId);
-            this.activeLeftParentTypes.delete('all');
-            this.focusedLeftParentType = parentId;
-        }
-
-        if (type === 'all') {
-            this.activeLeftSubTypes.clear();
-        } else {
-            if (this.activeLeftSubTypes.has(type)) {
-                this.activeLeftSubTypes.delete(type);
-            } else {
-                this.activeLeftSubTypes.add(type);
-            }
-        }
-        log.debug(`Toggled left sub filter:`, Array.from(this.activeLeftSubTypes));
+        this.leftTabs.toggleSub(parentId, type, this.leftGroups);
         this.render();
     }
 
@@ -778,84 +603,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     static async _onChangeActionType(event, target) {
         event.preventDefault();
         this._clearMenuState();
-        const parentId = target.dataset.type;
-        
-        if (parentId === 'all') {
-            this._resetRightTabsToDefault();
-        } else {
-            const parentGroup = this.parentGroups?.[parentId];
-            const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
-            const hasActiveSubs = Array.from(this.activeSubTypes).some(id => validSubIds.has(id));
-            
-            const isEnabled = this.activeParentTypes.has(parentId);
-            
-            if (!isEnabled) {
-                // Not enabled: change focus to it and enable it
-                this.activeParentTypes.add(parentId);
-                this.activeParentTypes.delete('all');
-                this.focusedParentType = parentId;
-            } else if (hasActiveSubs) {
-                // Enabled with active subtabs: just change focus to it
-                this.focusedParentType = parentId;
-            } else {
-                // Enabled with NO active subtabs: disable it and change focus
-                this.activeParentTypes.delete(parentId);
-                const remaining = Array.from(this.activeParentTypes).filter(p => p !== 'all');
-                if (remaining.length > 0) {
-                    this.focusedParentType = remaining[remaining.length - 1];
-                } else {
-                    this._resetRightTabsToDefault();
-                }
-            }
-        }
-        
-        log.debug(`Focused action parent to: ${this.focusedParentType}, active:`, Array.from(this.activeParentTypes));
-        this.render();
-    }
-
-    /**
-     * Toggle a right-side parent tab in the active set (for right-click multi-select).
-     */
-    _onToggleRightParent(parentId) {
-        if (parentId === 'all') {
-            this._resetRightTabsToDefault();
-        } else {
-            const parentGroup = this.parentGroups?.[parentId];
-            let hadActiveSubs = false;
-            if (parentGroup) {
-                const validSubIds = new Set(parentGroup.subTabs.map(t => t.id));
-                for (const subId of this.activeSubTypes) {
-                    if (validSubIds.has(subId)) {
-                        hadActiveSubs = true;
-                        this.activeSubTypes.delete(subId);
-                    }
-                }
-            }
-            
-            if (hadActiveSubs) {
-                // First right-click cleared subtabs, make sure the parent is focused
-                this.activeParentTypes.add(parentId);
-                this.activeParentTypes.delete('all');
-                this.focusedParentType = parentId;
-                log.debug(`Cleared subtabs for right parent ${parentId}`);
-            } else {
-                // Already in cleared state, toggle parent focus/selection
-                if (this.activeParentTypes.has(parentId)) {
-                    this.activeParentTypes.delete(parentId);
-                    log.debug(`Toggled OFF right parent ${parentId}`);
-                } else {
-                    this.activeParentTypes.add(parentId);
-                    this.activeParentTypes.delete('all');
-                    this.focusedParentType = parentId;
-                    log.debug(`Toggled ON right parent ${parentId}`);
-                }
-            }
-            
-            // Fall back to 'all' if no valid focused parent remains
-            if (this.activeParentTypes.size === 0) {
-                this._resetRightTabsToDefault();
-            }
-        }
+        this.rightTabs.selectParent(target.dataset.type, this.parentGroups);
         this.render();
     }
 
@@ -866,61 +614,17 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     static async _onChangeSubActionType(event, target) {
         event.preventDefault();
         this._clearMenuState();
-        const type = target.dataset.type;
-        
         const parentGroup = target.closest('.bad-right-tab-group');
         const parentId = parentGroup?.querySelector('.bad-right-tab')?.dataset.type;
-        
-        if (parentId) {
-            this.focusedParentType = parentId;
-        }
-        
-        if (type === 'all') {
-            // Clear all sub-tabs for this parent
-            if (parentId) {
-                const group = this.parentGroups?.[parentId];
-                if (group) {
-                    const validSubIds = new Set(group.subTabs.map(t => t.id));
-                    for (const subId of this.activeSubTypes) {
-                        if (validSubIds.has(subId)) {
-                            this.activeSubTypes.delete(subId);
-                        }
-                    }
-                }
-            }
-        } else {
-            // Left-click is exclusive within its own parent tab
-            if (parentId) {
-                const group = this.parentGroups?.[parentId];
-                log.debug(`_onChangeSubActionType | parentId: ${parentId}, group found: ${!!group}`, group);
-                if (group) {
-                    const validSubIds = new Set(group.subTabs.map(t => t.id));
-                    const activeSubsForParent = Array.from(this.activeSubTypes).filter(id => validSubIds.has(id));
-                    log.debug(`_onChangeSubActionType | type: ${type}, validSubIds:`, Array.from(validSubIds), `activeSubsForParent:`, activeSubsForParent);
-                    
-                    if (activeSubsForParent.length > 1) {
-                        log.debug(`_onChangeSubActionType | Multiple selected, isolating: ${type}`);
-                        for (const subId of activeSubsForParent) {
-                            if (subId !== type) {
-                                this.activeSubTypes.delete(subId);
-                            }
-                        }
-                        this.activeSubTypes.add(type); // Ensure it is selected
-                    } else if (activeSubsForParent.length === 1 && activeSubsForParent[0] === type) {
-                        log.debug(`_onChangeSubActionType | Sole selected, toggling off: ${type}`);
-                        this.activeSubTypes.delete(type);
-                    } else {
-                        log.debug(`_onChangeSubActionType | None or different selected, making sole: ${type}`);
-                        for (const subId of activeSubsForParent) {
-                            this.activeSubTypes.delete(subId);
-                        }
-                        this.activeSubTypes.add(type);
-                    }
-                }
-            }
-        }
-        
-        log.debug(`Changed action sub filter to:`, Array.from(this.activeSubTypes));
+        this.rightTabs.selectSub(parentId, target.dataset.type, this.parentGroups);
+        this.render();
+    }
+
+    /**
+     * Toggle a right-side parent tab in the active set (for right-click multi-select).
+     */
+    _onToggleRightParent(parentId) {
+        this.rightTabs.toggleParent(parentId, this.parentGroups);
         this.render();
     }
 
@@ -930,32 +634,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     _onToggleRightSub(target, type) {
         const parentGroup = target.closest('.bad-right-tab-group');
         const parentId = parentGroup?.querySelector('.bad-right-tab')?.dataset.type;
-        
-        if (parentId) {
-            this.focusedParentType = parentId;
-        }
-
-        if (type === 'all') {
-            // Clear all sub-tabs for this parent
-            if (parentId) {
-                const group = this.parentGroups?.[parentId];
-                if (group) {
-                    const validSubIds = new Set(group.subTabs.map(t => t.id));
-                    for (const subId of this.activeSubTypes) {
-                        if (validSubIds.has(subId)) {
-                            this.activeSubTypes.delete(subId);
-                        }
-                    }
-                }
-            }
-        } else {
-            if (this.activeSubTypes.has(type)) {
-                this.activeSubTypes.delete(type);
-            } else {
-                this.activeSubTypes.add(type);
-            }
-        }
-        log.debug(`Toggled right sub filter:`, Array.from(this.activeSubTypes));
+        this.rightTabs.toggleSub(parentId, type, this.parentGroups);
         this.render();
     }
 
