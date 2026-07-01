@@ -56,7 +56,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
         log.debug(`Pf1SystemAdapter.modifyActions | Found ${weapons.length} weapons on actor`);
 
         for (const weapon of weapons) {
-            const children = weapon.system.links?.children ?? [];
+            const children = this.getWeaponLinkChildren(weapon);
             if (children.length > 0) {
                 log.debug(`Pf1SystemAdapter.modifyActions | Weapon "${weapon.name}" (${weapon.id}) has ${children.length} children in links:`, children);
             }
@@ -97,7 +97,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
             if (item.type === 'spell') {
                 // 1. Spells in PF1e
                 const spellbookId = item.system.spellbook ?? 'primary';
-                const spellbook = actor.system.attributes?.spells?.spellbooks?.[spellbookId];
+                const spellbook = this.getSpellbook(actor, spellbookId);
                 if (!spellbook) continue;
 
                 const econRoot = new TabRef({ id: 'economy', label: 'Economy' });
@@ -137,7 +137,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                     continue;
                 }
 
-                const itemActions = item.system.actions ?? [];
+                const itemActions = this.getItemActions(item);
                 if (itemActions.length === 0) continue;
 
                 const uses = this._calculateUses(item, actor);
@@ -184,7 +184,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 if (linkedAttacks.length > 0) {
                     // Merge actions from all linked attack items
                     for (const attackItem of linkedAttacks) {
-                        const attackActions = attackItem.system.actions ?? [];
+                        const attackActions = this.getItemActions(attackItem);
                         for (const act of attackActions) {
                             const actType = act.activation?.type;
                             const activationType = this._parseActivationType(actType);
@@ -211,7 +211,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                     }
                 } else {
                     // Fallback to the weapon's own actions if no attacks are linked
-                    const itemActions = item.system.actions ?? [];
+                    const itemActions = this.getItemActions(item);
                     for (const act of itemActions) {
                         const actType = act.activation?.type;
                         const activationType = this._parseActivationType(actType);
@@ -293,11 +293,11 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 action.itemTypes = ['buff'];
                 
                 action.roll = async (event) => {
-                    const active = item.system.active;
+                    const active = this.getBuffActiveState(item);
                     await item.update({ "system.active": !active });
                 };
                 
-                action.isActive = item.system.active;
+                action.isActive = this.getBuffActiveState(item);
                 action.uses = { available: null, max: null };
                 action.excludeFromAll = true; // Exclude buffs from the 'All Items' tab in PF1e
 
@@ -339,6 +339,43 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
     /* ------------------------------------------------------------------------- */
     /*  System Data Structure Accessors / Schema Extraction Helpers              */
     /* ------------------------------------------------------------------------- */
+
+    /**
+     * Extract weapon link children for a PF1e weapon item.
+     * @param {Item} weapon
+     * @returns {Object[]} Link children objects
+     */
+    getWeaponLinkChildren(weapon) {
+        return weapon.system.links?.children ?? [];
+    }
+
+    /**
+     * Get a spellbook from a PF1e Actor by ID.
+     * @param {Actor} actor
+     * @param {string} spellbookId
+     * @returns {Object|undefined}
+     */
+    getSpellbook(actor, spellbookId) {
+        return actor.system.attributes?.spells?.spellbooks?.[spellbookId];
+    }
+
+    /**
+     * Extract sub-actions attached to a PF1e item or attack.
+     * @param {Item} item
+     * @returns {Object[]} Sub-action objects
+     */
+    getItemActions(item) {
+        return item.system.actions ?? [];
+    }
+
+    /**
+     * Extract active state of a PF1e Buff item.
+     * @param {Item} item
+     * @returns {boolean}
+     */
+    getBuffActiveState(item) {
+        return item.system.active ?? false;
+    }
 
     /**
      * Calculate remaining charges/uses for PF1e items.

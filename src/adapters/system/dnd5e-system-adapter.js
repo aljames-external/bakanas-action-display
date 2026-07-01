@@ -87,7 +87,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         if (!ALLOWED_TYPES.has(type)) return false;
         if (item.getFlag('dnd5e', 'cachedFor')) return false;
 
-        const isEquipped = item.system.equipped !== false;
+        const isEquipped = this.getItemEquipped(item);
         if (['weapon', 'equipment', 'consumable', 'tool'].includes(type) && !isEquipped) {
             return false;
         }
@@ -167,7 +167,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
             }
 
             // 4. Process activities if they exist (D&D 5e v4+)
-            const activities = item.system.activities;
+            const activities = this.getItemActivities(item);
             const activeActivities = activities 
                 ? Array.from(activities.values()).filter(a => a.activation?.type && a.activation.type !== 'none')
                 : [];
@@ -342,6 +342,24 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     /* ------------------------------------------------------------------------- */
     /*  System Data Structure Accessors / Schema Extraction Helpers              */
     /* ------------------------------------------------------------------------- */
+
+    /**
+     * Check if a D&D 5e item is equipped.
+     * @param {Item} item
+     * @returns {boolean}
+     */
+    getItemEquipped(item) {
+        return item.system.equipped !== false;
+    }
+
+    /**
+     * Get activities collection from a D&D 5e item.
+     * @param {Item} item
+     * @returns {Map|undefined}
+     */
+    getItemActivities(item) {
+        return item.system.activities;
+    }
 
     /**
      * Calculate available and maximum uses for an item.
