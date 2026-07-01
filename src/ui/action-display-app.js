@@ -336,7 +336,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
         // Sort sub-tabs within each parent and add 'All'
         const subOrder = {
-            'economy': ['all', 'action', 'bonus', 'reaction', 'special', 'legendary', 'mythic', 'crew', 'lair', 'minute', 'hour', 'day', 'none'],
+            'economy': ['all', 'action', 'bonus', 'reaction', 'other', 'special', 'legendary', 'mythic', 'crew', 'lair', 'minute', 'hour', 'day', 'none'],
             'components': ['vocal', 'somatic', 'material'],
             'standard': ['all', 'action', 'bonus', 'reaction'],
             'time': ['all', 'minute', 'hour', 'day'],

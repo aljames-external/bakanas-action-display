@@ -31,7 +31,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
                 if (!activationType) continue;
 
                 action.activationType = activationType; // Keep for sorting
-                action.tabs = [activationType];
+                action.tabs = [['economy', activationType]];
                 action.itemTypes = [item.type === 'action' ? 'feat' : item.type];
                 action.uses = this._calculateUses(item);
 
@@ -51,7 +51,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
                 if (!entry) continue;
 
                 const spellLevel = item.rank ?? 0;
-                action.tabs = ['action']; // Spells are active actions
+                action.tabs = [['economy', 'action']]; // Spells are active actions
                 action.activationType = 'action';
                 
                 let subTab = spellLevel.toString();
@@ -91,7 +91,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
                 type: 'weapon',
                 img: strike.item?.img ?? strike.img ?? strike.imageUrl ?? 'systems/pf2e/icons/default-icons/melee.svg',
                 activationType: 'action', // Strikes cost 1 action
-                tabs: ['action'],
+                tabs: [['economy', 'action']],
                 itemTypes: ['weapon'],
                 hidden: false,
                 uses: uses, // Display remaining ammunition
@@ -112,7 +112,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
 
         // Sort actions: activation type first, then item type, then name
         return filtered.sort((a, b) => {
-            const actSort = this._getActivationSort(a.activationType ?? a.tabs[0]) - this._getActivationSort(b.activationType ?? b.tabs[0]);
+            const actSort = this._getActivationSort(a.activationType ?? (Array.isArray(a.tabs[0]) ? a.tabs[0][1] : a.tabs[0])) - this._getActivationSort(b.activationType ?? (Array.isArray(b.tabs[0]) ? b.tabs[0][1] : b.tabs[0]));
             if (actSort !== 0) return actSort;
 
             const typeSort = this._getTypeSort(a.type) - this._getTypeSort(b.type);
@@ -242,9 +242,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
      */
     getActionTypeLabel(parentId) {
         const labels = {
-            'action': localize('PF2E.TabActionsLabel', 'Actions'),
-            'reaction': localize('PF2E.ActionsReactionsHeader', 'Reactions'),
-            'other': localize('PF2E.ActionsFreeActionsHeader', 'Free Actions')
+            'economy': localize('BAD.pf2e.actionEconomy', 'Action Economy')
         };
         return labels[parentId] || super.getActionTypeLabel(parentId);
     }
@@ -255,11 +253,22 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
     getActionTypeIcon(parentId) {
         const icons = {
             'all': 'fas fa-border-all',
-            'action': 'fas fa-bolt',
-            'reaction': 'fas fa-shield-halved',
-            'other': 'fas fa-wind'
+            'economy': 'fas fa-stopwatch'
         };
         return icons[parentId] || super.getActionTypeIcon(parentId);
+    }
+
+    /**
+     * Get the localized label for a right-side action sub-tab in PF2e.
+     */
+    getActionSubTabLabel(subId) {
+        const labels = {
+            'all': localize('BAD.hud.allActions', 'All Actions'),
+            'action': localize('PF2E.TabActionsLabel', 'Actions'),
+            'reaction': localize('PF2E.ActionsReactionsHeader', 'Reactions'),
+            'other': localize('PF2E.ActionsFreeActionsHeader', 'Free Actions')
+        };
+        return labels[subId] || super.getActionSubTabLabel(subId);
     }
 
     /**

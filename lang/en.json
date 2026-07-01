@@ -46,6 +46,9 @@
             "unprepareSpell": "Unprepare Spell",
             "actionEconomy": "Action Economy",
             "spellComponents": "Spell Components"
+        },
+        "pf2e": {
+            "actionEconomy": "Action Economy"
         }
     }
 }
