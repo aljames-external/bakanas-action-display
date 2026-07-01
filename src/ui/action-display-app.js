@@ -2,6 +2,7 @@ import { actionDisplay } from '../action-display.js';
 import { log } from '../lib/logger.js';
 import { MODULE_ID } from '../constants.js';
 import { TabSideState } from './tab-side-state.js';
+import { HUDTab, HUDSubTab } from './hud-tab.js';
 
 // Cache to persist tab states per actor across HUD rebuilds
 const activeTabCache = new Map();
@@ -202,7 +203,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         
         // Always ensure 'all' parent is present if we have actions
         if (rawActions.length > 0) {
-            leftGroups['all'] = {
+            leftGroups['all'] = new HUDTab({
                 id: 'all',
                 label: adapter.getItemTypeLabel('all'),
                 icon: adapter.getItemTypeIcon('all'),
@@ -210,7 +211,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 expanded: this.activeLeftParentTypes.has('all'),
                 activeParent: false,
                 subTabs: []
-            };
+            });
         }
 
         for (const combo of existingItemCombinations) {
@@ -220,7 +221,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
             if (!leftGroups[parentId]) {
                 const isActive = this.activeLeftParentTypes.has(parentId);
-                leftGroups[parentId] = {
+                leftGroups[parentId] = new HUDTab({
                     id: parentId,
                     label: adapter.getItemTypeLabel(parentId),
                     icon: adapter.getItemTypeIcon(parentId),
@@ -228,13 +229,13 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                     expanded: isActive,
                     activeParent: false, // Will compute post-loop
                     subTabs: []
-                };
+                });
             }
 
             if (subId) {
                 const isActive = this.activeLeftParentTypes.has(parentId);
                 const isSubActive = this.activeLeftSubTypes.has(subId);
-                leftGroups[parentId].subTabs.push({
+                leftGroups[parentId].addSubTab({
                     id: subId,
                     label: adapter.getItemSubTabLabel(parentId, subId),
                     active: isActive && isSubActive
@@ -283,7 +284,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         
         // Always ensure 'all' parent is present if we have actions
         if (rawActions.length > 0) {
-            parentGroups['all'] = {
+            parentGroups['all'] = new HUDTab({
                 id: 'all',
                 label: adapter.getActionTypeLabel('all'),
                 icon: adapter.getActionTypeIcon('all'),
@@ -291,7 +292,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 expanded: this.activeParentTypes.has('all'),
                 activeParent: false,
                 subTabs: []
-            };
+            });
         }
 
         for (const combo of existingCombinations) {
@@ -301,7 +302,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
             if (!parentGroups[parentId]) {
                 const isActive = this.activeParentTypes.has(parentId);
-                parentGroups[parentId] = {
+                parentGroups[parentId] = new HUDTab({
                     id: parentId,
                     label: adapter.getActionTypeLabel(parentId),
                     icon: adapter.getActionTypeIcon(parentId),
@@ -309,14 +310,14 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                     expanded: isActive,
                     activeParent: false, // Will compute post-loop
                     subTabs: []
-                };
+                });
             }
 
             if (subId) {
                 const isActive = this.activeParentTypes.has(parentId);
                 const isSubActive = this.activeSubTypes.has(subId);
                 const isComponents = parentId === 'components';
-                parentGroups[parentId].subTabs.push({
+                parentGroups[parentId].addSubTab({
                     id: subId,
                     label: adapter.getActionSubTabLabel(subId),
                     active: !isComponents && isActive && isSubActive,
@@ -351,11 +352,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 const validSubIds = new Set(parent.subTabs.map(t => t.id));
                 const activeSubsForParent = Array.from(this.activeSubTypes).filter(id => validSubIds.has(id));
 
-                parent.subTabs.unshift({
+                parent.subTabs.unshift(new HUDSubTab({
                     id: 'all',
                     label: adapter.getActionSubTabLabel('all') ?? 'All',
                     active: isActive && activeSubsForParent.length === 0
-                });
+                }));
                 
                 const order = subOrder[parent.id] ?? [];
                 parent.subTabs.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
@@ -574,7 +575,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     static async _onChangeLeftItemType(event, target) {
         event.preventDefault();
         this._clearMenuState();
-        this.leftTabs.selectParent(target.dataset.type, this.leftGroups);
+        const parentId = target.dataset.type;
+        const tab = this.leftGroups?.[parentId] || new HUDTab({ id: parentId });
+        tab.onLeftClick(this, this.leftTabs, this.leftGroups, event);
         this.render();
     }
 
@@ -585,9 +588,12 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     static async _onChangeLeftSubItemType(event, target) {
         event.preventDefault();
         this._clearMenuState();
+        const type = target.dataset.type;
         const parentGroup = target.closest('.bad-left-tab-group');
         const parentId = parentGroup?.querySelector('.bad-left-tab')?.dataset.type;
-        this.leftTabs.selectSub(parentId, target.dataset.type, this.leftGroups);
+        const parentTab = this.leftGroups?.[parentId];
+        const subTab = parentTab?.getSubTab(type) || new HUDSubTab({ id: type });
+        subTab.onLeftClick(this, this.leftTabs, parentId, this.leftGroups, event);
         this.render();
     }
 
@@ -595,7 +601,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      * Toggle a left-side parent tab in the active set (for right-click multi-select).
      */
     _onToggleLeftParent(parentId) {
-        this.leftTabs.toggleParent(parentId, this.leftGroups);
+        const tab = this.leftGroups?.[parentId] || new HUDTab({ id: parentId });
+        tab.onRightClick(this, this.leftTabs, this.leftGroups);
         this.render();
     }
 
@@ -605,7 +612,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     _onToggleLeftSub(target, type) {
         const parentGroup = target.closest('.bad-left-tab-group');
         const parentId = parentGroup?.querySelector('.bad-left-tab')?.dataset.type;
-        this.leftTabs.toggleSub(parentId, type, this.leftGroups);
+        const parentTab = this.leftGroups?.[parentId];
+        const subTab = parentTab?.getSubTab(type) || new HUDSubTab({ id: type });
+        subTab.onRightClick(this, this.leftTabs, parentId, this.leftGroups);
         this.render();
     }
 
@@ -616,7 +625,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     static async _onChangeActionType(event, target) {
         event.preventDefault();
         this._clearMenuState();
-        this.rightTabs.selectParent(target.dataset.type, this.parentGroups);
+        const parentId = target.dataset.type;
+        const tab = this.parentGroups?.[parentId] || new HUDTab({ id: parentId });
+        tab.onLeftClick(this, this.rightTabs, this.parentGroups, event);
         this.render();
     }
 
@@ -627,9 +638,12 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     static async _onChangeSubActionType(event, target) {
         event.preventDefault();
         this._clearMenuState();
+        const type = target.dataset.type;
         const parentGroup = target.closest('.bad-right-tab-group');
         const parentId = parentGroup?.querySelector('.bad-right-tab')?.dataset.type;
-        this.rightTabs.selectSub(parentId, target.dataset.type, this.parentGroups);
+        const parentTab = this.parentGroups?.[parentId];
+        const subTab = parentTab?.getSubTab(type) || new HUDSubTab({ id: type });
+        subTab.onLeftClick(this, this.rightTabs, parentId, this.parentGroups, event);
         this.render();
     }
 
@@ -637,7 +651,8 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
      * Toggle a right-side parent tab in the active set (for right-click multi-select).
      */
     _onToggleRightParent(parentId) {
-        this.rightTabs.toggleParent(parentId, this.parentGroups);
+        const tab = this.parentGroups?.[parentId] || new HUDTab({ id: parentId });
+        tab.onRightClick(this, this.rightTabs, this.parentGroups);
         this.render();
     }
 
@@ -647,7 +662,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     _onToggleRightSub(target, type) {
         const parentGroup = target.closest('.bad-right-tab-group');
         const parentId = parentGroup?.querySelector('.bad-right-tab')?.dataset.type;
-        this.rightTabs.toggleSub(parentId, type, this.parentGroups);
+        const parentTab = this.parentGroups?.[parentId];
+        const subTab = parentTab?.getSubTab(type) || new HUDSubTab({ id: type });
+        subTab.onRightClick(this, this.rightTabs, parentId, this.parentGroups);
         this.render();
     }
 
