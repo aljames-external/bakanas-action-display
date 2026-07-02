@@ -117,7 +117,11 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 if (props.has('material')) spellComponents.push(new TabRef({ label: 'material', parent: compRoot }));
             }
 
-            // 1. Filter out unprepared spells (unless innate/at-will/pact, or showUnprepared is enabled)
+            // Check if user has hidden this item
+            const hiddenIds = actor.getFlag(MODULE_ID, 'hiddenItems') ?? [];
+            const isUserHidden = hiddenIds.includes(item.id);
+
+            // 1. Filter out unprepared spells (unless innate/at-will/pact, showUnprepared is enabled, or item is user-hidden)
             let isSpellUnprepared = false;
             if (type === 'spell') {
                 const prepMode = item.system.method;
@@ -128,7 +132,22 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     isSpellUnprepared = true;
                 }
                 
-                if (!showUnprepared && isSpellUnprepared) {
+                if (!showUnprepared && isSpellUnprepared && !isUserHidden) {
+                    continue;
+                }
+            }
+
+            // 2. Filter out unequipped weapons and equipment (unless showUnequipped is enabled or item is user-hidden)
+            let isUnequipped = false;
+            if (['weapon', 'equipment'].includes(type)) {
+                const isEquipped = this.getItemEquipped(item);
+                const showUnequipped = actor.getFlag(MODULE_ID, `showUnequipped_${type}`);
+                
+                if (!isEquipped) {
+                    isUnequipped = true;
+                }
+                
+                if (!showUnequipped && isUnequipped && !isUserHidden) {
                     continue;
                 }
             }
@@ -250,13 +269,15 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 }
 
                 modified.push(activityAction);
-            } else if (['backpack', 'loot'].includes(type)) {
-                // Passive containers and loot (no activities) are shown in the inventory
+            } else {
+                // Passive items without active activities (e.g., armor, passive rings, loot, backpacks)
+                const subType = item.system.type?.value;
                 const econRoot = new TabRef({ label: 'economy' });
                 const passiveAction = {
                     ...action,
+                    unprepared: isSpellUnprepared || isUnequipped,
                     tabs: [new TabRef({ label: 'none', parent: econRoot })],
-                    itemTypes: [type],
+                    itemTypes: subType ? [type, subType] : [type],
                     uses: { available: null, max: null }
                 };
                 modified.push(passiveAction);
@@ -298,7 +319,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         const weaponParent = context.itemTypes.find(t => t.id === 'weapon');
-        if (weaponParent && weaponParent.subTabs.length > 0) {
+        if (weaponParent) {
             const showUnequipped = app.actor.getFlag(MODULE_ID, 'showUnequipped_weapon') ?? false;
             weaponParent.addSubTab({
                 id: 'all',
@@ -310,7 +331,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         const equipmentParent = context.itemTypes.find(t => t.id === 'equipment');
-        if (equipmentParent && equipmentParent.subTabs.length > 0) {
+        if (equipmentParent) {
             const showUnequipped = app.actor.getFlag(MODULE_ID, 'showUnequipped_equipment') ?? false;
             equipmentParent.addSubTab({
                 id: 'all',

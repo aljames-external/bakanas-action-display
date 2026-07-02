@@ -93,6 +93,8 @@ class ActionDisplay {
             if (hiddenSet.has(itemId)) {
                 action.isHidden = true;
                 action.itemTypes = ['hidden'];
+                // Ensure hidden actions are never skipped due to preparedness/equipped status
+                action.unprepared = false;
             }
 
             filtered.push(action);

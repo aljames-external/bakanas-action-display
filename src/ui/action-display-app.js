@@ -349,11 +349,11 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
     _matchesFilters(action) {
         if (!action) return false;
 
-        // Hidden Filter: If 'hidden' tab is selected, ONLY show actions that have action.hidden === true
+        // Hidden Filter: If 'hidden' tab is selected, ONLY show actions that have action.isHidden === true
         const isHiddenActive = this.leftTabs.activeParents.has('hidden');
         if (isHiddenActive) {
-            return action.hidden === true;
-        } else if (action.hidden === true) {
+            return action.isHidden === true;
+        } else if (action.isHidden === true) {
             return false; // Hide hidden actions from all other tabs
         }
 
