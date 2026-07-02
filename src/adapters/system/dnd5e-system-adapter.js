@@ -5,31 +5,30 @@ import { MODULE_ID } from '../../constants.js';
 import { TabRef } from '../../ui/tab-ref.js';
 import { KeyboardManager } from '../../lib/compat.js';
 
-const ACTION_SUB_SORT_ORDERS = {
-    'spell': {
-        'all': 0, 'level_0': 1, 'level_1': 2, 'level_2': 3, 'level_3': 4,
-        'level_4': 5, 'level_5': 6, 'level_6': 7, 'level_7': 8, 'level_8': 9,
-        'level_9': 10, 'itemCharges': 99
+const SORT_ORDERS = {
+    tabs: {
+        'spell': {
+            'all': 0, 'level_0': 1, 'level_1': 2, 'level_2': 3, 'level_3': 4,
+            'level_4': 5, 'level_5': 6, 'level_6': 7, 'level_7': 8, 'level_8': 9,
+            'level_9': 10, 'itemCharges': 99
+        },
+        'economy': {
+            'all': 0, 'action': 1, 'bonus': 2, 'reaction': 3, 'other': 4,
+            'special': 5, 'legendary': 6, 'mythic': 7, 'crew': 8, 'lair': 9,
+            'minute': 10, 'hour': 11, 'day': 12, 'none': 13
+        },
+        'components': { 'vocal': 0, 'somatic': 1, 'material': 2 }
     },
-    'economy': {
-        'all': 0, 'action': 1, 'bonus': 2, 'reaction': 3, 'other': 4,
-        'special': 5, 'legendary': 6, 'mythic': 7, 'crew': 8, 'lair': 9,
-        'minute': 10, 'hour': 11, 'day': 12, 'none': 13
-    },
-    'components': { 'vocal': 0, 'somatic': 1, 'material': 2 }
-};
-
-
-
-const TYPE_SORT_ORDER = {
-    'weapon': 1,
-    'equipment': 2,
-    'spell': 3,
-    'consumable': 4,
-    'tool': 5,
-    'backpack': 6,
-    'loot': 7,
-    'feat': 8,
+    item_type: {
+        'weapon': 1,
+        'equipment': 2,
+        'spell': 3,
+        'consumable': 4,
+        'tool': 5,
+        'backpack': 6,
+        'loot': 7,
+        'feat': 8
+    }
 };
 
 const ALLOWED_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'feat', 'spell']);
@@ -268,7 +267,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
             });
 
             // Re-order spell sub-tabs explicitly using updateOrder
-            spellParent.updateOrder(Object.keys(ACTION_SUB_SORT_ORDERS['spell']));
+            spellParent.updateOrder(Object.keys(SORT_ORDERS.tabs['spell']));
         }
     }
 
@@ -355,11 +354,11 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     }
 
     getItemTypeSortOrder(parentId) {
-        return TYPE_SORT_ORDER[parentId] ?? super.getItemTypeSortOrder(parentId);
+        return SORT_ORDERS.item_type[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
     getActionSubTabSortOrder(parentId, subId) {
-        return ACTION_SUB_SORT_ORDERS[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
+        return SORT_ORDERS.tabs[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 
 
