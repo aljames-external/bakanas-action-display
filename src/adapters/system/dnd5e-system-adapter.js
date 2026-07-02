@@ -234,7 +234,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 // Collect all unique tabs from the remaining non-depleted activities
                 const uniqueTabsMap = new Map();
                 for (const activity of filteredActivities) {
-                    const key = activity.tabs.path.join('/');
+                    const key = activity.tabs.path;
                     if (!uniqueTabsMap.has(key)) {
                         uniqueTabsMap.set(key, activity.tabs);
                     }

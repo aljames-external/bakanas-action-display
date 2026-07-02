@@ -133,7 +133,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
             if (action.tabs) {
                 for (const tab of action.tabs) {
-                    existingCombinations.add(tab.path.slice(0, 2).join('/'));
+                    existingCombinations.add(tab.path);
                 }
             }
         }

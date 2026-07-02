@@ -1,6 +1,6 @@
 /**
  * Structured tab reference node that pre-computes and caches its root parent ID
- * and hierarchy path array at construction.
+ * and hierarchy path string at construction.
  */
 export class TabRef {
     /**
@@ -14,9 +14,9 @@ export class TabRef {
         this.label = label;
         this.parent = parent;
 
-        // Pre-compute and cache root ID and path array for O(1) high-performance lookups
+        // Pre-compute and cache root ID and path string for O(1) high-performance lookups
         this.root = parent ? parent.root : id;
-        this.path = parent ? [...parent.path, id] : [id];
+        this.path = parent ? `${parent.path}/${id}` : id;
     }
 
     /**
@@ -28,17 +28,8 @@ export class TabRef {
     }
 
     /**
-     * Support positional indexing fallback (tab[0], tab[1]) for legacy array compatibility.
-     * @param {number} index 
-     * @returns {string|undefined}
-     */
-    at(index) {
-        return this.path[index];
-    }
-
-    /**
-     * Custom JSON serialization (serializes to path array for clean JSON representations).
-     * @returns {string[]}
+     * Custom JSON serialization.
+     * @returns {string}
      */
     toJSON() {
         return this.path;
