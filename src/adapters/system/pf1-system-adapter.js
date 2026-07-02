@@ -3,13 +3,7 @@ import { localize } from '../../lib/utils.js';
 import { log } from '../../lib/logger.js';
 import { TabRef } from '../../ui/tab-ref.js';
 
-// Static sort order maps to prevent allocations during sorting
-const ACTIVATION_SORT_ORDER = {
-    'action': 1,
-    'bonus': 2,
-    'reaction': 3,
-    'other': 4
-};
+
 
 const TYPE_SORT_ORDER = {
     'weapon': 1,
@@ -313,18 +307,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
         }
 
         // Apply default resource filtering (e.g. hiding depleted actions)
-        const filtered = super.modifyActions(modified, actor);
-
-        // Sort actions: activation type first, then item type, then name
-        return filtered.sort((a, b) => {
-            const actSort = this._getActivationSort(a.activationType ?? a.tabs[0].id) - this._getActivationSort(b.activationType ?? b.tabs[0].id);
-            if (actSort !== 0) return actSort;
-
-            const typeSort = this._getTypeSort(a.type) - this._getTypeSort(b.type);
-            if (typeSort !== 0) return typeSort;
-
-            return a.name.localeCompare(b.name);
-        });
+        return super.modifyActions(modified, actor);
     }
 
     /**
@@ -420,16 +403,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
         return icons[parentId] ?? super.getItemTypeIcon(parentId);
     }
 
-    /**
-     * Sort order for PF1e action types.
-     */
-    _getActivationSort(type) {
-        return ACTIVATION_SORT_ORDER[type] ?? 99;
-    }
 
-    _getTypeSort(type) {
-        return TYPE_SORT_ORDER[type] ?? 99;
-    }
 
     /* ------------------------------------------------------------------------- */
     /*  System Data Structure Accessors / Schema Extraction Helpers              */

@@ -5,9 +5,21 @@ import { MODULE_ID } from '../../constants.js';
 import { TabRef } from '../../ui/tab-ref.js';
 import { KeyboardManager } from '../../lib/compat.js';
 
-// Static sort order maps to prevent allocations during sorting
-const PARENT_SORT_ORDER = {
-    'economy': 1
+const SUB_SORT_ORDERS = {
+    'spell': [
+        'all',
+        'level_0',
+        'level_1',
+        'level_2',
+        'level_3',
+        'level_4',
+        'level_5',
+        'level_6',
+        'level_7',
+        'level_8',
+        'level_9',
+        'itemCharges'
+    ]
 };
 
 const SUB_TAB_MAP = {
@@ -23,52 +35,6 @@ const SUB_TAB_MAP = {
     'crew': 'crew',
     'special': 'special'
 };
-
-const SUB_SORT_ORDERS = {
-    'spell': [
-        'all',
-        'level_0',
-        'level_1',
-        'level_2',
-        'level_3',
-        'level_4',
-        'level_5',
-        'level_6',
-        'level_7',
-        'level_8',
-        'level_9',
-        'itemCharges'
-    ],
-    'economy': [
-        'all',
-        'action',
-        'bonus',
-        'reaction',
-        'other',
-        'special',
-        'legendary',
-        'mythic',
-        'crew',
-        'lair',
-        'minute',
-        'hour',
-        'day',
-        'none'
-    ],
-    'components': [
-        'vocal',
-        'somatic',
-        'material'
-    ]
-};
-
-// Precomputed index maps for instant O(1) sort lookups
-const SUB_SORT_MAPS = Object.fromEntries(
-    Object.entries(SUB_SORT_ORDERS).map(([key, list]) => [
-        key,
-        new Map(list.map((id, index) => [id, index]))
-    ])
-);
 
 const TYPE_SORT_ORDER = {
     'weapon': 1,
@@ -284,25 +250,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
             }
         }
 
-        // Sort actions: parent activation type first, then sub-activation, then item type, then name
-        return modified.sort((a, b) => {
-            const aParent = a.tabs[0];
-            const bParent = b.tabs[0];
-            const parentSort = this._getParentSort(aParent) - this._getParentSort(bParent);
-            if (parentSort !== 0) return parentSort;
-
-            const aSub = a.tabs[1] ?? '';
-            const bSub = b.tabs[1] ?? '';
-            const subSort = this._getSubSort(aParent, aSub) - this._getSubSort(bParent, bSub);
-            if (subSort !== 0) return subSort;
-
-            const aItemParent = a.itemTypes[0];
-            const bItemParent = b.itemTypes[0];
-            const typeSort = this._getTypeSort(aItemParent) - this._getTypeSort(bItemParent);
-            if (typeSort !== 0) return typeSort;
-
-            return a.name.localeCompare(b.name);
-        });
+        return modified;
     }
 
     /**
@@ -319,18 +267,6 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      */
     _getSubTab(type) {
         return SUB_TAB_MAP[type] ?? 'none';
-    }
-
-    _getParentSort(type) {
-        return PARENT_SORT_ORDER[type] ?? 99;
-    }
-
-    _getSubSort(parent, sub) {
-        return SUB_SORT_ORDERS[parent]?.[sub] ?? 99;
-    }
-
-    _getTypeSort(type) {
-        return TYPE_SORT_ORDER[type] ?? 99;
     }
 
     modifyContext(context, app) {
@@ -437,21 +373,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         return TYPE_SORT_ORDER[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
-    getItemSubTabSortOrder(parentId, subId) {
-        const map = SUB_SORT_MAPS[parentId];
-        if (map) {
-            return map.get(subId) ?? 999;
-        }
-        return super.getItemSubTabSortOrder(parentId, subId);
-    }
 
-    getActionSubTabSortOrder(parentId, subId) {
-        const map = SUB_SORT_MAPS[parentId];
-        if (map) {
-            return map.get(subId) ?? 999;
-        }
-        return super.getActionSubTabSortOrder(parentId, subId);
-    }
 
     getItemTypeLabel(parentId) {
         const labels = {

@@ -8,9 +8,10 @@ const SPELL_SUB_SORT_ORDER = {
     'level_3': 4,
     'level_4': 5,
     'level_5': 6,
-    'level_7': 7,
-    'level_8': 8,
-    'level_9': 9,
+    'level_6': 7,
+    'level_7': 8,
+    'level_8': 9,
+    'level_9': 10,
     'itemCharges': 99
 };
 
