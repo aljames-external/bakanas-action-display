@@ -47,6 +47,11 @@
             "itemCharges": "Item Charges",
             "prepareSpell": "Prepare Spell",
             "unprepareSpell": "Unprepare Spell",
+            "equipItem": "Equip Item",
+            "unequipItem": "Unequip Item",
+            "allSpells": "All Spells",
+            "allWeapons": "All Weapons",
+            "allEquipment": "All Equipment",
             "spellComponents": "Spell Components"
         }
     }
