@@ -332,6 +332,220 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         return TYPE_SORT_ORDER[type] ?? 99;
     }
 
+    modifyContext(context, app) {
+        super.modifyContext(context, app);
+        const spellParent = context.itemTypes.find(t => t.id === 'spell');
+        if (spellParent && spellParent.subTabs.length > 0) {
+            // Inject "All Spells" sub-tab
+            const showUnprepared = app.actor.getFlag(MODULE_ID, 'showUnprepared') ?? false;
+            spellParent.addSubTab({
+                id: 'all',
+                label: 'All Spells',
+                active: app.leftTabs.activeParents.has('spell') && app.leftTabs.activeSubTypes.size === 0,
+                showUnprepared: showUnprepared
+            });
+
+            // Re-order spell sub-tabs explicitly using updateOrder
+            spellParent.updateOrder(SUB_SORT_ORDERS['spell']);
+        }
+    }
+
+    /**
+     * Get D&D 5e-specific context menu items for spells (Prepare/Unprepare).
+     * @param {ApplicationV2} app The ActionDisplayApp instance
+     * @returns {Object[]} An array of context menu item configurations
+     */
+    getContextMenuItems(app) {
+        return [
+            {
+                name: "BAD.dnd5e.prepareSpell",
+                icon: '<i class="fas fa-book"></i>',
+                condition: el => {
+                    if (!app.actor?.isOwner) return false;
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
+                    if (!action) return false;
+                    const item = action.originalItem;
+                    if (item?.type !== 'spell') return false;
+                    
+                    const prepMode = item.system.method;
+                    const isPrepared = !!item.system.prepared;
+                    return !['innate', 'atwill', 'pact'].includes(prepMode) && !isPrepared;
+                },
+                callback: async el => {
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
+                    const item = action?.originalItem;
+                    if (item) {
+                        log.debug(`Preparing spell: ${item.name}`);
+                        await item.update({ "system.prepared": 1 });
+                    }
+                }
+            },
+            {
+                name: "BAD.dnd5e.unprepareSpell",
+                icon: '<i class="fas fa-book-dead"></i>',
+                condition: el => {
+                    if (!app.actor?.isOwner) return false;
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
+                    if (!action) return false;
+                    const item = action.originalItem;
+                    if (item?.type !== 'spell') return false;
+                    
+                    const prepMode = item.system.method;
+                    return !['innate', 'atwill', 'pact'].includes(prepMode) && item.system.prepared === 1;
+                },
+                callback: async el => {
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
+                    const item = action?.originalItem;
+                    if (item) {
+                        log.debug(`Unpreparing spell: ${item.name}`);
+                        await item.update({ "system.prepared": 0 });
+                    }
+                }
+            }
+        ];
+    }
+
+    /**
+     * Handle right-click on the "All Spells" tab to toggle unprepared spells.
+     * @param {ApplicationV2} app The ActionDisplayApp instance
+     * @param {HTMLElement} el The tab element that was right-clicked
+     * @param {Event} event The event
+     * @returns {boolean} True if handled
+     */
+    onTabRightClick(app, el, event) {
+        if (el.dataset.type === 'all') {
+            const parentGroup = el.closest('.bad-left-tab-group');
+            const parentTab = parentGroup?.querySelector('.bad-left-tab');
+            if (parentTab?.dataset.type === 'spell' && app.actor?.isOwner) {
+                const showUnprepared = app.actor.getFlag(MODULE_ID, 'showUnprepared') ?? false;
+                
+                log.group("BAD | Right-Click 'All Spells' Tab (Adapter)", "debug");
+                log.debug("Current showUnprepared state:", showUnprepared);
+                
+                app.actor.setFlag(MODULE_ID, 'showUnprepared', !showUnprepared);
+                
+                log.debug("New showUnprepared state set to:", !showUnprepared);
+                log.groupEnd();
+                return true; // Handled!
+            }
+        }
+        return false;
+    }
+
+    getItemTypeSortOrder(parentId) {
+        return TYPE_SORT_ORDER[parentId] ?? super.getItemTypeSortOrder(parentId);
+    }
+
+    getItemSubTabSortOrder(parentId, subId) {
+        const map = SUB_SORT_MAPS[parentId];
+        if (map) {
+            return map.get(subId) ?? 999;
+        }
+        return super.getItemSubTabSortOrder(parentId, subId);
+    }
+
+    getActionSubTabSortOrder(parentId, subId) {
+        const map = SUB_SORT_MAPS[parentId];
+        if (map) {
+            return map.get(subId) ?? 999;
+        }
+        return super.getActionSubTabSortOrder(parentId, subId);
+    }
+
+    getItemTypeLabel(parentId) {
+        const labels = {
+            'all': 'All Items',
+            'weapon': localize('DND5E.ItemTypeWeapon', 'Weapon'),
+            'equipment': localize('DND5E.ItemTypeEquipment', 'Equipment'),
+            'consumable': localize('DND5E.ItemTypeConsumable', 'Consumable'),
+            'tool': localize('DND5E.ItemTypeTool', 'Tool'),
+            'backpack': localize('DND5E.ItemTypeContainer', 'Container'),
+            'loot': localize('DND5E.ItemTypeLoot', 'Loot'),
+            'feat': localize('DND5E.ItemTypeFeat', 'Feature'),
+            'spell': localize('DND5E.ItemTypeSpell', 'Spell'),
+            'other': localize('DND5E.ActionOther', 'Other'),
+            'hidden': localize('BAD.hud.hidden', 'Hidden')
+        };
+        return labels[parentId] ?? super.getItemTypeLabel(parentId);
+    }
+
+    getItemTypeIcon(parentId) {
+        const icons = {
+            'equipment': 'fas fa-shield',
+            'tool': 'fas fa-hammer',
+            'backpack': 'fas fa-sack',
+            'loot': 'fas fa-gem'
+        };
+        return icons[parentId] ?? super.getItemTypeIcon(parentId);
+    }
+
+    /**
+     * Get the localized label for a left-side item sub-tab for DnD5e.
+     */
+    getItemSubTabLabel(parentId, subId) {
+        if (parentId === 'spell') {
+            if (subId === 'all') {
+                return localize('BAD.dnd5e.allSpells', 'All Spells');
+            }
+            if (subId === 'itemCharges') {
+                return localize('BAD.dnd5e.itemCharges', 'Item Charges');
+            }
+            if (subId.startsWith('level_')) {
+                const num = subId.replace('level_', '');
+                if (num === '0') return localize('DND5E.SpellCantrip', 'Cantrip');
+                const key = `DND5E.SpellLevel${num}`;
+                const ordinals = { '1': '1st', '2': '2nd', '3': '3rd' };
+                const ord = ordinals[num] || `${num}th`;
+                return localize(key, `${ord} Level`);
+            }
+        }
+        return super.getItemSubTabLabel(parentId, subId);
+    }
+
+    /**
+     * Get the localized label for a right-side action type (parent tab) for DnD5e.
+     */
+    getActionTypeLabel(parentId) {
+        const labels = {
+            'economy': localize('BAD.common.actionEconomy', 'Action Economy'),
+            'components': localize('BAD.dnd5e.spellComponents', 'Spell Components')
+        };
+        return labels[parentId] ?? super.getActionTypeLabel(parentId);
+    }
+
+    /**
+     * Get the CSS icon class for a right-side action type (parent tab) for DnD5e.
+     */
+    getActionTypeIcon(parentId) {
+        const icons = {
+            'economy': 'fas fa-stopwatch',
+            'components': 'fas fa-magic'
+        };
+        return icons[parentId] ?? super.getActionTypeIcon(parentId);
+    }
+
+    getActionSubTabLabel(subId) {
+        const labels = {
+            'all': localize('BAD.hud.allActions', 'All Actions'),
+            'action': localize('DND5E.Action', 'Action'),
+            'bonus': localize('DND5E.BonusAction', 'Bonus Action'),
+            'reaction': localize('DND5E.Reaction', 'Reaction'),
+            'minute': localize('DND5E.TimeMinute', 'Minute'),
+            'hour': localize('DND5E.TimeHour', 'Hour'),
+            'day': localize('DND5E.TimeDay', 'Day'),
+            'legendary': localize('DND5E.LegendaryAction', 'Legendary'),
+            'mythic': localize('DND5E.MythicAction', 'Mythic'),
+            'lair': localize('DND5E.LairAction', 'Lair'),
+            'crew': localize('DND5E.CrewAction', 'Crew'),
+            'special': localize('DND5E.Special', 'Special'),
+            'none': localize('DND5E.None', 'None'),
+            'vocal': localize('DND5E.ComponentVerbal', 'Verbal'),
+            'somatic': localize('DND5E.ComponentSomatic', 'Somatic'),
+            'material': localize('DND5E.ComponentMaterial', 'Material')
+        };
+        return labels[subId] ?? super.getActionSubTabLabel(subId);
+    }
+
     /* ------------------------------------------------------------------------- */
     /*  System Data Structure Accessors / Schema Extraction Helpers              */
     /* ------------------------------------------------------------------------- */
@@ -401,7 +615,6 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     /**
      * Check if an item has limited uses (either at the item level or activity level).
      * @param {Item} item The item to check
-     * @param {Actor} actor The actor
      * @returns {boolean} True if the item has limited uses
      * @private
      */
@@ -428,16 +641,6 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         return false;
     }
 
-    /**
-     * Calculate available and maximum uses for a D&D 5e Activity.
-     * @param {Activity} activity The activity instance
-     * @param {Item} item The parent item
-     * @param {Actor} actor The actor
-     * @param {Map<string, number>} ammoQuantities Pre-calculated ammunition quantities
-     * @param {number} highestAvailableSlot The highest available spell slot level on the actor
-     * @returns {{available: number|null, max: number|null}} The uses count
-     * @private
-     */
     /**
      * Parse and calculate limited uses configuration.
      * @private
@@ -600,6 +803,15 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     }
 
     /**
+     * Check if the actor has any available spell slots (standard or pact) of a given level or higher.
+     * Optimized to O(1) by comparing against the pre-calculated highest available slot.
+     * @private
+     */
+    _hasAvailableUpcastSlots(level, highestAvailableSlot) {
+        return highestAvailableSlot >= level;
+    }
+
+    /**
      * Fallback method to calculate spell slots for standard slot-based spells.
      * Used when the Cast activity doesn't have an explicit spellSlots consumption target.
      * @param {Item} item The spell item
@@ -634,211 +846,6 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    getItemTypeSortOrder(parentId) {
-        return TYPE_SORT_ORDER[parentId] ?? super.getItemTypeSortOrder(parentId);
-    }
-
-    getItemSubTabSortOrder(parentId, subId) {
-        const map = SUB_SORT_MAPS[parentId];
-        if (map) {
-            return map.get(subId) ?? 999;
-        }
-        return super.getItemSubTabSortOrder(parentId, subId);
-    }
-
-    getActionSubTabSortOrder(parentId, subId) {
-        const map = SUB_SORT_MAPS[parentId];
-        if (map) {
-            return map.get(subId) ?? 999;
-        }
-        return super.getActionSubTabSortOrder(parentId, subId);
-    }
-
-    getItemTypeLabel(parentId) {
-        const labels = {
-            'all': 'All Items',
-            'weapon': localize('DND5E.ItemTypeWeapon', 'Weapon'),
-            'equipment': localize('DND5E.ItemTypeEquipment', 'Equipment'),
-            'consumable': localize('DND5E.ItemTypeConsumable', 'Consumable'),
-            'tool': localize('DND5E.ItemTypeTool', 'Tool'),
-            'backpack': localize('DND5E.ItemTypeContainer', 'Container'),
-            'loot': localize('DND5E.ItemTypeLoot', 'Loot'),
-            'feat': localize('DND5E.ItemTypeFeat', 'Feature'),
-            'spell': localize('DND5E.ItemTypeSpell', 'Spell'),
-            'other': localize('DND5E.ActionOther', 'Other'),
-            'hidden': localize('BAD.hud.hidden', 'Hidden')
-        };
-        return labels[parentId] ?? super.getItemTypeLabel(parentId);
-    }
-
-    getItemTypeIcon(parentId) {
-        const icons = {
-            'equipment': 'fas fa-shield',
-            'tool': 'fas fa-hammer',
-            'backpack': 'fas fa-sack',
-            'loot': 'fas fa-gem'
-        };
-        return icons[parentId] ?? super.getItemTypeIcon(parentId);
-    }
-
-    /**
-     * Get the localized label for a left-side item sub-tab for DnD5e.
-     */
-    getItemSubTabLabel(parentId, subId) {
-        if (parentId === 'spell') {
-            if (subId === 'all') {
-                return localize('BAD.dnd5e.allSpells', 'All Spells');
-            }
-            if (subId === 'itemCharges') {
-                return localize('BAD.dnd5e.itemCharges', 'Item Charges');
-            }
-            if (subId.startsWith('level_')) {
-                const num = subId.replace('level_', '');
-                if (num === '0') return localize('DND5E.SpellCantrip', 'Cantrip');
-                const key = `DND5E.SpellLevel${num}`;
-                const ordinals = { '1': '1st', '2': '2nd', '3': '3rd' };
-                const ord = ordinals[num] || `${num}th`;
-                return localize(key, `${ord} Level`);
-            }
-        }
-        return super.getItemSubTabLabel(parentId, subId);
-    }
-
-
-
-    /**
-     * Get the localized label for a right-side action type (parent tab) for DnD5e.
-     */
-    getActionTypeLabel(parentId) {
-        const labels = {
-            'economy': localize('BAD.common.actionEconomy', 'Action Economy'),
-            'components': localize('BAD.dnd5e.spellComponents', 'Spell Components')
-        };
-        return labels[parentId] ?? super.getActionTypeLabel(parentId);
-    }
-
-    /**
-     * Get the CSS icon class for a right-side action type (parent tab) for DnD5e.
-     */
-    getActionTypeIcon(parentId) {
-        const icons = {
-            'economy': 'fas fa-stopwatch',
-            'components': 'fas fa-magic'
-        };
-        return icons[parentId] ?? super.getActionTypeIcon(parentId);
-    }
-
-    getActionSubTabLabel(subId) {
-        const labels = {
-            'all': localize('BAD.hud.allActions', 'All Actions'),
-            'action': localize('DND5E.Action', 'Action'),
-            'bonus': localize('DND5E.BonusAction', 'Bonus Action'),
-            'reaction': localize('DND5E.Reaction', 'Reaction'),
-            'minute': localize('DND5E.TimeMinute', 'Minute'),
-            'hour': localize('DND5E.TimeHour', 'Hour'),
-            'day': localize('DND5E.TimeDay', 'Day'),
-            'legendary': localize('DND5E.LegendaryAction', 'Legendary'),
-            'mythic': localize('DND5E.MythicAction', 'Mythic'),
-            'lair': localize('DND5E.LairAction', 'Lair'),
-            'crew': localize('DND5E.CrewAction', 'Crew'),
-            'special': localize('DND5E.Special', 'Special'),
-            'none': localize('DND5E.None', 'None'),
-            'vocal': localize('DND5E.ComponentVerbal', 'Verbal'),
-            'somatic': localize('DND5E.ComponentSomatic', 'Somatic'),
-            'material': localize('DND5E.ComponentMaterial', 'Material')
-        };
-        return labels[subId] ?? super.getActionSubTabLabel(subId);
-    }
-
-    /**
-     * Check if the actor has any available spell slots (standard or pact) of a given level or higher.
-     * Optimized to O(1) by comparing against the pre-calculated highest available slot.
-     * @private
-     */
-    _hasAvailableUpcastSlots(level, highestAvailableSlot) {
-        return highestAvailableSlot >= level;
-    }
-
-    /**
-     * Get D&D 5e-specific context menu items for spells (Prepare/Unprepare).
-     * @param {ApplicationV2} app The ActionDisplayApp instance
-     * @returns {Object[]} An array of context menu item configurations
-     */
-    getContextMenuItems(app) {
-        return [
-            {
-                name: "BAD.dnd5e.prepareSpell",
-                icon: '<i class="fas fa-book"></i>',
-                condition: el => {
-                    if (!app.actor?.isOwner) return false;
-                    const action = app.actions.find(a => a.id === el.dataset.actionId);
-                    if (!action) return false;
-                    const item = action.originalItem;
-                    if (item?.type !== 'spell') return false;
-                    
-                    const prepMode = item.system.method;
-                    const isPrepared = !!item.system.prepared;
-                    return !['innate', 'atwill', 'pact'].includes(prepMode) && !isPrepared;
-                },
-                callback: async el => {
-                    const action = app.actions.find(a => a.id === el.dataset.actionId);
-                    const item = action?.originalItem;
-                    if (item) {
-                        log.debug(`Preparing spell: ${item.name}`);
-                        await item.update({ "system.prepared": 1 });
-                    }
-                }
-            },
-            {
-                name: "BAD.dnd5e.unprepareSpell",
-                icon: '<i class="fas fa-book-dead"></i>',
-                condition: el => {
-                    if (!app.actor?.isOwner) return false;
-                    const action = app.actions.find(a => a.id === el.dataset.actionId);
-                    if (!action) return false;
-                    const item = action.originalItem;
-                    if (item?.type !== 'spell') return false;
-                    
-                    const prepMode = item.system.method;
-                    return !['innate', 'atwill', 'pact'].includes(prepMode) && item.system.prepared === 1;
-                },
-                callback: async el => {
-                    const action = app.actions.find(a => a.id === el.dataset.actionId);
-                    const item = action?.originalItem;
-                    if (item) {
-                        log.debug(`Unpreparing spell: ${item.name}`);
-                        await item.update({ "system.prepared": 0 });
-                    }
-                }
-            }
-        ];
-    }
-
-    modifyContext(context, app) {
-        super.modifyContext(context, app);
-        const spellParent = context.itemTypes.find(t => t.id === 'spell');
-        if (spellParent && spellParent.subTabs.length > 0) {
-            // Inject "All Spells" sub-tab
-            const showUnprepared = app.actor.getFlag(MODULE_ID, 'showUnprepared') ?? false;
-            spellParent.addSubTab({
-                id: 'all',
-                label: 'All Spells',
-                active: app.leftTabs.activeParents.has('spell') && app.leftTabs.activeSubTypes.size === 0,
-                showUnprepared: showUnprepared
-            });
-
-            // Re-order spell sub-tabs explicitly using updateOrder
-            spellParent.updateOrder(SUB_SORT_ORDERS['spell']);
-        }
-    }
-
-    /**
-     * Handle right-click on the "All Spells" tab to toggle unprepared spells.
-     * @param {ApplicationV2} app The ActionDisplayApp instance
-     * @param {HTMLElement} el The tab element that was right-clicked
-     * @param {Event} event The event
-     * @returns {boolean} True if handled
-     */
     /**
      * Create a proxy around a browser event to inject keyboard modifiers (Alt/Ctrl/Shift)
      * while preserving all other native event properties and methods (like target, preventDefault).
@@ -866,25 +873,5 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 return val;
             }
         });
-    }
-
-    onTabRightClick(app, el, event) {
-        if (el.dataset.type === 'all') {
-            const parentGroup = el.closest('.bad-left-tab-group');
-            const parentTab = parentGroup?.querySelector('.bad-left-tab');
-            if (parentTab?.dataset.type === 'spell' && app.actor?.isOwner) {
-                const showUnprepared = app.actor.getFlag(MODULE_ID, 'showUnprepared') ?? false;
-                
-                log.group("BAD | Right-Click 'All Spells' Tab (Adapter)", "debug");
-                log.debug("Current showUnprepared state:", showUnprepared);
-                
-                app.actor.setFlag(MODULE_ID, 'showUnprepared', !showUnprepared);
-                
-                log.debug("New showUnprepared state set to:", !showUnprepared);
-                log.groupEnd();
-                return true; // Handled!
-            }
-        }
-        return false;
     }
 }
