@@ -64,6 +64,12 @@ Full support for D&D 5e's 4.0 Activity architecture. Items with multiple activit
 
 ![D&D 5e Activity Dropdown](docs/readme-assets/blind_defened.png)
 
+#### Equipment & Weapon Tabs with Subcategories
+The HUD includes dedicated left-side parent tabs for **Weapons** and **Equipment**:
+*   **Subcategory Sub-tabs**: Weapons are categorized into sub-tabs by type (Simple Melee, Martial Melee, Simple Ranged, Martial Ranged, Natural, etc.), and Equipment is categorized by type (Light, Medium, Heavy, Shield, Clothing, Trinket, Wand, Wondrous, etc.).
+*   **Equipped / Unequipped Toggle**: By default, the HUD displays only equipped items to keep combat focused. Right-clicking the **"All Weapons"** or **"All Equipment"** sub-tab toggles an orange highlight state (`showUnequipped`), revealing all equipped and unequipped gear in your inventory.
+*   **Equip & Unequip Actions**: Right-clicking any weapon or equipment card opens the context menu with **Equip** or **Unequip** options to manage item equipment states directly from the HUD.
+
 #### Prepared Spells Toggle
 You can choose whether to show or hide unprepared spells in the HUD. A quick **right-click shortcut on the "All Spells" tab** allows you to toggle the visibility of unprepared spells instantly without opening the settings menu.
 

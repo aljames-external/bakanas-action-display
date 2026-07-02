@@ -322,3 +322,10 @@ flowchart TD
 - [**`modifyContext(context)`**](../src/adapters/system/base-system-adapter.js#L162-L164): Customizes tab layout context and sub-tab ordering.
 - [**`getItemTypeLabel(parentId)`**](../src/adapters/system/base-system-adapter.js#L80-L87) / [**`getItemTypeIcon(parentId)`**](../src/adapters/system/base-system-adapter.js#L94-L101): Returns tab labels and font-awesome icons.
 - [**`getSpellLevelLabel(level)`**](../src/adapters/system/base-system-adapter.js#L109-L111): Localizes spell level sub-tab labels.
+
+### [`src/adapters/system/dnd5e-system-adapter.js`](../src/adapters/system/dnd5e-system-adapter.js) — D&D 5e System Adapter (`Dnd5eSystemAdapter`)
+- [**`shouldExtractItem(item)`**](../src/adapters/system/dnd5e-system-adapter.js#L49-L59): Filters out unallowed item types, helper items, and unequipped tools/consumables.
+- [**`modifyActions(actions, actor)`**](../src/adapters/system/dnd5e-system-adapter.js#L67-L266): Processes D&D 5e activities, spell preparation, equipment states, and subcategory itemTypes.
+- [**`modifyContext(context, app)`**](../src/adapters/system/dnd5e-system-adapter.js#L285-L323): Injects "All Spells", "All Weapons", and "All Equipment" sub-tabs and orders subcategory sub-tabs.
+- [**`getContextMenuItems(app)`**](../src/adapters/system/dnd5e-system-adapter.js#L330-L418): Spawns context menu options for spell preparation (`Prepare`/`Unprepare`) and equipment management (`Equip`/`Unequip`).
+- [**`onTabRightClick(app, el, event)`**](../src/adapters/system/dnd5e-system-adapter.js#L427-L445): Toggles unprepared spell visibility (`showUnprepared`) and unequipped weapon/equipment visibility (`showUnequipped_weapon`, `showUnequipped_equipment`).
