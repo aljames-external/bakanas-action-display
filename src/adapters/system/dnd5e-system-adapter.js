@@ -11,6 +11,15 @@ const SORT_ORDERS = {
             'level_4': 5, 'level_5': 6, 'level_6': 7, 'level_7': 8, 'level_8': 9,
             'level_9': 10, 'itemCharges': 99
         },
+        'weapon': {
+            'all': 0, 'simpleM': 1, 'martialM': 2, 'simpleR': 3, 'martialR': 4,
+            'natural': 5, 'improv': 6, 'siege': 7
+        },
+        'equipment': {
+            'all': 0, 'light': 1, 'medium': 2, 'heavy': 3, 'shield': 4,
+            'clothing': 5, 'trinket': 6, 'ring': 7, 'rod': 8, 'wand': 9,
+            'wondrous': 10, 'vehicle': 11, 'natural': 12
+        },
         'economy': {
             'all': 0, 'action': 1, 'bonus': 2, 'reaction': 3, 'other': 4,
             'special': 5, 'legendary': 6, 'mythic': 7, 'crew': 8, 'lair': 9,
@@ -52,7 +61,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         if (item.getFlag('dnd5e', 'cachedFor')) return false;
 
         const isEquipped = this.getItemEquipped(item);
-        if (['weapon', 'equipment', 'consumable', 'tool'].includes(type) && !isEquipped) {
+        if (['consumable', 'tool'].includes(type) && !isEquipped) {
             return false;
         }
         return true;
@@ -124,6 +133,21 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 }
             }
 
+            // 2. Filter out unequipped weapons and equipment (unless showUnequipped is enabled)
+            let isUnequipped = false;
+            if (['weapon', 'equipment'].includes(type)) {
+                const isEquipped = this.getItemEquipped(item);
+                const showUnequipped = actor.getFlag(MODULE_ID, `showUnequipped_${type}`);
+                
+                if (!isEquipped) {
+                    isUnequipped = true;
+                }
+                
+                if (!showUnequipped && isUnequipped) {
+                    continue;
+                }
+            }
+
             // 4. Process activities if they exist (D&D 5e v4+)
             const activities = this.getItemActivities(item);
             const activeActivities = activities 
@@ -173,7 +197,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     ...action,
                     name: item.name, // Keep the clean item name
                     img: item.img, // Use the parent item's icon
-                    unprepared: isSpellUnprepared,
+                    unprepared: isSpellUnprepared || isUnequipped,
                     activities: filteredActivities,
                     roll: async (event) => {
                         // Roll the first active activity directly
@@ -202,6 +226,12 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     activityAction.itemTypes = ['spell', `level_${level}`];
                 } else if (isItemCharges) {
                     activityAction.itemTypes = ['spell', 'itemCharges'];
+                } else if (type === 'weapon') {
+                    const subType = item.system.type?.value;
+                    activityAction.itemTypes = subType ? ['weapon', subType] : ['weapon'];
+                } else if (type === 'equipment') {
+                    const subType = item.system.type?.value;
+                    activityAction.itemTypes = subType ? ['equipment', subType] : ['equipment'];
                 } else {
                     activityAction.itemTypes = [type];
                 }
@@ -254,9 +284,9 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
 
     modifyContext(context, app) {
         super.modifyContext(context, app);
+        
         const spellParent = context.itemTypes.find(t => t.id === 'spell');
         if (spellParent && spellParent.subTabs.length > 0) {
-            // Inject "All Spells" sub-tab
             const showUnprepared = app.actor.getFlag(MODULE_ID, 'showUnprepared') ?? false;
             spellParent.addSubTab({
                 id: 'all',
@@ -264,9 +294,31 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 active: app.leftTabs.activeParents.has('spell') && app.leftTabs.activeSubTypes.size === 0,
                 showUnprepared: showUnprepared
             });
-
-            // Re-order spell sub-tabs explicitly using updateOrder
             spellParent.updateOrder(Object.keys(SORT_ORDERS.tabs['spell']));
+        }
+
+        const weaponParent = context.itemTypes.find(t => t.id === 'weapon');
+        if (weaponParent && weaponParent.subTabs.length > 0) {
+            const showUnequipped = app.actor.getFlag(MODULE_ID, 'showUnequipped_weapon') ?? false;
+            weaponParent.addSubTab({
+                id: 'all',
+                label: localize('BAD.dnd5e.allWeapons', 'All Weapons'),
+                active: app.leftTabs.activeParents.has('weapon') && app.leftTabs.activeSubTypes.size === 0,
+                showUnprepared: showUnequipped
+            });
+            weaponParent.updateOrder(Object.keys(SORT_ORDERS.tabs['weapon']));
+        }
+
+        const equipmentParent = context.itemTypes.find(t => t.id === 'equipment');
+        if (equipmentParent && equipmentParent.subTabs.length > 0) {
+            const showUnequipped = app.actor.getFlag(MODULE_ID, 'showUnequipped_equipment') ?? false;
+            equipmentParent.addSubTab({
+                id: 'all',
+                label: localize('BAD.dnd5e.allEquipment', 'All Equipment'),
+                active: app.leftTabs.activeParents.has('equipment') && app.leftTabs.activeSubTypes.size === 0,
+                showUnprepared: showUnequipped
+            });
+            equipmentParent.updateOrder(Object.keys(SORT_ORDERS.tabs['equipment']));
         }
     }
 
@@ -321,12 +373,52 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         await item.update({ "system.prepared": 0 });
                     }
                 }
+            },
+            {
+                name: "BAD.dnd5e.equipItem",
+                icon: '<i class="fas fa-shield-halved"></i>',
+                condition: el => {
+                    if (!app.actor?.isOwner) return false;
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
+                    if (!action) return false;
+                    const item = action.originalItem;
+                    if (!item || !['weapon', 'equipment'].includes(item.type)) return false;
+                    return !this.getItemEquipped(item);
+                },
+                callback: async el => {
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
+                    const item = action?.originalItem;
+                    if (item) {
+                        log.debug(`Equipping item: ${item.name}`);
+                        await item.update({ "system.equipped": true });
+                    }
+                }
+            },
+            {
+                name: "BAD.dnd5e.unequipItem",
+                icon: '<i class="fas fa-shield-slash"></i>',
+                condition: el => {
+                    if (!app.actor?.isOwner) return false;
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
+                    if (!action) return false;
+                    const item = action.originalItem;
+                    if (!item || !['weapon', 'equipment'].includes(item.type)) return false;
+                    return this.getItemEquipped(item);
+                },
+                callback: async el => {
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
+                    const item = action?.originalItem;
+                    if (item) {
+                        log.debug(`Unequipping item: ${item.name}`);
+                        await item.update({ "system.equipped": false });
+                    }
+                }
             }
         ];
     }
 
     /**
-     * Handle right-click on the "All Spells" tab to toggle unprepared spells.
+     * Handle right-click on "All" sub-tabs (Spells, Weapons, Equipment) to toggle unprepared/unequipped items.
      * @param {ApplicationV2} app The ActionDisplayApp instance
      * @param {HTMLElement} el The tab element that was right-clicked
      * @param {Event} event The event
@@ -336,17 +428,19 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         if (el.dataset.type === 'all') {
             const parentGroup = el.closest('.bad-left-tab-group');
             const parentTab = parentGroup?.querySelector('.bad-left-tab');
-            if (parentTab?.dataset.type === 'spell' && app.actor?.isOwner) {
+            const parentType = parentTab?.dataset.type;
+
+            if (parentType === 'spell' && app.actor?.isOwner) {
                 const showUnprepared = app.actor.getFlag(MODULE_ID, 'showUnprepared') ?? false;
-                
-                log.group("BAD | Right-Click 'All Spells' Tab (Adapter)", "debug");
-                log.debug("Current showUnprepared state:", showUnprepared);
-                
                 app.actor.setFlag(MODULE_ID, 'showUnprepared', !showUnprepared);
-                
-                log.debug("New showUnprepared state set to:", !showUnprepared);
-                log.groupEnd();
-                return true; // Handled!
+                return true;
+            }
+
+            if (['weapon', 'equipment'].includes(parentType) && app.actor?.isOwner) {
+                const flagKey = `showUnequipped_${parentType}`;
+                const showUnequipped = app.actor.getFlag(MODULE_ID, flagKey) ?? false;
+                app.actor.setFlag(MODULE_ID, flagKey, !showUnequipped);
+                return true;
             }
         }
         return false;
@@ -408,6 +502,16 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 const ord = ordinals[num] || `${num}th`;
                 return localize(key, `${ord} Level`);
             }
+        }
+        if (parentId === 'weapon') {
+            if (subId === 'all') return localize('BAD.dnd5e.allWeapons', 'All Weapons');
+            const key = `DND5E.Weapon${subId.charAt(0).toUpperCase() + subId.slice(1)}`;
+            return localize(key, CONFIG?.DND5E?.weaponTypes?.[subId] ?? subId);
+        }
+        if (parentId === 'equipment') {
+            if (subId === 'all') return localize('BAD.dnd5e.allEquipment', 'All Equipment');
+            const key = `DND5E.Equipment${subId.charAt(0).toUpperCase() + subId.slice(1)}`;
+            return localize(key, CONFIG?.DND5E?.equipmentTypes?.[subId] ?? subId);
         }
         return super.getItemSubTabLabel(parentId, subId);
     }
