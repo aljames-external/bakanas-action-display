@@ -397,19 +397,23 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         if (!action.tabs) return false;
 
         // Spell Components Filter (restrictive AND-filter, for spells or features with spell components)
+        // Selected component sub-tabs in the HUD represent BANNED components (e.g. anti-magic/silence restrictions).
+        // If an action contains ANY of the banned components, it is filtered out!
         const isComponentsActive = this.rightTabs.activeParents.has('components');
         if (isComponentsActive) {
             const parentGroup = this.parentGroups?.['components'];
             const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
-            const activeCompSubs = Array.from(this.rightTabs.activeSubTypes).filter(id => validSubIds.has(id));
+            const bannedCompSubs = Array.from(this.rightTabs.activeSubTypes).filter(id => validSubIds.has(id));
             
-            if (activeCompSubs.length > 0) {
-                const spellCompSubs = new Set(
+            if (bannedCompSubs.length > 0) {
+                const actionCompSubs = new Set(
                     action.tabs
                         .filter(tab => tab.root === 'components')
                         .map(tab => tab.label)
                 );
-                const hasBannedComponent = Array.from(spellCompSubs).some(comp => activeCompSubs.includes(comp));
+                
+                // If action contains ANY banned component, filter it out!
+                const hasBannedComponent = Array.from(actionCompSubs).some(comp => bannedCompSubs.includes(comp));
                 if (hasBannedComponent) return false;
             }
         }
