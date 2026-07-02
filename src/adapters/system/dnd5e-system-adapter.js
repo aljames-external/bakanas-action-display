@@ -124,7 +124,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         const spellTarget = this._resolveTargetItem(spellUuid, item, actor);
                         if (spellTarget?.system?.properties) {
                             propSources.push(spellTarget.system.properties);
-                        } else if (activity.spell?.properties && Array.isArray(activity.spell.properties) && activity.spell.properties.length < 3) {
+                        } else if (activity.spell?.properties) {
                             propSources.push(activity.spell.properties);
                         }
                     } else if (activity.properties) {
@@ -196,7 +196,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         const spellTarget = this._resolveTargetItem(spellUuid, item, actor);
                         if (spellTarget?.system?.properties) {
                             actPropSources.push(spellTarget.system.properties);
-                        } else if (activity.spell?.properties && Array.isArray(activity.spell.properties) && activity.spell.properties.length < 3) {
+                        } else if (activity.spell?.properties) {
                             actPropSources.push(activity.spell.properties);
                         }
                     } else if (activity.properties) {
@@ -269,11 +269,19 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     }
                 }
 
-                const activeSpellComponents = activityCompTabsMap.size > 0 
-                    ? [...activityCompTabsMap.values()] 
-                    : spellComponents;
+                const activeSpellComponentsMap = new Map();
+                for (const compTab of spellComponents) {
+                    activeSpellComponentsMap.set(compTab.path, compTab);
+                }
+                for (const activity of filteredActivities) {
+                    if (activity.componentTabs) {
+                        for (const compTab of activity.componentTabs) {
+                            activeSpellComponentsMap.set(compTab.path, compTab);
+                        }
+                    }
+                }
 
-                activityAction.tabs = [...uniqueTabsMap.values(), ...activeSpellComponents];
+                activityAction.tabs = [...uniqueTabsMap.values(), ...activeSpellComponentsMap.values()];
 
                 // Assign to hierarchical item types: [parentType, subType] (for left-side tabs)
                 const hasCastActivity = filteredActivities.some(sub => sub.originalActivity?.type === 'cast');
