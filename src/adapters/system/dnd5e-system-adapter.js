@@ -742,11 +742,26 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
     _resolveTargetItem(targetId, item, actor) {
         if (!targetId) return null;
         try {
-            const resolved = targetId.includes('.')
+            // 1. Try standard synchronous resolution via Foundry fromUuidSync
+            let resolved = targetId.includes('.')
                 ? (foundry.utils.fromUuidSync(targetId, { relative: item })
                    || foundry.utils.fromUuidSync(targetId, { relative: actor })
-                   || actor.items.get(targetId))
-                : actor.items.get(targetId);
+                   || actor?.items?.get(targetId))
+                : actor?.items?.get(targetId);
+
+            // 2. Dynamic Fallback: If targetId is a UUID and fromUuidSync returned null, search all game packs index by document ID
+            if (!resolved && targetId.includes('.')) {
+                const parts = targetId.split('.');
+                const docId = parts[parts.length - 1];
+
+                for (const pack of game.packs.values()) {
+                    if (pack.index?.has(docId)) {
+                        resolved = pack.index.get(docId);
+                        break;
+                    }
+                }
+            }
+
             if (!resolved) {
                 log.warn(`Could not resolve target item "${targetId}" for item "${item?.name ?? item?.id}" on actor "${actor?.name}". Treating as missing item.`);
             }
