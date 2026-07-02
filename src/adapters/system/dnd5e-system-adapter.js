@@ -3,7 +3,6 @@ import { localize } from '../../lib/utils.js';
 import { log } from '../../lib/logger.js';
 import { MODULE_ID } from '../../constants.js';
 import { TabRef } from '../../ui/tab-ref.js';
-import { KeyboardManager } from '../../lib/compat.js';
 
 const SORT_ORDERS = {
     tabs: {
@@ -755,34 +754,5 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
             available: quantity,
             max: null
         };
-    }
-
-    /**
-     * Create a proxy around a browser event to inject keyboard modifiers (Alt/Ctrl/Shift)
-     * while preserving all other native event properties and methods (like target, preventDefault).
-     * @param {Event} event The original browser event
-     * @returns {Event|object} A proxy event or empty object
-     * @private
-     */
-    _createRollEvent(event) {
-        if (!event) return {};
-        return new Proxy(event, {
-            get: (target, prop) => {
-                if (prop === 'altKey') {
-                    return event.altKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.ALT);
-                }
-                if (prop === 'ctrlKey') {
-                    return event.ctrlKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.CONTROL);
-                }
-                if (prop === 'shiftKey') {
-                    return event.shiftKey || game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT);
-                }
-                const val = Reflect.get(target, prop);
-                if (typeof val === 'function') {
-                    return val.bind(target);
-                }
-                return val;
-            }
-        });
     }
 }

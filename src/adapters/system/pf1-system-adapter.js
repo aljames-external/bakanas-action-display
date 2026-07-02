@@ -203,10 +203,11 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                                 tabs: new TabRef({ label: activationType, parent: econRoot }),
                                 uses: uses, // Shares weapon's ammunition/charges
                                 roll: (event) => {
+                                    const proxiedEvent = this._createRollEvent(event);
                                     if (typeof attackItem.use === 'function') {
-                                        attackItem.use({ actionId: itemAction._id, event });
+                                        attackItem.use({ actionId: itemAction._id, event: proxiedEvent });
                                     } else if (typeof attackItem.roll === 'function') {
-                                        attackItem.roll({ actionId: itemAction._id, event });
+                                        attackItem.roll({ actionId: itemAction._id, event: proxiedEvent });
                                     }
                                 }
                             });

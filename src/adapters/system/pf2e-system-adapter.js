@@ -142,10 +142,11 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
                 hidden: false,
                 uses: uses, // Display remaining ammunition
                 roll: (event) => {
+                    const proxiedEvent = this._createRollEvent(event);
                     if (strike.variants?.[0]?.roll) {
-                        strike.variants[0].roll({ event });
+                        strike.variants[0].roll({ event: proxiedEvent });
                     } else if (typeof strike.roll === 'function') {
-                        strike.roll({ event });
+                        strike.roll({ event: proxiedEvent });
                     }
                 },
                 originalItem: strike.item, // Reference to the weapon item if available
