@@ -1,8 +1,5 @@
 import { localize } from '../../lib/utils.js';
-
 import { MODULE_ID } from '../../constants.js';
-
-
 
 /**
  * Base class for all system-specific adapters.

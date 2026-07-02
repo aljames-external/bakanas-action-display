@@ -3,21 +3,20 @@ import { localize } from '../../lib/utils.js';
 import { log } from '../../lib/logger.js';
 import { TabRef } from '../../ui/tab-ref.js';
 
-
-
-const ACTION_SUB_SORT_ORDERS = {
-    'economy': {
-        'all': 0, 'action': 1, 'bonus': 2, 'reaction': 3, 'other': 4
+const SORT_ORDERS = {
+    tabs: {
+        'economy': {
+            'all': 0, 'action': 1, 'bonus': 2, 'reaction': 3, 'other': 4
+        }
+    },
+    item_type: {
+        'weapon': 1,
+        'attack': 1,
+        'spell': 2,
+        'feat': 3,
+        'buff': 4,
+        'consumable': 5
     }
-};
-
-const TYPE_SORT_ORDER = {
-    'weapon': 1,
-    'attack': 1,
-    'spell': 2,
-    'feat': 3,
-    'buff': 4,
-    'consumable': 5
 };
 
 /**
@@ -409,8 +408,12 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
         return icons[parentId] ?? super.getItemTypeIcon(parentId);
     }
 
+    getItemTypeSortOrder(parentId) {
+        return SORT_ORDERS.item_type[parentId] ?? super.getItemTypeSortOrder(parentId);
+    }
+
     getActionSubTabSortOrder(parentId, subId) {
-        return ACTION_SUB_SORT_ORDERS[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
+        return SORT_ORDERS.tabs[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 
 
