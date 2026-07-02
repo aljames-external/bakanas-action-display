@@ -122,8 +122,9 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         // Resolve linked spell document from UUID to get its true component properties
                         const spellUuid = activity.spell?.uuid || activity.spell?.id || activity.spellItem?.uuid;
                         const spellTarget = this._resolveTargetItem(spellUuid, item, actor);
-                        if (spellTarget?.system?.properties) {
-                            propSources.push(spellTarget.system.properties);
+                        const targetProps = spellTarget?.system?.properties ?? spellTarget?.properties;
+                        if (targetProps) {
+                            propSources.push(targetProps);
                         } else if (activity.spell?.properties) {
                             propSources.push(activity.spell.properties);
                         }
@@ -194,8 +195,9 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     if (activity.type === 'cast') {
                         const spellUuid = activity.spell?.uuid || activity.spell?.id || activity.spellItem?.uuid;
                         const spellTarget = this._resolveTargetItem(spellUuid, item, actor);
-                        if (spellTarget?.system?.properties) {
-                            actPropSources.push(spellTarget.system.properties);
+                        const targetProps = spellTarget?.system?.properties ?? spellTarget?.properties;
+                        if (targetProps) {
+                            actPropSources.push(targetProps);
                         } else if (activity.spell?.properties) {
                             actPropSources.push(activity.spell.properties);
                         }
@@ -764,7 +766,9 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
 
                 for (const pack of game.packs.values()) {
                     if (pack.index?.has(docId)) {
-                        resolved = pack.index.get(docId);
+                        const indexEntry = pack.index.get(docId);
+                        // If index entry doesn't contain system properties, get cached/full document from pack
+                        resolved = pack.getDocument ? pack.get(docId) || indexEntry : indexEntry;
                         break;
                     }
                 }
