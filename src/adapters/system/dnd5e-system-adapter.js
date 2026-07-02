@@ -19,19 +19,7 @@ const ACTION_SUB_SORT_ORDERS = {
     'components': { 'vocal': 0, 'somatic': 1, 'material': 2 }
 };
 
-const SUB_TAB_MAP = {
-    'action': 'action',
-    'bonus': 'bonus',
-    'reaction': 'reaction',
-    'minute': 'minute',
-    'hour': 'hour',
-    'day': 'day',
-    'legendary': 'legendary',
-    'mythic': 'mythic',
-    'lair': 'lair',
-    'crew': 'crew',
-    'special': 'special'
-};
+
 
 const TYPE_SORT_ORDER = {
     'weapon': 1,
@@ -263,7 +251,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      * Determine the sub-action tab based on DnD5e activation type.
      */
     _getSubTab(type) {
-        return SUB_TAB_MAP[type] ?? 'none';
+        return type ?? 'none';
     }
 
     modifyContext(context, app) {
