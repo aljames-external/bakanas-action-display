@@ -3,6 +3,7 @@ import { log } from '../lib/logger.js';
 import { MODULE_ID } from '../constants.js';
 import { HUDTabColumn } from './hud-tab-column.js';
 import { HUDTab } from './hud-tab.js';
+import { ContextMenu } from '../lib/compat.js';
 
 // Cache to persist tab states per actor across HUD rebuilds
 const activeTabCache = new Map();
@@ -705,7 +706,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
                     // Create and render a temporary ContextMenu at the clicked element (passing raw HTMLElement)
                     const container = this.element.querySelector('.bakana-action-display-container') ?? this.element;
-                    menu = new foundry.applications.ux.ContextMenu.implementation(container, null, menuItems, options);
+                    menu = new ContextMenu.implementation(container, null, menuItems, options);
                     this._activeMenuTarget = target; // Set target directly to ensure toggle-off tracking works
                     this._activeLeftClickMenu = menu; // Store the menu instance directly
                     log.debug(`_onRollAction | Rendering menu for: ${targetRow.dataset.actionId}`);
@@ -1019,7 +1020,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             }
         };
 
-        return new foundry.applications.ux.ContextMenu.implementation(this.element, ".bad-action-item", menuItems, options);
+        return new ContextMenu.implementation(this.element, ".bad-action-item", menuItems, options);
     }
 
     /**

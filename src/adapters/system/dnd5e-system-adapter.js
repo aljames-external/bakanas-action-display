@@ -3,6 +3,7 @@ import { localize } from '../../lib/utils.js';
 import { log } from '../../lib/logger.js';
 import { MODULE_ID } from '../../constants.js';
 import { TabRef } from '../../ui/tab-ref.js';
+import { KeyboardManager } from '../../lib/compat.js';
 
 // Static sort order maps to prevent allocations during sorting
 const PARENT_SORT_ORDER = {
