@@ -152,21 +152,6 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 }
             }
 
-            // 2. Filter out unequipped weapons and equipment (unless showUnequipped is enabled)
-            let isUnequipped = false;
-            if (['weapon', 'equipment'].includes(type)) {
-                const isEquipped = this.getItemEquipped(item);
-                const showUnequipped = actor.getFlag(MODULE_ID, `showUnequipped_${type}`);
-                
-                if (!isEquipped) {
-                    isUnequipped = true;
-                }
-                
-                if (!showUnequipped && isUnequipped) {
-                    continue;
-                }
-            }
-
             // 4. Process activities if they exist (D&D 5e v4+)
             const activities = this.getItemActivities(item);
             const activeActivities = activities 
@@ -269,8 +254,8 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 }
 
                 modified.push(activityAction);
-            } else {
-                // Passive items without active activities (e.g., armor, passive rings, loot, backpacks)
+            } else if (['equipment', 'weapon', 'backpack', 'loot'].includes(type)) {
+                // Passive items (armor, passive shields, containers, loot) are assigned right-side tab 'none' under 'economy'
                 const subType = item.system.type?.value;
                 const econRoot = new TabRef({ label: 'economy' });
                 const passiveAction = {
