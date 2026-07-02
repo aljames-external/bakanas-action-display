@@ -616,8 +616,31 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
                     if (actionParentId === 'components') return false;
 
+                    // 1. Filter by Banned Spell Components (if components tab is active)
+                    const isComponentsActive = activeParents.has('components');
+                    if (isComponentsActive) {
+                        const parentGroup = this.parentGroups?.['components'];
+                        const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
+                        const bannedCompSubs = Array.from(activeSubs).filter(id => validSubIds.has(id));
+                        
+                        if (bannedCompSubs.length > 0) {
+                            const subCompSubs = new Set(
+                                (sub.componentTabs ?? [])
+                                    .filter(t => t.root === 'components')
+                                    .map(t => t.label)
+                            );
+                            const hasBannedComponent = Array.from(subCompSubs).some(comp => bannedCompSubs.includes(comp));
+                            if (hasBannedComponent) return false;
+                        }
+                    }
+
+                    // 2. Bypass economy filter if only components tab is active (and no economy tabs are selected)
                     if (activeEconomyParents.length === 0 && !activeParents.has('all')) {
-                        return true; // Bypass economy filter if only components is active
+                        // Filter out depleted sub-actions if Hide Depleted is enabled
+                        if (filterNoResources && sub.uses && sub.uses.available !== null && sub.uses.available <= 0) {
+                            return false;
+                        }
+                        return true;
                     }
                     
                     let matchesParent = false;
@@ -651,24 +674,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                     }
                     
                     if (!matchesParent) return false;
-
-                    // Filter by Banned Spell Components (if components tab is active)
-                    const isComponentsActive = activeParents.has('components');
-                    if (isComponentsActive) {
-                        const parentGroup = this.parentGroups?.['components'];
-                        const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
-                        const bannedCompSubs = Array.from(activeSubs).filter(id => validSubIds.has(id));
-                        
-                        if (bannedCompSubs.length > 0) {
-                            const subCompSubs = new Set(
-                                (sub.componentTabs ?? [])
-                                    .filter(t => t.root === 'components')
-                                    .map(t => t.label)
-                            );
-                            const hasBannedComponent = Array.from(subCompSubs).some(comp => bannedCompSubs.includes(comp));
-                            if (hasBannedComponent) return false;
-                        }
-                    }
                     
                     // Filter out depleted sub-actions if Hide Depleted is enabled
                     if (filterNoResources && sub.uses && sub.uses.available !== null && sub.uses.available <= 0) {
