@@ -107,14 +107,32 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
         for (const action of actions) {
             const item = action.originalItem;
             const type = item.type;
-            // Extract spell components if it's a spell (for the Spell Components tab)
-            const props = item.system?.properties;
+            // Extract spell components for the Spell Components tab (spells or feats with Cast activities)
+            let props = item.system?.properties;
             const spellComponents = [];
-            if (item.type === 'spell' && props) {
-                const compRoot = new TabRef({ label: 'components' });
-                if (props.has('vocal')) spellComponents.push(new TabRef({ label: 'vocal', parent: compRoot }));
-                if (props.has('somatic')) spellComponents.push(new TabRef({ label: 'somatic', parent: compRoot }));
-                if (props.has('material')) spellComponents.push(new TabRef({ label: 'material', parent: compRoot }));
+            const compRoot = new TabRef({ label: 'components' });
+
+            // If item is not a spell (e.g. a feat/feature like Elven Lineage), try to inherit spell properties from its Cast activity target
+            if (item.type !== 'spell') {
+                const activities = this.getItemActivities(item);
+                if (activities) {
+                    for (const activity of activities.values()) {
+                        if (activity.type === 'cast') {
+                            const spellTarget = this._resolveTargetItem(activity.spell?.uuid || activity.spell?.id, item, actor);
+                            if (spellTarget?.system?.properties) {
+                                props = spellTarget.system.properties;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (props) {
+                const hasProp = prop => typeof props.has === 'function' ? props.has(prop) : Array.isArray(props) ? props.includes(prop) : false;
+                if (hasProp('vocal')) spellComponents.push(new TabRef({ label: 'vocal', parent: compRoot }));
+                if (hasProp('somatic')) spellComponents.push(new TabRef({ label: 'somatic', parent: compRoot }));
+                if (hasProp('material')) spellComponents.push(new TabRef({ label: 'material', parent: compRoot }));
             }
 
             // Check if user has hidden this item
@@ -686,11 +704,20 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      */
     _resolveTargetItem(targetId, item, actor) {
         if (!targetId) return null;
-        return targetId.includes('.')
-            ? (foundry.utils.fromUuidSync(targetId, { relative: item })
-               || foundry.utils.fromUuidSync(targetId, { relative: actor })
-               || actor.items.get(targetId))
-            : actor.items.get(targetId);
+        try {
+            const resolved = targetId.includes('.')
+                ? (foundry.utils.fromUuidSync(targetId, { relative: item })
+                   || foundry.utils.fromUuidSync(targetId, { relative: actor })
+                   || actor.items.get(targetId))
+                : actor.items.get(targetId);
+            if (!resolved) {
+                log.warn(`Could not resolve target item "${targetId}" for item "${item?.name ?? item?.id}" on actor "${actor?.name}". Treating as missing item.`);
+            }
+            return resolved ?? null;
+        } catch (error) {
+            log.warn(`Error resolving target item "${targetId}" for item "${item?.name ?? item?.id}" on actor "${actor?.name}":`, error);
+            return null;
+        }
     }
 
     /**

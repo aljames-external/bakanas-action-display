@@ -396,23 +396,21 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // Filter by Right Side (Action Type)
         if (!action.tabs) return false;
 
-        // Spell Components Filter (restrictive AND-filter, only for spells)
-        if (action.originalItem?.type === 'spell') {
-            const isComponentsActive = this.rightTabs.activeParents.has('components');
-            if (isComponentsActive) {
-                const parentGroup = this.parentGroups?.['components'];
-                const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
-                const activeCompSubs = Array.from(this.rightTabs.activeSubTypes).filter(id => validSubIds.has(id));
-                
-                if (activeCompSubs.length > 0) {
-                    const spellCompSubs = new Set(
-                        action.tabs
-                            .filter(tab => tab.root === 'components')
-                            .map(tab => tab.label)
-                    );
-                    const hasBannedComponent = Array.from(spellCompSubs).some(comp => activeCompSubs.includes(comp));
-                    if (hasBannedComponent) return false;
-                }
+        // Spell Components Filter (restrictive AND-filter, for spells or features with spell components)
+        const isComponentsActive = this.rightTabs.activeParents.has('components');
+        if (isComponentsActive) {
+            const parentGroup = this.parentGroups?.['components'];
+            const validSubIds = parentGroup ? new Set(parentGroup.subTabs.map(t => t.id)) : new Set();
+            const activeCompSubs = Array.from(this.rightTabs.activeSubTypes).filter(id => validSubIds.has(id));
+            
+            if (activeCompSubs.length > 0) {
+                const spellCompSubs = new Set(
+                    action.tabs
+                        .filter(tab => tab.root === 'components')
+                        .map(tab => tab.label)
+                );
+                const hasBannedComponent = Array.from(spellCompSubs).some(comp => activeCompSubs.includes(comp));
+                if (hasBannedComponent) return false;
             }
         }
 
