@@ -250,16 +250,29 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     }
                 };
 
-                // Collect all unique tabs from the remaining non-depleted activities
+                // Collect all unique tabs and componentTabs from the remaining non-depleted activities
                 const uniqueTabsMap = new Map();
+                const activityCompTabsMap = new Map();
+
                 for (const activity of filteredActivities) {
                     const key = activity.tabs.path;
                     if (!uniqueTabsMap.has(key)) {
                         uniqueTabsMap.set(key, activity.tabs);
                     }
+                    if (activity.componentTabs) {
+                        for (const compTab of activity.componentTabs) {
+                            if (!activityCompTabsMap.has(compTab.path)) {
+                                activityCompTabsMap.set(compTab.path, compTab);
+                            }
+                        }
+                    }
                 }
 
-                activityAction.tabs = [...uniqueTabsMap.values(), ...spellComponents];
+                const activeSpellComponents = activityCompTabsMap.size > 0 
+                    ? [...activityCompTabsMap.values()] 
+                    : spellComponents;
+
+                activityAction.tabs = [...uniqueTabsMap.values(), ...activeSpellComponents];
 
                 // Assign to hierarchical item types: [parentType, subType] (for left-side tabs)
                 const hasCastActivity = filteredActivities.some(sub => sub.originalActivity?.type === 'cast');

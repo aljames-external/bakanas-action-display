@@ -398,7 +398,6 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
         // Spell Components Filter (restrictive AND-filter, for spells or features with spell components)
         // Selected component sub-tabs in the HUD represent BANNED components (e.g. anti-magic/silence restrictions).
-        // If an action contains ANY of the banned components, it is filtered out!
         const isComponentsActive = this.rightTabs.activeParents.has('components');
         if (isComponentsActive) {
             const parentGroup = this.parentGroups?.['components'];
@@ -406,15 +405,28 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             const bannedCompSubs = Array.from(this.rightTabs.activeSubTypes).filter(id => validSubIds.has(id));
             
             if (bannedCompSubs.length > 0) {
-                const actionCompSubs = new Set(
-                    action.tabs
-                        .filter(tab => tab.root === 'components')
-                        .map(tab => tab.label)
-                );
-                
-                // If action contains ANY banned component, filter it out!
-                const hasBannedComponent = Array.from(actionCompSubs).some(comp => bannedCompSubs.includes(comp));
-                if (hasBannedComponent) return false;
+                // If the item has sub-activities (e.g. Elven Lineage with Misty Step & Detect Magic),
+                // check if ANY sub-activity remains un-banned. If ALL sub-activities are banned, filter out parent action!
+                if (action.activities && action.activities.length > 0) {
+                    const hasUnbannedActivity = action.activities.some(sub => {
+                        const subCompSubs = new Set(
+                            (sub.componentTabs ?? [])
+                                .filter(t => t.root === 'components')
+                                .map(t => t.label)
+                        );
+                        return !Array.from(subCompSubs).some(comp => bannedCompSubs.includes(comp));
+                    });
+                    if (!hasUnbannedActivity) return false;
+                } else {
+                    // Standard item component check
+                    const actionCompSubs = new Set(
+                        action.tabs
+                            .filter(tab => tab.root === 'components')
+                            .map(tab => tab.label)
+                    );
+                    const hasBannedComponent = Array.from(actionCompSubs).some(comp => bannedCompSubs.includes(comp));
+                    if (hasBannedComponent) return false;
+                }
             }
         }
 
