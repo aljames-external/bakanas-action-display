@@ -108,32 +108,34 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
             const item = action.originalItem;
             const type = item.type;
             // Extract spell components for the Spell Components tab (spells or feats with Cast activities)
-            let props = item.system?.properties;
             const spellComponents = [];
             const compRoot = new TabRef({ label: 'components' });
 
-            // If item is not a spell (e.g. a feat/feature like Elven Lineage), try to inherit spell properties from its Cast activity target
-            if (item.type !== 'spell') {
-                const activities = this.getItemActivities(item);
-                if (activities) {
-                    for (const activity of activities.values()) {
-                        if (activity.type === 'cast') {
-                            const spellTarget = this._resolveTargetItem(activity.spell?.uuid || activity.spell?.id, item, actor);
-                            if (spellTarget?.system?.properties) {
-                                props = spellTarget.system.properties;
-                                break;
-                            }
+            // Collect properties from the item itself
+            const propSources = [item.system?.properties];
+
+            // Check if any activity is a Cast activity linked to a spell target or has properties
+            const itemActivities = this.getItemActivities(item);
+            if (itemActivities) {
+                for (const activity of itemActivities.values()) {
+                    if (activity.properties) {
+                        propSources.push(activity.properties);
+                    }
+                    if (activity.type === 'cast') {
+                        // Resolve linked spell document (e.g. from Compendium or World item UUID)
+                        const spellTarget = this._resolveTargetItem(activity.spell?.uuid || activity.spell?.id, item, actor);
+                        if (spellTarget?.system?.properties) {
+                            propSources.push(spellTarget.system.properties);
                         }
                     }
                 }
             }
 
-            if (props) {
-                const hasProp = prop => typeof props.has === 'function' ? props.has(prop) : Array.isArray(props) ? props.includes(prop) : false;
-                if (hasProp('vocal')) spellComponents.push(new TabRef({ label: 'vocal', parent: compRoot }));
-                if (hasProp('somatic')) spellComponents.push(new TabRef({ label: 'somatic', parent: compRoot }));
-                if (hasProp('material')) spellComponents.push(new TabRef({ label: 'material', parent: compRoot }));
-            }
+            const hasProp = prop => propSources.some(p => p?.has?.(prop));
+
+            if (hasProp('vocal')) spellComponents.push(new TabRef({ label: 'vocal', parent: compRoot }));
+            if (hasProp('somatic')) spellComponents.push(new TabRef({ label: 'somatic', parent: compRoot }));
+            if (hasProp('material')) spellComponents.push(new TabRef({ label: 'material', parent: compRoot }));
 
             // Check if user has hidden this item
             const hiddenIds = actor.getFlag(MODULE_ID, 'hiddenItems') ?? [];
