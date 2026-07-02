@@ -54,7 +54,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
         for (const i of actor.items) {
             const { baseItem, quantity } = this.getAmmoInfo(i);
             if (baseItem) {
-                ammoQuantities.set(baseItem, (ammoQuantities.get(baseItem) || 0) + quantity);
+                ammoQuantities.set(baseItem, (ammoQuantities.get(baseItem) ?? 0) + quantity);
             }
         }
 

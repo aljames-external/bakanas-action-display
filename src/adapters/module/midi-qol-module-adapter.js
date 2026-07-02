@@ -20,7 +20,7 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
         for (const item of actions) {
             // Check if the 5e item has mapped D&D 5e Activities
             const activities = item.activities;
-            if (activities && activities.length > 0) {
+            if (activities.length > 0) {
                 // Filter out D&D 5e Activities that are marked as automationOnly by Midi-QOL
                 const filteredActivities = activities.filter(activity => !this.isAutomationOnly(activity));
 

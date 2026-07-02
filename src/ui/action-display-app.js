@@ -18,6 +18,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         super(options);
         this.token = token;
         this.actor = token.actor;
+        this.actions = [];
         
         const cached = activeTabCache.get(this.actor?.uuid);
 
@@ -65,7 +66,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         // Clean up menu states and close any open dropdowns/context menus to prevent visual leaks
         this._clearMenuState();
         this._contextMenu = null;
-        this.actions = null; // Clear actions cache to release memory
+        this.actions = []; // Reset actions array to release references
         
         const result = await super.close(options);
         log.debug(`ActionDisplayApp.close() completed, new state: ${this.state}`);

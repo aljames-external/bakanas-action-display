@@ -18,7 +18,7 @@ function getVerbosityLevel() {
     if (cachedVerbosity !== null) return cachedVerbosity;
 
     try {
-        if (typeof game !== 'undefined' && game.settings) {
+        if (game?.settings) {
             const setting = game.settings.get(MODULE_ID, 'logVerbosity');
             cachedVerbosity = VERBOSITY_LEVELS[setting] ?? VERBOSITY_LEVELS['warn'];
             return cachedVerbosity;

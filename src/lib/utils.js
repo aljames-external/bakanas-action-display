@@ -5,5 +5,5 @@
  * @returns {string} The localized string or fallback
  */
 export function localize(key, fallback) {
-    return (game.i18n && game.i18n.has(key)) ? game.i18n.localize(key) : fallback;
+    return game.i18n?.has(key) ? game.i18n.localize(key) : fallback;
 }

@@ -125,7 +125,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 const subtype = i.system.type.subtype;
                 if (subtype) {
                     const qty = i.system.quantity ?? 0;
-                    ammoQuantities.set(subtype, (ammoQuantities.get(subtype) || 0) + qty);
+                    ammoQuantities.set(subtype, (ammoQuantities.get(subtype) ?? 0) + qty);
                 }
             }
         }
@@ -481,7 +481,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
      * @private
      */
     _calculateActivityUses(activity, item, actor, ammoQuantities, highestAvailableSlot) {
-        const targets = activity.consumption?.targets || [];
+        const targets = activity.consumption?.targets ?? [];
         
         // 1. If the activity has its own explicit limited uses
         const selfUses = this._calculateLimitedUses(activity.uses);
@@ -771,9 +771,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 icon: '<i class="fas fa-book"></i>',
                 condition: el => {
                     if (!app.actor?.isOwner) return false;
-                    const actionId = el.dataset.actionId;
-                    const actions = app.actions || [];
-                    const action = actions.find(a => a.id === actionId);
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
                     if (!action) return false;
                     const item = action.originalItem;
                     if (item?.type !== 'spell') return false;
@@ -783,9 +781,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     return !['innate', 'atwill', 'pact'].includes(prepMode) && !isPrepared;
                 },
                 callback: async el => {
-                    const actionId = el.dataset.actionId;
-                    const actions = app.actions || [];
-                    const action = actions.find(a => a.id === actionId);
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
                     const item = action?.originalItem;
                     if (item) {
                         log.debug(`Preparing spell: ${item.name}`);
@@ -798,9 +794,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 icon: '<i class="fas fa-book-dead"></i>',
                 condition: el => {
                     if (!app.actor?.isOwner) return false;
-                    const actionId = el.dataset.actionId;
-                    const actions = app.actions || [];
-                    const action = actions.find(a => a.id === actionId);
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
                     if (!action) return false;
                     const item = action.originalItem;
                     if (item?.type !== 'spell') return false;
@@ -809,9 +803,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     return !['innate', 'atwill', 'pact'].includes(prepMode) && item.system.prepared === 1;
                 },
                 callback: async el => {
-                    const actionId = el.dataset.actionId;
-                    const actions = app.actions || [];
-                    const action = actions.find(a => a.id === actionId);
+                    const action = app.actions.find(a => a.id === el.dataset.actionId);
                     const item = action?.originalItem;
                     if (item) {
                         log.debug(`Unpreparing spell: ${item.name}`);

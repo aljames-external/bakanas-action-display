@@ -75,7 +75,7 @@ export class HUDTab {
      */
     _setRootParent(root) {
         this.rootParent = root;
-        if (this.subTabs && this.subTabs.length > 0) {
+        if (this.subTabs.length > 0) {
             for (const child of this.subTabs) {
                 child._setRootParent(root);
             }
