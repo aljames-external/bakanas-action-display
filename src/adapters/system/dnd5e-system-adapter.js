@@ -186,6 +186,20 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     const subId = this._getSubTab(activationType);
                     const parentRef = new TabRef({ label: parentId });
                     const tabRef = subId !== 'none' ? new TabRef({ label: subId, parent: parentRef }) : parentRef;
+
+                    // Extract activity-specific spell component tabs if this activity is a Cast activity or has properties
+                    const actPropSources = [activity.properties];
+                    if (activity.type === 'cast') {
+                        const spellTarget = this._resolveTargetItem(activity.spell?.uuid || activity.spell?.id, item, actor);
+                        if (spellTarget?.system?.properties) {
+                            actPropSources.push(spellTarget.system.properties);
+                        }
+                    }
+                    const actHasProp = prop => actPropSources.some(p => p?.has?.(prop));
+                    const actSpellComponents = [];
+                    if (actHasProp('vocal')) actSpellComponents.push(new TabRef({ label: 'vocal', parent: compRoot }));
+                    if (actHasProp('somatic')) actSpellComponents.push(new TabRef({ label: 'somatic', parent: compRoot }));
+                    if (actHasProp('material')) actSpellComponents.push(new TabRef({ label: 'material', parent: compRoot }));
                     
                     return {
                         id: activity.id,
@@ -193,6 +207,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         img: activity.img ?? item.img,
                         uses: this._calculateActivityUses(activity, item, actor, ammoQuantities, highestAvailableSlot),
                         tabs: tabRef,
+                        componentTabs: actSpellComponents,
                         roll: async (event) => {
                             const proxiedEvent = this._createRollEvent(event);
                             return activity.use({ event: proxiedEvent }, { event: proxiedEvent });
