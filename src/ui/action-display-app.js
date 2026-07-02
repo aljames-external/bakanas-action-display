@@ -408,7 +408,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                     const spellCompSubs = new Set(
                         action.tabs
                             .filter(tab => tab.root === 'components')
-                            .map(tab => tab.id)
+                            .map(tab => tab.label)
                     );
                     const hasBannedComponent = Array.from(spellCompSubs).some(comp => activeCompSubs.includes(comp));
                     if (hasBannedComponent) return false;
@@ -423,7 +423,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         if (activeEconomyParents.length > 0 || this.rightTabs.activeParents.has('all')) {
             matchesRight = action.tabs.some(tab => {
                 const actionParentId = tab.root;
-                const actionSubId = tab.parent ? tab.id : undefined;
+                const actionSubId = tab.parent ? tab.label : undefined;
 
                 // Ignore components parent in the OR-filter
                 if (actionParentId === 'components') return false;
@@ -598,7 +598,7 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
                 const qualifyingSubActions = itemActivities.filter(sub => {
                     const tab = sub.tabs;
                     const actionParentId = tab.root;
-                    const actionSubId = tab.parent ? tab.id : undefined;
+                    const actionSubId = tab.parent ? tab.label : undefined;
 
                     if (actionParentId === 'components') return false;
 

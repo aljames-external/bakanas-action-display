@@ -5,17 +5,15 @@
 export class TabRef {
     /**
      * @param {Object} options
-     * @param {string} options.id Tab identifier (e.g. 'action', 'evocation', 'vocal')
-     * @param {string} [options.label] Display label (e.g. 'Action', 'Evocation', 'Vocal')
+     * @param {string} options.label Tab identifier/label (e.g. 'action', 'evocation', 'vocal')
      * @param {TabRef|null} [options.parent=null] Parent TabRef node in the tree
      */
-    constructor({ id, label = '', parent = null } = {}) {
-        this.id = id;
+    constructor({ label, parent = null } = {}) {
         this.label = label;
         this.parent = parent;
 
         // Pre-compute and cache root ID and path string for O(1) high-performance lookups
-        this.root = parent ? parent.root : id;
-        this.path = parent ? `${parent.path}/${id}` : id;
+        this.root = parent ? parent.root : label;
+        this.path = parent ? `${parent.path}/${label}` : label;
     }
 }

@@ -153,10 +153,10 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
             const props = item.system?.properties;
             const spellComponents = [];
             if (item.type === 'spell' && props) {
-                const compRoot = new TabRef({ id: 'components', label: 'Components' });
-                if (props.has('vocal')) spellComponents.push(new TabRef({ id: 'vocal', label: 'V', parent: compRoot }));
-                if (props.has('somatic')) spellComponents.push(new TabRef({ id: 'somatic', label: 'S', parent: compRoot }));
-                if (props.has('material')) spellComponents.push(new TabRef({ id: 'material', label: 'M', parent: compRoot }));
+                const compRoot = new TabRef({ label: 'components' });
+                if (props.has('vocal')) spellComponents.push(new TabRef({ label: 'vocal', parent: compRoot }));
+                if (props.has('somatic')) spellComponents.push(new TabRef({ label: 'somatic', parent: compRoot }));
+                if (props.has('material')) spellComponents.push(new TabRef({ label: 'material', parent: compRoot }));
             }
 
             // 1. Filter out unprepared spells (unless innate/at-will/pact, or showUnprepared is enabled)
@@ -187,8 +187,8 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     const activationType = activity.activation.type;
                     const parentId = this._getParentTab(activationType);
                     const subId = this._getSubTab(activationType);
-                    const parentRef = new TabRef({ id: parentId, label: parentId });
-                    const tabRef = subId !== 'none' ? new TabRef({ id: subId, label: subId, parent: parentRef }) : parentRef;
+                    const parentRef = new TabRef({ label: parentId });
+                    const tabRef = subId !== 'none' ? new TabRef({ label: subId, parent: parentRef }) : parentRef;
                     
                     return {
                         id: activity.id,
@@ -273,10 +273,10 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 modified.push(activityAction);
             } else if (['backpack', 'loot'].includes(type)) {
                 // Passive containers and loot (no activities) are shown in the inventory
-                const econRoot = new TabRef({ id: 'economy', label: 'Economy' });
+                const econRoot = new TabRef({ label: 'economy' });
                 const passiveAction = {
                     ...action,
-                    tabs: [new TabRef({ id: 'none', label: 'Passive', parent: econRoot })],
+                    tabs: [new TabRef({ label: 'none', parent: econRoot })],
                     itemTypes: [type],
                     uses: { available: null, max: null }
                 };

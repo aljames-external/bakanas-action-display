@@ -100,8 +100,8 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 const spellbook = this.getSpellbook(actor, spellbookId);
                 if (!spellbook) continue;
 
-                const econRoot = new TabRef({ id: 'economy', label: 'Economy' });
-                action.tabs = [new TabRef({ id: 'action', label: 'Action', parent: econRoot })];
+                const econRoot = new TabRef({ label: 'economy' });
+                action.tabs = [new TabRef({ label: 'action', parent: econRoot })];
                 action.activationType = 'action';
                 
                 const level = item.system.level ?? 0;
@@ -145,7 +145,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 action.activities = itemActions.map(itemAction => {
                     const actionType = itemAction.activation?.type;
                     const activationType = this._parseActivationType(actionType);
-                    const parentRef = new TabRef({ id: 'economy', label: 'Economy' });
+                    const parentRef = new TabRef({ label: 'economy' });
                     const actionName = itemAction.name ?? item.name;
                     
                     return {
@@ -153,7 +153,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                         name: actionName,
                         img: item.img,
                         activationType: activationType,
-                        tabs: new TabRef({ id: activationType, label: activationType, parent: parentRef }),
+                        tabs: new TabRef({ label: activationType, parent: parentRef }),
                         uses: uses,
                         roll: (event) => {
                             if (typeof item.use === 'function') {
@@ -191,7 +191,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                             const activationType = this._parseActivationType(actionType);
                             if (!activationType) continue;
 
-                            const econRoot = new TabRef({ id: 'economy', label: 'Economy' });
+                            const econRoot = new TabRef({ label: 'economy' });
                             const actionName = linkedAttacks.length > 1 
                                 ? `${attackItem.name}: ${itemAction.name ?? 'Attack'}` 
                                 : (itemAction.name ?? attackItem.name);
@@ -201,7 +201,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                                 name: actionName,
                                 img: attackItem.img ?? item.img,
                                 activationType: activationType,
-                                tabs: new TabRef({ id: activationType, label: activationType, parent: econRoot }),
+                                tabs: new TabRef({ label: activationType, parent: econRoot }),
                                 uses: uses, // Shares weapon's ammunition/charges
                                 roll: (event) => {
                                     if (typeof attackItem.use === 'function') {
@@ -221,7 +221,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                         const activationType = this._parseActivationType(actionType);
                         if (!activationType) continue;
 
-                        const econRoot = new TabRef({ id: 'economy', label: 'Economy' });
+                        const econRoot = new TabRef({ label: 'economy' });
                         const actionName = itemAction.name ?? item.name;
 
                         itemActionsList.push({
@@ -229,7 +229,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                             name: actionName,
                             img: item.img,
                             activationType: activationType,
-                            tabs: new TabRef({ id: activationType, label: activationType, parent: econRoot }),
+                            tabs: new TabRef({ label: activationType, parent: econRoot }),
                             uses: uses,
                             roll: (event) => {
                                 if (typeof item.use === 'function') {
@@ -262,7 +262,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                 action.activities = itemActions.map(itemAction => {
                     const actionType = itemAction.activation?.type;
                     const activationType = this._parseActivationType(actionType);
-                    const econRoot = new TabRef({ id: 'economy', label: 'Economy' });
+                    const econRoot = new TabRef({ label: 'economy' });
                     const actionName = itemAction.name ?? item.name;
                     
                     return {
@@ -270,7 +270,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
                         name: actionName,
                         img: item.img,
                         activationType: activationType,
-                        tabs: new TabRef({ id: activationType, label: activationType, parent: econRoot }),
+                        tabs: new TabRef({ label: activationType, parent: econRoot }),
                         uses: uses,
                         roll: (event) => {
                             if (typeof item.use === 'function') {
@@ -294,8 +294,8 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
 
             } else if (item.type === 'buff') {
                 // 5. Buffs
-                const econRoot = new TabRef({ id: 'economy', label: 'Economy' });
-                action.tabs = [new TabRef({ id: 'other', label: 'Other', parent: econRoot })];
+                const econRoot = new TabRef({ label: 'economy' });
+                action.tabs = [new TabRef({ label: 'other', parent: econRoot })];
                 action.activationType = 'other';
                 action.itemTypes = ['buff'];
                 

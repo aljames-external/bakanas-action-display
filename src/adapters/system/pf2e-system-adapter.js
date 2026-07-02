@@ -79,9 +79,9 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
                 // Skip passive feats/actions that don't have an active cost
                 if (!activationType) continue;
 
-                const econRoot = new TabRef({ id: 'economy', label: 'Economy' });
+                const econRoot = new TabRef({ label: 'economy' });
                 action.activationType = activationType; // Keep for sorting
-                action.tabs = [new TabRef({ id: activationType, label: activationType, parent: econRoot })];
+                action.tabs = [new TabRef({ label: activationType, parent: econRoot })];
                 action.itemTypes = [type === 'action' ? 'feat' : type];
                 action.uses = this.getUses(item);
 
@@ -101,8 +101,8 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
                 if (!entry) continue;
 
                 const spellLevel = item.rank ?? 0;
-                const econRoot = new TabRef({ id: 'economy', label: 'Economy' });
-                action.tabs = [new TabRef({ id: 'action', label: 'action', parent: econRoot })]; // Spells are active actions
+                const econRoot = new TabRef({ label: 'economy' });
+                action.tabs = [new TabRef({ label: 'action', parent: econRoot })]; // Spells are active actions
                 action.activationType = 'action';
                 
                 let subTab = spellLevel.toString();
@@ -142,7 +142,7 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
                 type: 'weapon',
                 img: strike.item?.img ?? strike.img ?? strike.imageUrl ?? 'systems/pf2e/icons/default-icons/melee.svg',
                 activationType: 'action', // Strikes cost 1 action
-                tabs: [new TabRef({ id: 'action', label: 'Action', parent: new TabRef({ id: 'economy', label: 'Economy' }) })],
+                tabs: [new TabRef({ label: 'action', parent: new TabRef({ label: 'economy' }) })],
                 itemTypes: ['weapon'],
                 hidden: false,
                 uses: uses, // Display remaining ammunition
