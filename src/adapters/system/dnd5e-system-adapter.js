@@ -261,7 +261,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
             const showUnprepared = app.actor.getFlag(MODULE_ID, 'showUnprepared') ?? false;
             spellParent.addSubTab({
                 id: 'all',
-                label: 'All Spells',
+                label: localize('BAD.dnd5e.allSpells', 'All Spells'),
                 active: app.leftTabs.activeParents.has('spell') && app.leftTabs.activeSubTypes.size === 0,
                 showUnprepared: showUnprepared
             });
@@ -365,7 +365,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
 
     getItemTypeLabel(parentId) {
         const labels = {
-            'all': 'All Items',
+            'all': localize('BAD.hud.allItems', 'All Items'),
             'weapon': localize('DND5E.ItemTypeWeapon', 'Weapon'),
             'equipment': localize('DND5E.ItemTypeEquipment', 'Equipment'),
             'consumable': localize('DND5E.ItemTypeConsumable', 'Consumable'),

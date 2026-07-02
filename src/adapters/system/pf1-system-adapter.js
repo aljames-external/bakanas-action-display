@@ -192,7 +192,7 @@ export class Pf1SystemAdapter extends FantasySystemAdapter {
 
                             const econRoot = new TabRef({ label: 'economy' });
                             const actionName = linkedAttacks.length > 1 
-                                ? `${attackItem.name}: ${itemAction.name ?? 'Attack'}` 
+                                ? `${attackItem.name}: ${itemAction.name ?? localize('PF1.Attack', 'Attack')}` 
                                 : (itemAction.name ?? attackItem.name);
 
                             itemActionsList.push({
