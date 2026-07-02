@@ -199,9 +199,9 @@ classDiagram
 
     ActionDisplayApp --> ActionDisplay : queries actions
     ActionDisplayApp --> BaseSystemAdapter : queries tab labels/icons
-    ActionDisplayApp *-- TabSideState : owns (left & right)
+    ActionDisplayApp *-- HUDTabColumn : owns (left & right)
     ActionDisplayApp ..> HUDTab : uses
-    TabSideState ..> HUDTab : manipulates
+    HUDTabColumn ..> HUDTab : manipulates
     HUDTab *-- HUDTab : parent/subTabs hierarchy
     ActionDisplay *-- BaseSystemAdapter : owns
     ActionDisplay *-- BaseModuleAdapter : owns
@@ -224,7 +224,7 @@ sequenceDiagram
     actor User as Player / GM
     participant Hook as Foundry VTT Hook
     participant UI as ActionDisplayApp (UI)
-    participant State as TabSideState & HUDTab
+    participant State as HUDTabColumn & HUDTab
     participant Core as ActionDisplay (Coordinator)
     participant Sys as Dnd5eSystemAdapter (System)
     participant Mod as MidiQolModuleAdapter (Module)
@@ -265,7 +265,7 @@ sequenceDiagram
     UI->>Sys: modifyContext(context)
     Note over Sys: Formats spell level subtabs<br/>Applies custom tab ordering
     
-    Note over UI: UI filters finalActions[] down to<br/>currently active TabSideState filters
+    Note over UI: UI filters finalActions[] down to<br/>currently active HUDTabColumn filters
     
     UI->>UI: Renders HTML (templates/action-display.html)
     UI->>User: Displays HUD on screen!

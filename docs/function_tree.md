@@ -312,12 +312,13 @@ flowchart TD
 - [**`onRightClick(app, tabColumn, groups, event)`**](../src/ui/hud-tab.js#L182-L192): Executes right-click toggle logic.
 
 ### [`src/ui/tab-ref.js`](../src/ui/tab-ref.js) — Structured Tab Data Reference (`TabRef`)
-- [**`constructor({ id, label, parent })`**](../src/ui/tab-ref.js#L12-L20): Instantiates a pre-computed tab data node linked to parent nodes, caching `.root` and `.path` string (`'economy/action'`).
+- [**`constructor({ label, parent })`**](../src/ui/tab-ref.js#L11-L18): Instantiates a pre-computed tab data node linked to parent nodes, caching `.root` and `.path` string (`'economy/action'`).
 - [**`get parentId`**](../src/ui/tab-ref.js#L26-L28): Returns direct parent ID or root ID.
 
 ### [`src/adapters/system/base-system-adapter.js`](../src/adapters/system/base-system-adapter.js) — System Adapter Interface (`BaseSystemAdapter`)
-- [**`shouldExtractItem(item, actor)`**](../src/adapters/system/base-system-adapter.js#L26-L28): Performance filter to bypass unneeded item allocations.
-- [**`modifyActions(actions, actor)`**](../src/adapters/system/base-system-adapter.js#L40-L52): Modifies base actions with system-specific calculations.
-- [**`modifyContext(context)`**](../src/adapters/system/base-system-adapter.js#L141-L143): Customizes tab layout context and sub-tab ordering.
-- [**`getItemTypeLabel(parentId)`**](../src/adapters/system/base-system-adapter.js#L59-L66) / [**`getItemTypeIcon(parentId)`**](../src/adapters/system/base-system-adapter.js#L73-L80): Returns tab labels and font-awesome icons.
-- [**`getSpellLevelLabel(level)`**](../src/adapters/system/base-system-adapter.js#L88-L90): Localizes spell level sub-tab labels.
+- [**`_createRollEvent(event)`**](../src/adapters/system/base-system-adapter.js#L23-L42): Creates a proxy around a roll event to inject keyboard modifiers (`Alt`, `Control`, `Shift`).
+- [**`shouldExtractItem(item, actor)`**](../src/adapters/system/base-system-adapter.js#L51-L53): Performance filter to bypass unneeded item allocations.
+- [**`modifyActions(actions, actor)`**](../src/adapters/system/base-system-adapter.js#L61-L73): Modifies base actions with system-specific calculations.
+- [**`modifyContext(context)`**](../src/adapters/system/base-system-adapter.js#L162-L164): Customizes tab layout context and sub-tab ordering.
+- [**`getItemTypeLabel(parentId)`**](../src/adapters/system/base-system-adapter.js#L80-L87) / [**`getItemTypeIcon(parentId)`**](../src/adapters/system/base-system-adapter.js#L94-L101): Returns tab labels and font-awesome icons.
+- [**`getSpellLevelLabel(level)`**](../src/adapters/system/base-system-adapter.js#L109-L111): Localizes spell level sub-tab labels.
