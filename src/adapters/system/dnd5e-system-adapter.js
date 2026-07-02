@@ -124,7 +124,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         const spellTarget = this._resolveTargetItem(spellUuid, item, actor);
                         if (spellTarget?.system?.properties) {
                             propSources.push(spellTarget.system.properties);
-                        } else if (activity.spell?.properties) {
+                        } else if (activity.spell?.properties && Array.isArray(activity.spell.properties) && activity.spell.properties.length < 3) {
                             propSources.push(activity.spell.properties);
                         }
                     } else if (activity.properties) {
@@ -133,7 +133,7 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                 }
             }
 
-            const hasProp = prop => propSources.some(p => p?.has?.(prop));
+            const hasProp = prop => propSources.some(p => p?.has?.(prop) || (Array.isArray(p) && p.includes(prop)));
 
             if (hasProp('vocal')) spellComponents.push(new TabRef({ label: 'vocal', parent: compRoot }));
             if (hasProp('somatic')) spellComponents.push(new TabRef({ label: 'somatic', parent: compRoot }));
@@ -196,13 +196,13 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         const spellTarget = this._resolveTargetItem(spellUuid, item, actor);
                         if (spellTarget?.system?.properties) {
                             actPropSources.push(spellTarget.system.properties);
-                        } else if (activity.spell?.properties) {
+                        } else if (activity.spell?.properties && Array.isArray(activity.spell.properties) && activity.spell.properties.length < 3) {
                             actPropSources.push(activity.spell.properties);
                         }
                     } else if (activity.properties) {
                         actPropSources.push(activity.properties);
                     }
-                    const actHasProp = prop => actPropSources.some(p => p?.has?.(prop));
+                    const actHasProp = prop => actPropSources.some(p => p?.has?.(prop) || (Array.isArray(p) && p.includes(prop)));
                     const actSpellComponents = [];
                     if (actHasProp('vocal')) actSpellComponents.push(new TabRef({ label: 'vocal', parent: compRoot }));
                     if (actHasProp('somatic')) actSpellComponents.push(new TabRef({ label: 'somatic', parent: compRoot }));
