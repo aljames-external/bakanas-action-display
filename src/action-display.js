@@ -99,7 +99,10 @@ class ActionDisplay {
 
             filtered.push(action);
         }
-        
+
+        // 5. Sort actions alphabetically by name (locale-aware)
+        filtered.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+
         log.debug(`getActions | actor: ${actor.name}, base actions: ${totalBase}, final actions: ${filtered.length} (activeSystemAdapter: ${this.activeSystemAdapter?.systemId})`);
         
         return filtered;
