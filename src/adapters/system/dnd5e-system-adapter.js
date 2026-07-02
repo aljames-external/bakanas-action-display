@@ -283,53 +283,20 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
             }
         }
 
-        // Sort actions: parent activation type first, then sub-activation, then item type, then name
-        return modified.sort((a, b) => {
-            const aParent = a.tabs[0];
-            const bParent = b.tabs[0];
-            const parentSort = this._getParentSort(aParent) - this._getParentSort(bParent);
-            if (parentSort !== 0) return parentSort;
-
-            const aSub = a.tabs[1] ?? '';
-            const bSub = b.tabs[1] ?? '';
-            const subSort = this._getSubSort(aParent, aSub) - this._getSubSort(bParent, bSub);
-            if (subSort !== 0) return subSort;
-
-            const aItemParent = a.itemTypes[0];
-            const bItemParent = b.itemTypes[0];
-            const typeSort = this._getTypeSort(aItemParent) - this._getTypeSort(bItemParent);
-            if (typeSort !== 0) return typeSort;
-
-            return a.name.localeCompare(b.name);
-        });
+        // Sort actions using inherited N-level comparator
+        return modified.sort((a, b) => this.sortActions(a, b));
     }
 
-    /**
-     * Determine the parent action tab based on DnD5e activation type.
-     */
     _getParentTab(type) {
-        // Everything (including times, actions, legendary, special, none)
-        // now goes under 'economy' (Action Economy)
         return 'economy';
     }
 
-    /**
-     * Determine the sub-action tab based on DnD5e activation type.
-     */
     _getSubTab(type) {
         return SUB_TAB_MAP[type] ?? 'none';
     }
 
-    _getParentSort(type) {
-        return PARENT_SORT_ORDER[type] ?? 99;
-    }
-
-    _getSubSort(parent, sub) {
-        return SUB_SORT_ORDERS[parent]?.[sub] ?? 99;
-    }
-
-    _getTypeSort(type) {
-        return TYPE_SORT_ORDER[type] ?? 99;
+    getActionTypeSortOrder(parentId) {
+        return PARENT_SORT_ORDER[parentId] ?? super.getActionTypeSortOrder(parentId);
     }
 
     modifyContext(context, app) {

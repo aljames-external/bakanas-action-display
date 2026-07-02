@@ -214,6 +214,93 @@ export class BaseSystemAdapter {
     }
 
     /**
+     * Compare two TabRef objects level by level along their path string ('root/sub/subSub').
+     * Dynamically delegates to the active system adapter's sort order methods.
+     * @param {TabRef|null} aTab
+     * @param {TabRef|null} bTab
+     * @returns {number} Comparison result (-1, 0, 1)
+     */
+    compareTabPaths(aTab, bTab) {
+        if (!aTab && !bTab) return 0;
+        if (!aTab) return 1;
+        if (!bTab) return -1;
+
+        // 1. Compare top-level root parent first
+        const rootSort = this.getActionTypeSortOrder(aTab.root) - this.getActionTypeSortOrder(bTab.root);
+        if (rootSort !== 0) return rootSort;
+
+        // 2. Compare nested sub-tabs level by level along the path string
+        const aParts = aTab.path.split('/');
+        const bParts = bTab.path.split('/');
+        const maxLen = Math.max(aParts.length, bParts.length);
+
+        for (let i = 1; i < maxLen; i++) {
+            const aPart = aParts[i];
+            const bPart = bParts[i];
+
+            if (aPart === undefined) return -1;
+            if (bPart === undefined) return 1;
+            if (aPart === bPart) continue;
+
+            const parentPart = aParts[i - 1];
+            const subSort = this.getActionSubTabSortOrder(parentPart, aPart) - this.getActionSubTabSortOrder(parentPart, bPart);
+            if (subSort !== 0) return subSort;
+
+            return aPart.localeCompare(bPart);
+        }
+
+        return 0;
+    }
+
+    /**
+     * Compare two itemType arrays level by level (['spell', 'level_1', ...]).
+     * Delegates to getItemTypeSortOrder() and getItemSubTabSortOrder().
+     * @param {string[]} aTypes
+     * @param {string[]} bTypes
+     * @returns {number} Comparison result (-1, 0, 1)
+     */
+    compareItemTypes(aTypes = [], bTypes = []) {
+        const maxLen = Math.max(aTypes.length, bTypes.length);
+        for (let i = 0; i < maxLen; i++) {
+            const aType = aTypes[i];
+            const bType = bTypes[i];
+
+            if (aType === undefined) return -1;
+            if (bType === undefined) return 1;
+            if (aType === bType) continue;
+
+            if (i === 0) {
+                const sort = this.getItemTypeSortOrder(aType) - this.getItemTypeSortOrder(bType);
+                if (sort !== 0) return sort;
+            } else {
+                const parentType = aTypes[i - 1];
+                const sort = this.getItemSubTabSortOrder(parentType, aType) - this.getItemSubTabSortOrder(parentType, bType);
+                if (sort !== 0) return sort;
+            }
+
+            return aType.localeCompare(bType);
+        }
+        return 0;
+    }
+
+    /**
+     * Standard action sort comparator for system adapters.
+     * Sorts by right-side action tabs (N-level), then left-side item types (N-level), then item name.
+     * @param {Object} a Action A
+     * @param {Object} b Action B
+     * @returns {number}
+     */
+    sortActions(a, b) {
+        const tabSort = this.compareTabPaths(a.tabs?.[0], b.tabs?.[0]);
+        if (tabSort !== 0) return tabSort;
+
+        const typeSort = this.compareItemTypes(a.itemTypes, b.itemTypes);
+        if (typeSort !== 0) return typeSort;
+
+        return a.name.localeCompare(b.name);
+    }
+
+    /**
      * Handle right-click on a tab.
      * @param {ApplicationV2} app The ActionDisplayApp instance
      * @param {HTMLElement} el The tab element that was right-clicked
