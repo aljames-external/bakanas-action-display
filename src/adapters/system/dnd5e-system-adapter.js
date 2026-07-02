@@ -123,7 +123,8 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     }
                     if (activity.type === 'cast') {
                         // Resolve linked spell document (e.g. from Compendium or World item UUID)
-                        const spellTarget = this._resolveTargetItem(activity.spell?.uuid || activity.spell?.id, item, actor);
+                        const spellUuid = activity.spell?.uuid || activity.spell?.id || activity.spellItem?.uuid;
+                        const spellTarget = this._resolveTargetItem(spellUuid, item, actor);
                         if (spellTarget?.system?.properties) {
                             propSources.push(spellTarget.system.properties);
                         }
@@ -190,7 +191,8 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     // Extract activity-specific spell component tabs if this activity is a Cast activity or has properties
                     const actPropSources = [activity.properties];
                     if (activity.type === 'cast') {
-                        const spellTarget = this._resolveTargetItem(activity.spell?.uuid || activity.spell?.id, item, actor);
+                        const spellUuid = activity.spell?.uuid || activity.spell?.id || activity.spellItem?.uuid;
+                        const spellTarget = this._resolveTargetItem(spellUuid, item, actor);
                         if (spellTarget?.system?.properties) {
                             actPropSources.push(spellTarget.system.properties);
                         }
