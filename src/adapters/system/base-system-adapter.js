@@ -2,18 +2,7 @@ import { localize } from '../../lib/utils.js';
 
 import { MODULE_ID } from '../../constants.js';
 
-const ACTION_SUB_SORT_ORDERS = {
-    'economy': {
-        'all': 0, 'action': 1, 'bonus': 2, 'reaction': 3, 'other': 4,
-        'special': 5, 'legendary': 6, 'mythic': 7, 'crew': 8, 'lair': 9,
-        'minute': 10, 'hour': 11, 'day': 12, 'none': 13
-    },
-    'components': { 'vocal': 0, 'somatic': 1, 'material': 2 },
-    'standard': { 'all': 0, 'action': 1, 'bonus': 2, 'reaction': 3 },
-    'time': { 'all': 0, 'minute': 1, 'hour': 2, 'day': 3 },
-    'monster': { 'all': 0, 'legendary': 1, 'mythic': 2, 'lair': 3 },
-    'vehicle': { 'all': 0, 'crew': 1 }
-};
+
 
 /**
  * Base class for all system-specific adapters.
@@ -210,7 +199,8 @@ export class BaseSystemAdapter {
      * @returns {number}
      */
     getActionSubTabSortOrder(parentId, subId) {
-        return ACTION_SUB_SORT_ORDERS[parentId]?.[subId] ?? 999;
+        if (subId === 'all') return 0;
+        return 999;
     }
 
     /**

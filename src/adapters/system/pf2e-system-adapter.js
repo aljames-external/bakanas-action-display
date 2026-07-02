@@ -4,6 +4,12 @@ import { TabRef } from '../../ui/tab-ref.js';
 
 
 
+const ACTION_SUB_SORT_ORDERS = {
+    'economy': {
+        'all': 0, 'action': 1, 'reaction': 2, 'free': 3, 'other': 4
+    }
+};
+
 const TYPE_SORT_ORDER = {
     'weapon': 1,
     'equipment': 2,
@@ -196,6 +202,10 @@ export class Pf2eSystemAdapter extends FantasySystemAdapter {
             'economy': localize('BAD.common.actionEconomy', 'Action Economy')
         };
         return labels[parentId] ?? super.getActionTypeLabel(parentId);
+    }
+
+    getActionSubTabSortOrder(parentId, subId) {
+        return ACTION_SUB_SORT_ORDERS[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 
     /**
