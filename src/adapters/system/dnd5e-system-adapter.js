@@ -122,11 +122,13 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                         propSources.push(activity.properties);
                     }
                     if (activity.type === 'cast') {
-                        // Resolve linked spell document (e.g. from Compendium or World item UUID)
+                        // Resolve linked spell document from UUID to get its true component properties
                         const spellUuid = activity.spell?.uuid || activity.spell?.id || activity.spellItem?.uuid;
                         const spellTarget = this._resolveTargetItem(spellUuid, item, actor);
                         if (spellTarget?.system?.properties) {
                             propSources.push(spellTarget.system.properties);
+                        } else if (activity.spell?.properties) {
+                            propSources.push(activity.spell.properties);
                         }
                     }
                 }
@@ -188,13 +190,15 @@ export class Dnd5eSystemAdapter extends FantasySystemAdapter {
                     const parentRef = new TabRef({ label: parentId });
                     const tabRef = subId !== 'none' ? new TabRef({ label: subId, parent: parentRef }) : parentRef;
 
-                    // Extract activity-specific spell component tabs if this activity is a Cast activity or has properties
+                    // Extract activity-specific spell component tabs (prefer true resolved spell document properties)
                     const actPropSources = [activity.properties];
                     if (activity.type === 'cast') {
                         const spellUuid = activity.spell?.uuid || activity.spell?.id || activity.spellItem?.uuid;
                         const spellTarget = this._resolveTargetItem(spellUuid, item, actor);
                         if (spellTarget?.system?.properties) {
                             actPropSources.push(spellTarget.system.properties);
+                        } else if (activity.spell?.properties) {
+                            actPropSources.push(activity.spell.properties);
                         }
                     }
                     const actHasProp = prop => actPropSources.some(p => p?.has?.(prop));
