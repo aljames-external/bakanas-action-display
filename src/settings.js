@@ -101,7 +101,7 @@ Hooks.once('init', () => {
     game.settings.register(MODULE_ID, 'hudPositionPreference', {
         scope: 'client',
         config: false,
-        type: Array,
+        type: Object,
         default: ['top', 'bottom', 'left', 'right']
     });
 

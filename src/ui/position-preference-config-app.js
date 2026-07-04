@@ -1,5 +1,17 @@
 import { MODULE_ID } from '../constants.js';
 
+function sanitizeDirections(raw) {
+    let arr = raw;
+    while (Array.isArray(arr) && arr.length === 1 && Array.isArray(arr[0])) {
+        arr = arr[0];
+    }
+    const valid = ['top', 'bottom', 'left', 'right'];
+    if (Array.isArray(arr) && arr.length === 4 && arr.every(x => typeof x === 'string' && valid.includes(x))) {
+        return [...arr];
+    }
+    return ['top', 'bottom', 'left', 'right'];
+}
+
 /**
  * Interactive ApplicationV2 dialog for configuring HUD placement preference order using drag-and-drop.
  */
@@ -35,9 +47,7 @@ export class PositionPreferenceConfigApp extends foundry.applications.api.Handle
     constructor(options = {}) {
         super(options);
         const currentPref = game.settings.get(MODULE_ID, 'hudPositionPreference');
-        this.directions = Array.isArray(currentPref) && currentPref.length === 4
-            ? [...currentPref]
-            : ['top', 'bottom', 'left', 'right'];
+        this.directions = sanitizeDirections(currentPref);
     }
 
     async _prepareContext(_options) {
@@ -122,8 +132,10 @@ export class PositionPreferenceConfigApp extends foundry.applications.api.Handle
     }
 
     static async _onSubmitForm(event, form, formData) {
-        const items = this.element.querySelectorAll('.bad-pref-item');
+        const items = form.querySelectorAll('.bad-pref-item');
         const newOrder = Array.from(items).map(el => el.dataset.id);
-        await game.settings.set(MODULE_ID, 'hudPositionPreference', newOrder);
+        if (newOrder.length === 4) {
+            await game.settings.set(MODULE_ID, 'hudPositionPreference', newOrder);
+        }
     }
 }
