@@ -96,12 +96,38 @@ Hooks.once('init', () => {
         }
     });
 
-    // Register HUD Position Mode (attached/detached)
+    // Register HUD Placement Preference Order
+    game.settings.register(MODULE_ID, 'hudPositionPreference', {
+        name: game.i18n.localize('BAD.settings.hudPositionPreference.name'),
+        hint: game.i18n.localize('BAD.settings.hudPositionPreference.hint'),
+        scope: 'client',
+        config: true,
+        type: String,
+        default: 'top-bottom-left-right',
+        choices: {
+            'top-bottom-left-right': game.i18n.localize('BAD.settings.hudPositionPreference.choices.top-bottom-left-right'),
+            'bottom-top-right-left': game.i18n.localize('BAD.settings.hudPositionPreference.choices.bottom-top-right-left'),
+            'left-right-top-bottom': game.i18n.localize('BAD.settings.hudPositionPreference.choices.left-right-top-bottom'),
+            'right-left-bottom-top': game.i18n.localize('BAD.settings.hudPositionPreference.choices.right-left-bottom-top'),
+            'top-bottom-right-left': game.i18n.localize('BAD.settings.hudPositionPreference.choices.top-bottom-right-left'),
+            'bottom-top-left-right': game.i18n.localize('BAD.settings.hudPositionPreference.choices.bottom-top-left-right')
+        }
+    });
+
+    // Register HUD Position Mode (attached/pinned/detached)
     game.settings.register(MODULE_ID, 'hudPositionMode', {
         scope: 'client',
         config: false,
         type: String,
         default: 'attached'
+    });
+
+    // Register HUD Pinned Offset (fixed offset relative to token top-left)
+    game.settings.register(MODULE_ID, 'hudPinnedOffset', {
+        scope: 'client',
+        config: false,
+        type: Object,
+        default: { x: 0, y: -50 }
     });
 
     // Register HUD Detached Position (coordinates)
