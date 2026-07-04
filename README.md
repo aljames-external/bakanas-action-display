@@ -140,8 +140,7 @@ For a deep dive into the codebase architecture, lifecycle hooks, and instruction
 
 ## Configuration & Settings
 
-Configure these options in the Foundry VTT Module Settings menu:
-*   **HUD Placement Preference Order**: Select your preferred sequence of sides around the token (`Top → Bottom → Left → Right`, `Bottom → Top → Right → Left`, etc.) where the HUD will attach.
+*   **Drag & Drop Placement Preference Order**: Interactive setting dialog allowing you to drag-and-drop or reorder the directions (**Top**, **Bottom**, **Left**, **Right**) to customize the preferred sequence of sides for HUD attachment around tokens.
 *   **HUD Position Mode**: Choose whether the HUD operates in `Attached` (dynamic tracking), `Pinned` (fixed token offset), or `Detached` (floating) mode.
 *   **Filter Out of Resources**: Enable or disable the resource filter by default.
 *   **Theme & Styling**: Fully compatible with custom CSS. Overrides core Foundry styles cleanly.

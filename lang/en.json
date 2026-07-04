@@ -29,15 +29,8 @@
             },
             "hudPositionPreference": {
                 "name": "HUD Placement Preference Order",
-                "hint": "Controls the order of preferred sides around the token where the HUD will attempt to attach.",
-                "choices": {
-                    "top-bottom-left-right": "Top → Bottom → Left → Right",
-                    "bottom-top-right-left": "Bottom → Top → Right → Left",
-                    "left-right-top-bottom": "Left → Right → Top → Bottom",
-                    "right-left-bottom-top": "Right → Left → Bottom → Top",
-                    "top-bottom-right-left": "Top → Bottom → Right → Left",
-                    "bottom-top-left-right": "Bottom → Top → Left → Right"
-                }
+                "label": "Configure Placement Order",
+                "hint": "Drag and drop the sides below into your preferred order for attaching the HUD around tokens (Top, Bottom, Left, Right)."
             },
             "persistTabState": {
                 "name": "Persist Tab Selections Across Close / Open & Refreshes",
@@ -65,7 +58,11 @@
             "allSpells": "All Spells",
             "allWeapons": "All Weapons",
             "allEquipment": "All Equipment",
-            "spellComponents": "Spell Components"
+            "spellComponents": "Spell Components",
+            "top": "Top",
+            "bottom": "Bottom",
+            "left": "Left",
+            "right": "Right"
         },
         "dnd5e": {
             "upcast": "Upcast"

@@ -1205,16 +1205,10 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
             const tokenLeft = tokenTransform.tx;
             const tokenTop = tokenTransform.ty;
 
-            const prefSetting = game.settings.get(MODULE_ID, 'hudPositionPreference') || 'top-bottom-left-right';
-            const prefOrderMap = {
-                'top-bottom-left-right': ['top', 'bottom', 'left', 'right'],
-                'bottom-top-right-left': ['bottom', 'top', 'right', 'left'],
-                'left-right-top-bottom': ['left', 'right', 'top', 'bottom'],
-                'right-left-bottom-top': ['right', 'left', 'bottom', 'top'],
-                'top-bottom-right-left': ['top', 'bottom', 'right', 'left'],
-                'bottom-top-left-right': ['bottom', 'top', 'left', 'right']
-            };
-            const preferenceOrder = prefOrderMap[prefSetting] ?? ['top', 'bottom', 'left', 'right'];
+            const rawPref = game.settings.get(MODULE_ID, 'hudPositionPreference');
+            const preferenceOrder = Array.isArray(rawPref) && rawPref.length === 4
+                ? rawPref
+                : ['top', 'bottom', 'left', 'right'];
 
             let chosenSide = null;
             let chosenPos = null;

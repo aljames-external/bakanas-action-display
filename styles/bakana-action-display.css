@@ -733,6 +733,124 @@
     background: rgba(251, 146, 60, 0.1) !important;
 }
 
+/* ==========================================================================
+   POSITION PREFERENCE CONFIG DIALOG STYLING
+   ========================================================================== */
+.bad-position-preference-form {
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bad-position-preference-form .notes {
+    color: var(--color-text-dark-secondary, #999);
+    font-size: 0.9em;
+    margin-bottom: 4px;
+}
+
+.bad-pref-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bad-pref-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(30, 30, 40, 0.7);
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    border-radius: 6px;
+    cursor: grab;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.bad-pref-item:hover {
+    background: rgba(45, 45, 60, 0.85);
+    border-color: rgba(167, 139, 250, 0.5);
+}
+
+.bad-pref-item.dragging {
+    opacity: 0.4;
+    border-style: dashed;
+    border-color: #a78bfa;
+}
+
+.bad-pref-grip {
+    color: #8b8ba7;
+    cursor: grab;
+}
+
+.bad-pref-rank {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #a78bfa;
+    min-width: 16px;
+}
+
+.bad-pref-label {
+    flex: 1;
+    font-size: 1.05em;
+    font-weight: 500;
+    color: #e0e0ea;
+}
+
+.bad-pref-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.bad-pref-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: #ccc;
+    padding: 2px 6px;
+    cursor: pointer;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bad-pref-btn:hover:not(:disabled) {
+    background: rgba(167, 139, 250, 0.3);
+    color: #fff;
+    border-color: #a78bfa;
+}
+
+.bad-pref-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.bad-form-buttons {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.bad-submit-btn {
+    background: rgba(167, 139, 250, 0.2);
+    border: 1px solid rgba(167, 139, 250, 0.5);
+    color: #f0f0f5;
+    padding: 6px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bad-submit-btn:hover {
+    background: rgba(167, 139, 250, 0.4);
+    border-color: #a78bfa;
+}
+
 
 
 

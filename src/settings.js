@@ -1,5 +1,6 @@
 import { MODULE_ID } from "./constants.js";
 import { log } from "./lib/logger.js";
+import { PositionPreferenceConfigApp } from "./ui/position-preference-config-app.js";
 
 Hooks.once('init', () => {
     // Register Log Verbosity Setting
@@ -96,22 +97,22 @@ Hooks.once('init', () => {
         }
     });
 
-    // Register HUD Placement Preference Order
+    // Register HUD Placement Preference Order setting
     game.settings.register(MODULE_ID, 'hudPositionPreference', {
-        name: game.i18n.localize('BAD.settings.hudPositionPreference.name'),
-        hint: game.i18n.localize('BAD.settings.hudPositionPreference.hint'),
         scope: 'client',
-        config: true,
-        type: String,
-        default: 'top-bottom-left-right',
-        choices: {
-            'top-bottom-left-right': game.i18n.localize('BAD.settings.hudPositionPreference.choices.top-bottom-left-right'),
-            'bottom-top-right-left': game.i18n.localize('BAD.settings.hudPositionPreference.choices.bottom-top-right-left'),
-            'left-right-top-bottom': game.i18n.localize('BAD.settings.hudPositionPreference.choices.left-right-top-bottom'),
-            'right-left-bottom-top': game.i18n.localize('BAD.settings.hudPositionPreference.choices.right-left-bottom-top'),
-            'top-bottom-right-left': game.i18n.localize('BAD.settings.hudPositionPreference.choices.top-bottom-right-left'),
-            'bottom-top-left-right': game.i18n.localize('BAD.settings.hudPositionPreference.choices.bottom-top-left-right')
-        }
+        config: false,
+        type: Array,
+        default: ['top', 'bottom', 'left', 'right']
+    });
+
+    // Register HUD Placement Preference Order Menu
+    game.settings.registerMenu(MODULE_ID, 'hudPositionPreferenceMenu', {
+        name: game.i18n.localize('BAD.settings.hudPositionPreference.name'),
+        label: game.i18n.localize('BAD.settings.hudPositionPreference.label'),
+        hint: game.i18n.localize('BAD.settings.hudPositionPreference.hint'),
+        icon: 'fas fa-sort-amount-down',
+        type: PositionPreferenceConfigApp,
+        restricted: false
     });
 
     // Register Persist Tab State setting

@@ -1,0 +1,25 @@
+<form class="bad-position-preference-form" autocomplete="off">
+    <p class="notes">{{localize "BAD.settings.hudPositionPreference.hint"}}</p>
+    <div class="bad-pref-list" id="bad-pref-list">
+        {{#each directions}}
+        <div class="bad-pref-item" data-id="{{this.id}}" draggable="true">
+            <span class="bad-pref-grip"><i class="fas fa-grip-vertical"></i></span>
+            <span class="bad-pref-rank">{{add @index 1}}</span>
+            <span class="bad-pref-label">{{this.label}}</span>
+            <div class="bad-pref-actions">
+                <button type="button" class="bad-pref-btn" data-action="moveUp" title="Move Up" {{#if @first}}disabled{{/if}}>
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+                <button type="button" class="bad-pref-btn" data-action="moveDown" title="Move Down" {{#if @last}}disabled{{/if}}>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    <div class="form-group flexrow bad-form-buttons">
+        <button type="submit" name="submit" class="bad-submit-btn">
+            <i class="fas fa-save"></i> {{localize "Save"}}
+        </button>
+    </div>
+</form>
