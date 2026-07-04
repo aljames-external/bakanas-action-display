@@ -38,6 +38,10 @@
                     "top-bottom-right-left": "Top → Bottom → Right → Left",
                     "bottom-top-left-right": "Bottom → Top → Left → Right"
                 }
+            },
+            "persistTabState": {
+                "name": "Persist Tab Selections Across Close / Open & Refreshes",
+                "hint": "If enabled, your active tab selections for each character are saved and restored whenever you re-open the HUD or refresh Foundry."
             }
         },
         "core": {

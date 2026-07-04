@@ -114,6 +114,24 @@ Hooks.once('init', () => {
         }
     });
 
+    // Register Persist Tab State setting
+    game.settings.register(MODULE_ID, 'persistTabState', {
+        name: game.i18n.localize('BAD.settings.persistTabState.name'),
+        hint: game.i18n.localize('BAD.settings.persistTabState.hint'),
+        scope: 'client',
+        config: true,
+        type: Boolean,
+        default: true
+    });
+
+    // Register HUD Tab States (persisted actor tab selections object)
+    game.settings.register(MODULE_ID, 'hudTabStates', {
+        scope: 'client',
+        config: false,
+        type: Object,
+        default: {}
+    });
+
     // Register HUD Position Mode (attached/pinned/detached)
     game.settings.register(MODULE_ID, 'hudPositionMode', {
         scope: 'client',

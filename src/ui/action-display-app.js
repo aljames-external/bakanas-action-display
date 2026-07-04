@@ -8,6 +8,7 @@ import { ContextMenu } from '../lib/compat.js';
 
 // Cache to persist tab states per actor across HUD rebuilds
 const activeTabCache = new Map();
+let lastActiveTabState = null;
 
 /**
  * Modern ApplicationV2-based HUD overlay for Bakana's Action Display.
@@ -22,7 +23,17 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this.actor = token.actor;
         this.actions = [];
         
-        const cached = activeTabCache.get(this.actor?.uuid);
+        const actorKey = this.actor?.uuid || this.actor?.id;
+        let cached = activeTabCache.get(actorKey);
+        if (!cached && game.settings.get(MODULE_ID, 'persistTabState')) {
+            const allStates = game.settings.get(MODULE_ID, 'hudTabStates') ?? {};
+            cached = (actorKey ? allStates[actorKey] : null) ?? lastActiveTabState;
+            if (cached && actorKey) {
+                activeTabCache.set(actorKey, cached);
+            }
+        } else if (!cached && lastActiveTabState) {
+            cached = lastActiveTabState;
+        }
 
         // Encapsulated tab side state managers
         this.leftTabs = new HUDTabColumn({
@@ -50,6 +61,37 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
         this._onDragStart = this._onDragStart.bind(this);
         this._onDragMove = this._onDragMove.bind(this);
         this._onDragEnd = this._onDragEnd.bind(this);
+    }
+
+    /**
+     * Save active tab states for this actor to in-memory cache and client setting if enabled.
+     */
+    _saveTabState() {
+        const actorKey = this.actor?.uuid || this.actor?.id;
+        
+        const serialized = {
+            left: this.leftTabs.serialize(),
+            right: this.rightTabs.serialize()
+        };
+
+        // Track most recent active tab selections for seamless actor switching
+        lastActiveTabState = serialized;
+
+        if (!actorKey) return;
+
+        // Always update in-memory cache for fast session lookups
+        activeTabCache.set(actorKey, serialized);
+
+        // Persist client-side across refreshes if enabled
+        if (game.settings.get(MODULE_ID, 'persistTabState')) {
+            try {
+                const allStates = foundry.utils.duplicate(game.settings.get(MODULE_ID, 'hudTabStates') ?? {});
+                allStates[actorKey] = serialized;
+                game.settings.set(MODULE_ID, 'hudTabStates', allStates);
+            } catch (err) {
+                log.error("Failed to save persisted tab state:", err);
+            }
+        }
     }
 
 
@@ -342,6 +384,9 @@ export class ActionDisplayApp extends foundry.applications.api.HandlebarsApplica
 
         // Delegate to system adapter to allow system-specific context modifications
         adapter?.modifyContext?.(context, this);
+
+        // Save serialized tab selections for active actor
+        this._saveTabState();
 
         return context;
     }
