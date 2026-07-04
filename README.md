@@ -25,12 +25,12 @@ https://github.com/user-attachments/assets/c842ee1e-783c-4d7e-b55d-de86e5cb0b44
 
 ## Key Features
 
-*   **Dynamic Token Tracking**: Automatically follows your active or selected token, updating the HUD instantly as you switch selection.
+*   **Dynamic Token Tracking & Pinning**: Automatically follows your active or selected token. Toggle between three positioning modes: **Attached** (dynamic token tracking), **Pinned** (fixed offset relative to token top-left, clamped to page), and **Detached** (floating screen coordinates).
 *   **Dual-Tab Filtering**:
     *   **Left-Side Tabs**: Group actions by item type (Weapons, Spells, Feats, Consumables, etc.).
     *   **Right-Side Tabs**: Group actions by their action economy cost (Actions, Bonus Actions, Reactions, Passives, etc.).
 *   **Right-Click Multi-Select**: Right-click on any parent tab or sub-tab to toggle it, allowing you to combine categories (e.g., view both **Weapons** and **Spells**, or **Bonus Actions** and **Reactions** at the same time!).
-*   **Floating / Detached Mode**: Drag the HUD anywhere on your screen—it will smoothly glide at 60fps and save its position. Click the anchor icon to re-attach it to tokens.
+*   **Floating / Detached Mode**: Drag the HUD anywhere on your screen—it will smoothly glide at 60fps and save its position. Click the anchor button to cycle positioning modes.
 *   **Hide Depleted Resources**: Toggle the resource filter to instantly hide spells, activities, or items that have run out of slots, charges, or uses.
 *   **Customizable Visibility**: Right-click any action card in the HUD to hide it. Unhide it anytime via the context menu.
 *   **Left-Click Smart Dropdowns**: For items with multiple options (like a spell with multiple casting levels or a weapon with multiple activities), left-clicking opens a sleek dropdown to let you choose your option. Even if active filters limit a multi-option item down to a single qualifying choice, the dropdown is still shown to provide clear feedback on what is being cast.
@@ -40,6 +40,8 @@ https://github.com/user-attachments/assets/c842ee1e-783c-4d7e-b55d-de86e5cb0b44
 ## What's New in 0.3.0
 
 *   **AppV2 Declarative Action Architecture**: Fully updated to standard Foundry V12 `ApplicationV2` idioms with instance action handlers and clean prototype dispatch.
+*   **Configurable Placement Preference Order**: Select your preferred sequence of sides around the token (`Top → Bottom → Left → Right`, `Bottom → Top → Right → Left`, etc.) where the HUD will attempt to attach.
+*   **Top-Left Token Pinning Mode**: Pin the HUD to the token's top-left corner at a fixed offset. The HUD moves with the token and scales with canvas pan/zoom while remaining 100% on screen.
 *   **Dynamic Sub-Action Filtering**: Dropdown menus for multi-option items (like D&D 5e activities and PF1 linked attacks) now dynamically react to active HUD tab filters.
 *   **Modular Component Filtering Layer**: Extracted spell component exclusion checks into system adapter methods (`matchesComponentsFilter`) with strict, cross-realm type validation.
 *   **Zero-Allocation Performance (`toSet`)**: Introduced a high-performance `toSet(input, mapFn)` utility function to eliminate intermediate `.map()` array heap allocations across UI rendering passes.
@@ -53,8 +55,11 @@ https://github.com/user-attachments/assets/c842ee1e-783c-4d7e-b55d-de86e5cb0b44
     *   **Second Click (when already cleared)**: Toggles the parent tab itself **off** (unselecting it). If no parent tabs remain active on that side, the column automatically falls back to selecting the **All** parent tab.
 *   **Left-Click an Action Card**: Rolls the action! If the action has multiple options, it opens a dropdown; click the option you want to roll.
 *   **Right-Click an Action Card**: Opens the context menu to **Hide** or **Unhide** the action, or open the item's sheet.
-*   **Drag the Top Handle**: Detaches the HUD and lets you drag it anywhere.
-*   **Click the Anchor Icon ⚓**: Re-attaches the HUD to follow your selected token.
+*   **Drag the Top Handle**: Instantly detaches/pins the HUD and lets you drag it anywhere.
+*   **Click the Anchor / Pin Icon**: Cycles through HUD positioning modes:
+    *   `<i class="fas fa-link"></i>` **Attached**: Dynamic token tracking based on your placement preference order.
+    *   `<i class="fas fa-thumbtack"></i>` **Pinned**: Locks the HUD to the token's top-left corner at a fixed offset (clamped to page bounds).
+    *   `<i class="fas fa-unlink"></i>` **Detached**: Floating at your last dragged screen coordinates.
 *   **Click the Checkbox ⚙️**: Toggles the **Hide Depleted Resources** filter.
 
 https://github.com/user-attachments/assets/d7d23743-82ed-4427-836c-dc426ee1be8a
@@ -136,7 +141,8 @@ For a deep dive into the codebase architecture, lifecycle hooks, and instruction
 ## Configuration & Settings
 
 Configure these options in the Foundry VTT Module Settings menu:
-*   **HUD Position Mode**: Choose whether the HUD starts in `Attached` (following tokens) or `Detached` (floating) mode.
+*   **HUD Placement Preference Order**: Select your preferred sequence of sides around the token (`Top → Bottom → Left → Right`, `Bottom → Top → Right → Left`, etc.) where the HUD will attach.
+*   **HUD Position Mode**: Choose whether the HUD operates in `Attached` (dynamic tracking), `Pinned` (fixed token offset), or `Detached` (floating) mode.
 *   **Filter Out of Resources**: Enable or disable the resource filter by default.
 *   **Theme & Styling**: Fully compatible with custom CSS. Overrides core Foundry styles cleanly.
 

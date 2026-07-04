@@ -63,7 +63,7 @@ The module is built using a clean **pipes-and-filters / adapter** architecture, 
 ### 4. UI Layer (`ActionDisplayApp`, `HUDTabColumn`, `HUDTab`, & `TabRef`)
 *   **Role**: The rendering engine and state management system, built on Foundry VTT's modern `ApplicationV2` (`HandlebarsApplication`) framework.
 *   **Responsibilities**:
-    *   **`ActionDisplayApp`**: Listens to Foundry hooks (like token selection) to position and render the HUD. Manages attachment/detachment states, scroll position preservation (`scrollable` selector), and context rendering.
+    *   **`ActionDisplayApp`**: Listens to Foundry hooks (like token selection) to position and render the HUD. Manages positioning modes (`attached` dynamic preference placement, `pinned` fixed token offset, and `detached` floating screen position), scroll position preservation (`scrollable` selector), and context rendering.
     *   **`HUDTabColumn`**: Encapsulates left and right column tab states (active parents, focused parent, active sub-types) and enforces click interaction rules (exclusive left-click parent selection, multi-stage right-click toggles, sub-tab isolation).
     *   **`HUDTab`**: A unified, recursive tab UI model representing top-level parent tabs, sub-tabs, and deeply nested sub-tabs with depth levels (`level` 0, 1, 2+), parent/rootParent pointers, and click event handlers (`onLeftClick`, `onRightClick`).
     *   **`TabRef`**: A structured tab data reference class (`src/ui/tab-ref.js`) attached to item activities (`item.tabs`, `activity.tabs`). Pre-computes `.root` parent IDs and `.path` hierarchy strings (e.g. `'economy/action'`) at construction.
