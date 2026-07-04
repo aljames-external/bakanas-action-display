@@ -48,8 +48,9 @@ export class PositionPreferenceConfigApp extends foundry.applications.api.Handle
             right: game.i18n.localize('BAD.common.right') || 'Right'
         };
 
-        const directions = this.directions.map(id => ({
+        const directions = this.directions.map((id, index) => ({
             id,
+            rank: index + 1,
             label: labels[id] || id.charAt(0).toUpperCase() + id.slice(1)
         }));
 

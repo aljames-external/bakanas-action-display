@@ -4,7 +4,7 @@
         {{#each directions}}
         <div class="bad-pref-item" data-id="{{this.id}}" draggable="true">
             <span class="bad-pref-grip"><i class="fas fa-grip-vertical"></i></span>
-            <span class="bad-pref-rank">{{add @index 1}}</span>
+            <span class="bad-pref-rank">{{this.rank}}</span>
             <span class="bad-pref-label">{{this.label}}</span>
             <div class="bad-pref-actions">
                 <button type="button" class="bad-pref-btn" data-action="moveUp" title="Move Up" {{#if @first}}disabled{{/if}}>
