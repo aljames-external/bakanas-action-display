@@ -89,7 +89,8 @@ Hooks.once('init', async () => {
 function handleHUDClose() {
     if (activeApp) {
         const persist = game.settings.get(MODULE_ID, 'persistDetached');
-        const shouldClose = activeApp.isAttached || !persist || closeDetachedHUD;
+        const isTracked = ['attached', 'pinned'].includes(activeApp.positionMode);
+        const shouldClose = isTracked || !persist || closeDetachedHUD;
         
         if (shouldClose) {
             log.debug(`HUD Hook | Closing activeApp (state: ${activeApp.state})`);
@@ -166,7 +167,7 @@ const MOVEMENT_KEYS = new Set(['x', 'y', 'rotation', 'elevation', 'animation']);
 Hooks.on('updateToken', (tokenDocument, change) => {
     if (activeApp && activeApp.token.document.id === tokenDocument.id && activeApp.rendered) {
         // If the HUD is detached, token document updates (movement, flags, etc.) never affect HUD contents
-        if (!activeApp.isAttached) return;
+        if (activeApp.positionMode === 'detached') return;
 
         // Skip full DOM re-renders if the update is only movement, rotation, or elevation.
         // Positioning is already handled at 60fps by the refreshToken hook.
@@ -180,7 +181,7 @@ Hooks.on('updateToken', (tokenDocument, change) => {
     }
 });
 
-// Update HUD position in real-time when the token moves (e.g., during keyboard movement or animations)
+// Update HUD position in real-time when the token moves (for attached mode)
 Hooks.on('refreshToken', (token, options) => {
     if (activeApp && activeApp.token === token && activeApp.isAttached && activeApp.rendered) {
         activeApp.setPosition();
@@ -189,7 +190,7 @@ Hooks.on('refreshToken', (token, options) => {
 
 // Update HUD position when the canvas is panned or zoomed
 Hooks.on('canvasPan', (canvas, pan) => {
-    if (activeApp && activeApp.isAttached && activeApp.rendered) {
+    if (activeApp && ['attached', 'pinned'].includes(activeApp.positionMode) && activeApp.rendered) {
         activeApp.setPosition();
     }
 });
