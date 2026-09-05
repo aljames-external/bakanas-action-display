@@ -135,9 +135,6 @@ button.bad-control-btn:hover {
 }
 
 /* Force suppress Foundry default button focus/active outlines on all control buttons */
-.bakana-action-display-container .bad-control-btn:focus,
-.bakana-action-display-container .bad-control-btn:focus-visible,
-.bakana-action-display-container .bad-control-btn:active,
 .bad-control-btn:focus,
 .bad-control-btn:focus-visible,
 .bad-control-btn:active {
@@ -147,7 +144,6 @@ button.bad-control-btn:hover {
 }
 
 /* Left-Click Selected: Icon is purple (highlighted, no outline) */
-.bakana-action-display-container .bad-control-btn.active,
 .bad-control-btn.active {
     color: #c084fc;
     background: rgba(167, 139, 250, 0.18);
@@ -157,7 +153,6 @@ button.bad-control-btn:hover {
     box-shadow: none;
 }
 
-.bakana-action-display-container .bad-control-btn.active:hover,
 .bad-control-btn.active:hover {
     color: #d8b4fe;
     background: rgba(167, 139, 250, 0.28);
@@ -167,14 +162,11 @@ button.bad-control-btn:hover {
     box-shadow: none;
 }
 
-.bakana-action-display-container .bad-control-btn.active:focus,
 .bad-control-btn.active:focus {
     color: #c084fc;
 }
 
 /* Right-Click Selected: Icon is outlined in orange (no purple highlight) */
-.bakana-action-display-container .bad-control-btn.auto-toggle-active,
-.bad-combat-track-btn.auto-toggle-active,
 .bad-control-btn.auto-toggle-active {
     color: #94a3b8;
     background: rgba(255, 255, 255, 0.03);
@@ -184,8 +176,6 @@ button.bad-control-btn:hover {
     box-shadow: 0 0 4px rgba(249, 115, 22, 0.4);
 }
 
-.bakana-action-display-container .bad-control-btn.auto-toggle-active:hover,
-.bad-combat-track-btn.auto-toggle-active:hover,
 .bad-control-btn.auto-toggle-active:hover {
     color: #ffffff;
     background: rgba(255, 255, 255, 0.08);
@@ -195,8 +185,6 @@ button.bad-control-btn:hover {
 }
 
 /* Both Left & Right Click Selected: Icon is purple AND outlined in orange */
-.bakana-action-display-container .bad-control-btn.active.auto-toggle-active,
-.bad-combat-track-btn.active.auto-toggle-active,
 .bad-control-btn.active.auto-toggle-active {
     color: #c084fc;
     background: rgba(167, 139, 250, 0.18);
@@ -206,8 +194,6 @@ button.bad-control-btn:hover {
     box-shadow: 0 0 5px rgba(249, 115, 22, 0.45);
 }
 
-.bakana-action-display-container .bad-control-btn.active.auto-toggle-active:hover,
-.bad-combat-track-btn.active.auto-toggle-active:hover,
 .bad-control-btn.active.auto-toggle-active:hover {
     color: #d8b4fe;
     background: rgba(167, 139, 250, 0.28);
@@ -518,7 +504,7 @@ button.bad-control-btn:hover {
     opacity: 1;
 }
 
-/* /* Selected/Active Parent Tab State (when no sub-tab is active) */
+/* Selected/Active Parent Tab State (when no sub-tab is active) */
 .bad-left-tab.active {
     background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
     border-color: #8b5cf6;
@@ -1326,13 +1312,6 @@ button.bad-control-btn:hover {
     pointer-events: all !important;
 }
 
-.bad-sub-context-menu ol,
-.bad-sub-context-menu ul,
-.bad-sub-context-menu menu {
-    list-style: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
 
 .bad-sub-context-menu .context-item {
     display: flex;
@@ -2460,7 +2439,6 @@ body > #tooltip.bad-summary-has-table-wrapper,
 .bad-economy-preset-select {
     flex-grow: 1;
     max-width: 250px;
-    background-color: #1a162b;
     background: #1a162b;
     border: 1px solid rgba(167, 139, 250, 0.35);
     border-radius: 0.35em;
@@ -2477,7 +2455,6 @@ body > #tooltip.bad-summary-has-table-wrapper,
 }
 
 .bad-economy-preset-select option {
-    background-color: #1a162b;
     background: #1a162b;
     color: #f8fafc;
     padding: 0.35em 0.5em;
@@ -2582,7 +2559,6 @@ body > #tooltip.bad-summary-has-table-wrapper,
     width: 6em;
     height: 2em;
     padding: 0.2em 0.5em;
-    background-color: #1a162b;
     background: #1a162b;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 0.25em;
@@ -2914,8 +2890,6 @@ body > #tooltip.bad-summary-has-table-wrapper,
     text-overflow: ellipsis;
 }
 
-.bakana-action-display-container .bad-token-inspiration-btn,
-.bad-token-info-name-row .bad-token-inspiration-btn,
 a.bad-token-inspiration-btn,
 button.bad-token-inspiration-btn,
 .bad-token-inspiration-btn {
@@ -2925,9 +2899,7 @@ button.bad-token-inspiration-btn,
     align-items: center;
     justify-content: center;
     background: none;
-    background-color: transparent;
     border: none;
-    border-width: 0;
     outline: none;
     box-shadow: none;
     color: #64748b;
@@ -2945,68 +2917,56 @@ button.bad-token-inspiration-btn,
     flex-shrink: 0;
 }
 
-.bakana-action-display-container .bad-token-inspiration-btn i,
 .bad-token-inspiration-btn i {
     font-size: 1.1em;
     line-height: 1;
 }
 
-.bakana-action-display-container .bad-token-inspiration-btn:hover,
-.bad-token-info-name-row .bad-token-inspiration-btn:hover,
 a.bad-token-inspiration-btn:hover,
 button.bad-token-inspiration-btn:hover,
 .bad-token-inspiration-btn:hover {
     color: #94a3b8;
     background: none;
-    background-color: transparent;
     border: none;
-    border-width: 0;
     outline: none;
     box-shadow: none;
     text-decoration: none;
 }
 
-.bakana-action-display-container .bad-token-inspiration-btn:focus,
-.bakana-action-display-container .bad-token-inspiration-btn:focus-visible,
-.bakana-action-display-container .bad-token-inspiration-btn:active,
+a.bad-token-inspiration-btn:focus,
+a.bad-token-inspiration-btn:focus-visible,
+a.bad-token-inspiration-btn:active,
+button.bad-token-inspiration-btn:focus,
+button.bad-token-inspiration-btn:focus-visible,
+button.bad-token-inspiration-btn:active,
 .bad-token-inspiration-btn:focus,
 .bad-token-inspiration-btn:focus-visible,
 .bad-token-inspiration-btn:active {
     outline: none;
     box-shadow: none;
     border: none;
-    border-width: 0;
     background: none;
-    background-color: transparent;
     text-decoration: none;
 }
 
-.bakana-action-display-container .bad-token-inspiration-btn.active,
-.bad-token-info-name-row .bad-token-inspiration-btn.active,
 a.bad-token-inspiration-btn.active,
 button.bad-token-inspiration-btn.active,
 .bad-token-inspiration-btn.active {
     color: #f59e0b;
     background: none;
-    background-color: transparent;
     border: none;
-    border-width: 0;
     outline: none;
     box-shadow: none;
     text-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
     text-decoration: none;
 }
 
-.bakana-action-display-container .bad-token-inspiration-btn.active:hover,
-.bad-token-info-name-row .bad-token-inspiration-btn.active:hover,
 a.bad-token-inspiration-btn.active:hover,
 button.bad-token-inspiration-btn.active:hover,
 .bad-token-inspiration-btn.active:hover {
     color: #fbbf24;
     background: none;
-    background-color: transparent;
     border: none;
-    border-width: 0;
     outline: none;
     box-shadow: none;
     text-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
@@ -3430,7 +3390,6 @@ button.bad-token-inspiration-btn.active:hover,
 }
 
 .bad-hud-config-select {
-    background-color: #1a162b;
     background: #1a162b;
     color: #f8fafc;
     border: 1px solid rgba(167, 139, 250, 0.4);
@@ -3442,7 +3401,6 @@ button.bad-token-inspiration-btn.active:hover,
 }
 
 .bad-hud-config-select option {
-    background-color: #1a162b;
     background: #1a162b;
     color: #f8fafc;
     padding: 0.35em 0.5em;
