@@ -47,7 +47,7 @@ export class Dnd5eSystemContextMenuManager extends BaseSystemContextMenuManager 
                 icon: '<i class="fas fa-book"></i>',
                 condition: el => {
                     const item = this.#getOwnerItem(app, el);
-                    return item?.type === 'spell' && !['innate', 'atwill', 'pact'].includes(item.system.method) && !item.system.prepared;
+                    return Boolean(item?.type === 'spell' && !['innate', 'atwill', 'pact'].includes(item.system.method) && !item.system.prepared);
                 },
                 callback: async el => {
                     const item = this.#getOwnerItem(app, el);
@@ -61,7 +61,7 @@ export class Dnd5eSystemContextMenuManager extends BaseSystemContextMenuManager 
                 icon: '<i class="fas fa-book-dead"></i>',
                 condition: el => {
                     const item = this.#getOwnerItem(app, el);
-                    return item?.type === 'spell' && !['innate', 'atwill', 'pact'].includes(item.system.method) && !!item.system.prepared;
+                    return Boolean(item?.type === 'spell' && !['innate', 'atwill', 'pact'].includes(item.system.method) && item.system.prepared);
                 },
                 callback: async el => {
                     const item = this.#getOwnerItem(app, el);
@@ -75,7 +75,7 @@ export class Dnd5eSystemContextMenuManager extends BaseSystemContextMenuManager 
                 icon: '<i class="fas fa-shield-halved"></i>',
                 condition: el => {
                     const item = this.#getOwnerItem(app, el);
-                    return item && ['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot'].includes(item.type) && item.system?.equipped !== undefined && !this.adapter.getItemEquipped(item);
+                    return Boolean(item && ['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot'].includes(item.type) && item.system?.equipped !== undefined && !this.adapter.getItemEquipped(item));
                 },
                 callback: async el => {
                     const item = this.#getOwnerItem(app, el);
@@ -89,7 +89,7 @@ export class Dnd5eSystemContextMenuManager extends BaseSystemContextMenuManager 
                 icon: '<i class="fas fa-shield-slash"></i>',
                 condition: el => {
                     const item = this.#getOwnerItem(app, el);
-                    return item && ['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot'].includes(item.type) && item.system?.equipped !== undefined && this.adapter.getItemEquipped(item);
+                    return Boolean(item && ['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot'].includes(item.type) && item.system?.equipped !== undefined && this.adapter.getItemEquipped(item));
                 },
                 callback: async el => {
                     const item = this.#getOwnerItem(app, el);

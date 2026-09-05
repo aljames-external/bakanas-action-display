@@ -72,7 +72,7 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                 icon: '<i class="fas fa-shield-halved"></i>',
                 condition: el => {
                     const item = this.#getOwnerItem(app, el);
-                    return this.#isEquippable(item, app);
+                    return Boolean(this.#isEquippable(item, app));
                 },
                 submenu: [
                     {

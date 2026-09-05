@@ -82,7 +82,7 @@ export class ContextMenuManager {
                 condition: el => {
                     if (!this.app.actor?.isOwner) return false;
                     const action = this.app.actions?.find(a => a.id === el.dataset.actionId);
-                    return action && !action.isHidden;
+                    return Boolean(action && !action.isHidden);
                 },
                 callback: el => {
                     this.app._toggleActionHidden(el.dataset.actionId, true);
@@ -94,7 +94,7 @@ export class ContextMenuManager {
                 condition: el => {
                     if (!this.app.actor?.isOwner) return false;
                     const action = this.app.actions?.find(a => a.id === el.dataset.actionId);
-                    return action && action.isHidden;
+                    return Boolean(action && action.isHidden);
                 },
                 callback: el => {
                     this.app._toggleActionHidden(el.dataset.actionId, false);
@@ -145,6 +145,7 @@ export class ContextMenuManager {
                 scheduleReposition();
                 queueMicrotask(scheduleReposition);
                 requestAnimationFrame(scheduleReposition);
+                setTimeout(scheduleReposition, 200);
             },
             onClose: () => {
                 this.closeSubmenu();
@@ -201,17 +202,30 @@ export class ContextMenuManager {
             display: 'block',
             visibility: 'visible',
             opacity: '1',
+            height: 'auto',
+            'min-height': '0',
             'max-height': `${maxHeight}px`
         };
+
+        menuEl.querySelectorAll?.('.context-item')?.forEach?.(li => {
+            if (!li.textContent?.trim() && !li.querySelector?.('i, img, span, svg')) {
+                li.remove?.();
+            }
+        });
 
         for (const [prop, val] of Object.entries(styles)) {
             menuEl.style?.setProperty?.(prop, val, 'important');
         }
 
         Array.from(menuEl.children ?? []).forEach(child => {
+            child.style?.setProperty?.('height', 'auto', 'important');
+            child.style?.setProperty?.('min-height', '0', 'important');
             child.style?.setProperty?.('max-height', `${maxHeight}px`, 'important');
             child.style?.setProperty?.('overflow-y', 'auto', 'important');
             child.style?.setProperty?.('overflow-x', 'clip', 'important');
+            child.style?.setProperty?.('margin', '0', 'important');
+            child.style?.setProperty?.('padding', '0', 'important');
+            child.style?.setProperty?.('list-style', 'none', 'important');
         });
     }
 

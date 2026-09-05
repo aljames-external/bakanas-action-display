@@ -250,17 +250,30 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
             display: 'block',
             visibility: 'visible',
             opacity: '1',
+            height: 'auto',
+            'min-height': '0',
             'max-height': `${maxHeight}px`
         };
+
+        menuEl.querySelectorAll?.('.context-item')?.forEach?.(li => {
+            if (!li.textContent?.trim() && !li.querySelector?.('i, img, span, svg')) {
+                li.remove?.();
+            }
+        });
 
         for (const [prop, val] of Object.entries(styles)) {
             menuEl.style?.setProperty?.(prop, val, 'important');
         }
 
         Array.from(menuEl.children ?? []).forEach(child => {
+            child.style?.setProperty?.('height', 'auto', 'important');
+            child.style?.setProperty?.('min-height', '0', 'important');
             child.style?.setProperty?.('max-height', `${maxHeight}px`, 'important');
             child.style?.setProperty?.('overflow-y', 'auto', 'important');
             child.style?.setProperty?.('overflow-x', 'clip', 'important');
+            child.style?.setProperty?.('margin', '0', 'important');
+            child.style?.setProperty?.('padding', '0', 'important');
+            child.style?.setProperty?.('list-style', 'none', 'important');
         });
     };
 
