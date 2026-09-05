@@ -1806,8 +1806,12 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         }
 
         // Clean up any lingering context-menu or sub-context-menu DOM elements
-        const openMenus = document.querySelectorAll('#context-menu, .context-menu');
-        openMenus.forEach(el => el.remove());
+        const openMenus = document.querySelectorAll('#context-menu.bad-context-menu, .context-menu.bad-context-menu, .bad-sub-context-menu');
+        openMenus.forEach(el => {
+            el.classList?.remove?.('bad-context-menu');
+            el.remove?.();
+        });
+        document.querySelectorAll('#context-menu.bad-context-menu, .context-menu.bad-context-menu').forEach(el => el.classList?.remove?.('bad-context-menu'));
 
         const container = this.element?.querySelector?.('.bakana-action-display-container');
         container?.classList?.remove?.('has-context-menu');

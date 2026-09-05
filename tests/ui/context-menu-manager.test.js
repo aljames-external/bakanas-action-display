@@ -182,12 +182,24 @@ test('ContextMenuManager _positionContextMenu reparents #context-menu to documen
     const manager = new ContextMenuManager(mockApp, mockElement);
 
     const menuStyles = {};
+    const childStyles = {};
+    const classes = new Set();
+    const mockChild = {
+        style: {
+            setProperty: (prop, val) => { childStyles[prop] = val; }
+        }
+    };
     const mockMenuEl = {
         parentElement: { notBody: true },
+        classList: {
+            add: (cls) => classes.add(cls),
+            remove: (cls) => classes.delete(cls),
+            contains: (cls) => classes.has(cls)
+        },
         style: {
             setProperty: (prop, val) => { menuStyles[prop] = val; }
         },
-        children: []
+        children: [mockChild]
     };
 
     let appendedToBody = false;
@@ -210,11 +222,14 @@ test('ContextMenuManager _positionContextMenu reparents #context-menu to documen
     try {
         manager._positionContextMenu(mockTarget, 4);
         assert.equal(appendedToBody, true, '#context-menu must be reparented to document.body');
+        assert.equal(classes.has('bad-context-menu'), true, 'bad-context-menu class must be added');
         assert.equal(menuStyles.position, 'fixed', 'Position must be fixed to escape HUD bounding box');
         assert.equal(menuStyles.left, '50px', 'Left must match target left');
         assert.equal(menuStyles.top, '130px', 'Top must match target bottom when space below is sufficient');
         assert.equal(menuStyles.width, '200px', 'Width must match target width');
         assert.equal(menuStyles['z-index'], '999999', 'z-index must be high to render over HUD and canvas');
+        assert.equal(childStyles['overflow-x'], 'clip', 'child element must have overflow-x: clip to prevent scrollbar leakage');
+        assert.equal(childStyles['overflow-y'], 'auto', 'child element must have overflow-y: auto');
     } finally {
         document.querySelector = originalQuerySelector;
         document.body.appendChild = originalAppendChild;
@@ -264,8 +279,16 @@ test('showActivityDropdown close removes #context-menu from DOM and resets activ
         element: { ownerDocument: { body: document.body } }
     };
     let removedFromDom = false;
+    const classes = new Set();
     const mockMenuEl = {
         remove: () => { removedFromDom = true; },
+        classList: {
+            add: (cls) => classes.add(cls),
+            remove: (cls) => classes.delete(cls),
+            contains: (cls) => classes.has(cls)
+        },
+        style: { setProperty: () => {} },
+        children: [],
         querySelectorAll: () => []
     };
 
@@ -295,6 +318,7 @@ test('showActivityDropdown close removes #context-menu from DOM and resets activ
 
         await mockApp._activeLeftClickMenu.close();
         assert.equal(removedFromDom, true, '#context-menu should be removed from DOM on close');
+        assert.equal(classes.has('bad-context-menu'), false, 'bad-context-menu class should be removed on close');
         assert.equal(mockApp._activeLeftClickMenu, null, 'Active left click menu reference should be cleared');
         assert.equal(mockApp._activeMenuTarget, null, 'Active menu target reference should be cleared');
     } finally {

@@ -152,6 +152,7 @@ export class ContextMenuManager {
                 this.app._activeContextMenuTarget = null;
                 prevContextTarget?.classList?.remove?.('bad-menu-active');
                 this.element.querySelector('.bakana-action-display-container')?.classList?.remove?.('has-context-menu');
+                document.querySelectorAll('#context-menu.bad-context-menu, .context-menu.bad-context-menu').forEach(el => el.classList?.remove?.('bad-context-menu'));
             }
         };
 
@@ -169,6 +170,8 @@ export class ContextMenuManager {
         const targetBody = this.app?.element?.ownerDocument?.body ?? document.body;
         const menuEl = document.querySelector('#context-menu, .context-menu:not(.bad-sub-context-menu)');
         if (!menuEl) return;
+
+        menuEl.classList?.add?.('bad-context-menu');
 
         if (menuEl.parentElement !== targetBody) {
             targetBody.appendChild(menuEl);
@@ -207,6 +210,7 @@ export class ContextMenuManager {
         Array.from(menuEl.children ?? []).forEach(child => {
             child.style?.setProperty?.('max-height', `${maxHeight}px`, 'important');
             child.style?.setProperty?.('overflow-y', 'auto', 'important');
+            child.style?.setProperty?.('overflow-x', 'clip', 'important');
         });
     }
 
@@ -334,7 +338,9 @@ export class ContextMenuManager {
                 this.closeSubmenu();
 
                 const parentMenu = document.querySelector('#context-menu, .context-menu');
+                parentMenu?.classList?.remove?.('bad-context-menu');
                 parentMenu?.remove?.();
+                document.querySelectorAll('#context-menu.bad-context-menu, .context-menu.bad-context-menu').forEach(el => el.classList?.remove?.('bad-context-menu'));
                 if (this.app._activeContextMenuTarget) {
                     this.app._activeContextMenuTarget.classList.remove('bad-menu-active');
                     this.app._activeContextMenuTarget = null;

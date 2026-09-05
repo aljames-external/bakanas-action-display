@@ -1100,30 +1100,36 @@
     opacity: 0.85;
 }
 
-/* Ensure Foundry's native context menu always renders on top of our HUD and receives clicks */
-#context-menu, .context-menu {
+/* Ensure Foundry's native context menu always renders on top of our HUD and receives clicks when BAD activates it */
+#context-menu.bad-context-menu,
+.context-menu.bad-context-menu {
     z-index: 999999 !important;
     pointer-events: all !important;
     transform: translateZ(0); /* Promote to composited layer to prevent 1-frame transition flickers */
     max-height: 85vh !important;
 }
 
-#context-menu .context-items,
-.context-menu .context-items,
-#context-menu ol,
-.context-menu ol,
-#context-menu ul,
-.context-menu ul,
-#context-menu menu,
-.context-menu menu {
+#context-menu.bad-context-menu .context-items,
+.context-menu.bad-context-menu .context-items,
+#context-menu.bad-context-menu ol,
+.context-menu.bad-context-menu ol,
+#context-menu.bad-context-menu ul,
+.context-menu.bad-context-menu ul,
+#context-menu.bad-context-menu menu,
+.context-menu.bad-context-menu menu,
+.bad-sub-context-menu ol,
+.bad-sub-context-menu ul,
+.bad-sub-context-menu menu {
     max-height: 85vh !important;
     overflow-y: auto !important;
+    overflow-x: clip !important;
 }
 
 /* Hover effects are disabled via :not(.has-context-menu) on the hover rulesets above */
 
 /* Style the context menu items for single-line flex layout to support item-identical segmentation */
-#context-menu .context-item, .context-menu .context-item {
+#context-menu.bad-context-menu .context-item,
+.context-menu.bad-context-menu .context-item {
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
@@ -1136,7 +1142,8 @@
     padding: 0.25em 0.5em !important;
 }
 
-#context-menu .bad-menu-icon-wrap, .context-menu .bad-menu-icon-wrap {
+#context-menu.bad-context-menu .bad-menu-icon-wrap,
+.context-menu.bad-context-menu .bad-menu-icon-wrap {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1144,7 +1151,8 @@
 }
 
 /* Context menu icon styling */
-#context-menu .bad-menu-icon, .context-menu .bad-menu-icon {
+#context-menu.bad-context-menu .bad-menu-icon,
+.context-menu.bad-context-menu .bad-menu-icon {
     width: 1.35em !important;
     height: 1.35em !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -1154,7 +1162,8 @@
     object-fit: cover;
 }
 
-#context-menu .bad-action-icon-placeholder, .context-menu .bad-action-icon-placeholder {
+#context-menu.bad-context-menu .bad-action-icon-placeholder,
+.context-menu.bad-context-menu .bad-action-icon-placeholder {
     width: 1.35em !important;
     height: 1.35em !important;
     border-radius: 0.2em !important;
@@ -1169,8 +1178,10 @@
 }
 
 /* Context menu activity / action name (flex: 1 1 auto to take remaining space) */
-#context-menu .bad-action-name, .context-menu .bad-action-name,
-#context-menu .bad-menu-name, .context-menu .bad-menu-name {
+#context-menu.bad-context-menu .bad-action-name,
+.context-menu.bad-context-menu .bad-action-name,
+#context-menu.bad-context-menu .bad-menu-name,
+.context-menu.bad-context-menu .bad-menu-name {
     font-size: 1em !important;
     color: #f1f5f9 !important;
     flex: 1 1 auto !important;
@@ -1180,15 +1191,16 @@
     text-overflow: ellipsis !important;
 }
 
-#context-menu .context-item:hover .bad-action-name,
-.context-menu .context-item:hover .bad-action-name,
-#context-menu .context-item:hover .bad-menu-name,
-.context-menu .context-item:hover .bad-menu-name {
+#context-menu.bad-context-menu .context-item:hover .bad-action-name,
+.context-menu.bad-context-menu .context-item:hover .bad-action-name,
+#context-menu.bad-context-menu .context-item:hover .bad-menu-name,
+.context-menu.bad-context-menu .context-item:hover .bad-menu-name {
     color: #ffffff !important;
 }
 
 /* Context menu economy bars slot (1/6th width = 16.666%, middle 4/6 - 5/6 when enabled) */
-#context-menu .bad-economy-bars, .context-menu .bad-economy-bars {
+#context-menu.bad-context-menu .bad-economy-bars,
+.context-menu.bad-context-menu .bad-economy-bars {
     flex: 0 0 16.666% !important;
     width: 16.666% !important;
     max-width: 16.666% !important;
@@ -1201,11 +1213,13 @@
     height: 100% !important;
 }
 
-#context-menu .bad-economy-bars:empty, .context-menu .bad-economy-bars:empty {
+#context-menu.bad-context-menu .bad-economy-bars:empty,
+.context-menu.bad-context-menu .bad-economy-bars:empty {
     display: none !important;
 }
 
-#context-menu .bad-economy-slot, .context-menu .bad-economy-slot {
+#context-menu.bad-context-menu .bad-economy-slot,
+.context-menu.bad-context-menu .bad-economy-slot {
     flex: 1 1 0% !important;
     min-width: 0 !important;
     height: 1.15em !important;
@@ -1215,7 +1229,8 @@
     box-sizing: border-box !important;
 }
 
-#context-menu .bad-economy-bar, .context-menu .bad-economy-bar {
+#context-menu.bad-context-menu .bad-economy-bar,
+.context-menu.bad-context-menu .bad-economy-bar {
     width: 100% !important;
     height: 100% !important;
     border-radius: 2px !important;
@@ -1226,7 +1241,8 @@
 }
 
 /* Remaining Uses Slot (Dedicated 1/6th of space on far right = 16.666%) */
-#context-menu .bad-action-uses-slot, .context-menu .bad-action-uses-slot {
+#context-menu.bad-context-menu .bad-action-uses-slot,
+.context-menu.bad-context-menu .bad-action-uses-slot {
     flex: 0 0 16.666% !important;
     width: 16.666% !important;
     max-width: 16.666% !important;
@@ -1239,8 +1255,10 @@
 }
 
 /* Uses badge inside dropdown context menu */
-#context-menu .bad-menu-uses, .context-menu .bad-menu-uses,
-#context-menu .bad-action-uses, .context-menu .bad-action-uses {
+#context-menu.bad-context-menu .bad-menu-uses,
+.context-menu.bad-context-menu .bad-menu-uses,
+#context-menu.bad-context-menu .bad-action-uses,
+.context-menu.bad-context-menu .bad-action-uses {
     font-size: 0.85em !important;
     background: rgba(255, 255, 255, 0.08) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -1253,8 +1271,10 @@
 }
 
 /* Depleted uses styling (red) */
-#context-menu .bad-menu-uses.depleted, .context-menu .bad-menu-uses.depleted,
-#context-menu .bad-action-uses.depleted, .context-menu .bad-action-uses.depleted {
+#context-menu.bad-context-menu .bad-menu-uses.depleted,
+.context-menu.bad-context-menu .bad-menu-uses.depleted,
+#context-menu.bad-context-menu .bad-action-uses.depleted,
+.context-menu.bad-context-menu .bad-action-uses.depleted {
     background: rgba(239, 68, 68, 0.1) !important;
     border-color: rgba(239, 68, 68, 0.2) !important;
     color: #f87171 !important;
@@ -1263,8 +1283,10 @@
 }
 
 /* Upcast uses styling (orange) */
-#context-menu .bad-menu-uses.upcast, .context-menu .bad-menu-uses.upcast,
-#context-menu .bad-action-uses.upcast, .context-menu .bad-action-uses.upcast {
+#context-menu.bad-context-menu .bad-menu-uses.upcast,
+.context-menu.bad-context-menu .bad-menu-uses.upcast,
+#context-menu.bad-context-menu .bad-action-uses.upcast,
+.context-menu.bad-context-menu .bad-action-uses.upcast {
     background: rgba(251, 146, 60, 0.1) !important;
     border-color: rgba(251, 146, 60, 0.2) !important;
     color: #fb923c !important;
@@ -1273,7 +1295,8 @@
 }
 
 /* Submenu Arrow & Popout Styling */
-#context-menu .bad-menu-submenu-arrow, .context-menu .bad-menu-submenu-arrow {
+#context-menu.bad-context-menu .bad-menu-submenu-arrow,
+.context-menu.bad-context-menu .bad-menu-submenu-arrow {
     margin-left: auto !important;
     padding-left: 12px !important;
     font-size: 0.75em !important;

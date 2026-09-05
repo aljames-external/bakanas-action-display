@@ -220,6 +220,7 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
 
     const applyPositioning = (menuEl) => {
         if (!menuEl) return;
+        menuEl.classList?.add?.('bad-context-menu');
         formatMenuItems(menuEl);
         if (menuEl.parentElement !== targetBody) {
             targetBody.appendChild(menuEl);
@@ -258,6 +259,7 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
         Array.from(menuEl.children ?? []).forEach(child => {
             child.style?.setProperty?.('max-height', `${maxHeight}px`, 'important');
             child.style?.setProperty?.('overflow-y', 'auto', 'important');
+            child.style?.setProperty?.('overflow-x', 'clip', 'important');
         });
     };
 
@@ -280,7 +282,9 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
             if (app._activeLeftClickMenu === menu) app._activeLeftClickMenu = null;
             if (app._activeMenuTarget === target) app._activeMenuTarget = null;
             const menuEl = document.querySelector('#context-menu, .context-menu');
+            menuEl?.classList?.remove?.('bad-context-menu');
             menuEl?.remove?.();
+            document.querySelectorAll('#context-menu.bad-context-menu, .context-menu.bad-context-menu').forEach(el => el.classList?.remove?.('bad-context-menu'));
         }
     };
 
@@ -303,7 +307,9 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
         } catch (err) {
             log.debug("LeftClickMenu close error:", err);
         } finally {
+            menuEl?.classList?.remove?.('bad-context-menu');
             menuEl?.remove?.();
+            document.querySelectorAll('#context-menu.bad-context-menu, .context-menu.bad-context-menu').forEach(el => el.classList?.remove?.('bad-context-menu'));
             target?.classList?.remove?.('bad-dropdown-active');
             if (app._activeLeftClickMenu === menu) app._activeLeftClickMenu = null;
             if (app._activeMenuTarget === target) app._activeMenuTarget = null;
