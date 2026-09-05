@@ -181,7 +181,8 @@ export class ContextMenuManager {
         const viewportHeight = window?.innerHeight ?? 1080;
         const spaceBelow = viewportHeight - rect.bottom - 15;
         const spaceAbove = rect.top - 15;
-        const neededHeight = itemCount * 36 + 15;
+        const actualCount = menuEl.querySelectorAll?.('.context-item')?.length || itemCount || 1;
+        const neededHeight = actualCount * 36 + 15;
 
         // Prefer down: only place above if space below is critically constrained (< 80px) and space above is larger
         const placeAbove = spaceBelow < Math.min(neededHeight, 80) && spaceAbove > spaceBelow;
@@ -191,8 +192,8 @@ export class ContextMenuManager {
         const styles = {
             position: 'fixed',
             left: `${rect.left}px`,
-            top: placeAbove ? `${Math.max(10, rect.top - Math.min(neededHeight, maxHeight))}px` : `${rect.bottom}px`,
-            bottom: 'auto',
+            top: placeAbove ? 'auto' : `${rect.bottom}px`,
+            bottom: placeAbove ? `${viewportHeight - rect.top}px` : 'auto',
             width: `${rect.width}px`,
             'min-width': `${rect.width}px`,
             'box-sizing': 'border-box',

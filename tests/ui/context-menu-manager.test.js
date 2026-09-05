@@ -264,9 +264,9 @@ test('ContextMenuManager _positionContextMenu positions menu above when space be
     try {
         manager._positionContextMenu(mockTarget, 5);
         assert.equal(menuStyles.position, 'fixed');
-        // Space below is 1080 - 1030 - 15 = 35px (< 120px), so it should flip above top (1000px)
-        const topVal = parseFloat(menuStyles.top);
-        assert.ok(topVal < 1000, 'Top should be positioned above target when space below is constrained');
+        // Space below is 1080 - 1030 - 15 = 35px (< 80px), so it should flip above top (1000px)
+        assert.equal(menuStyles.top, 'auto', 'Top should be auto when positioned above');
+        assert.equal(menuStyles.bottom, '80px', 'Bottom should be anchored above target top (1080 - 1000 = 80px)');
     } finally {
         document.querySelector = originalQuerySelector;
     }
