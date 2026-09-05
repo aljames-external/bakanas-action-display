@@ -1771,7 +1771,6 @@ div.locked-tooltip:has(.bad-autoban-tooltip) .content-link {
 }
 
 /* Statuses Sub-Bullet under Effect */
-.bad-autoban-status-list,
 .bad-autoban-conditions-list {
     margin: 2px 0 4px 0;
     padding-left: 1.1em;
@@ -1779,19 +1778,16 @@ div.locked-tooltip:has(.bad-autoban-tooltip) .content-link {
     color: #94a3b8;
 }
 
-.bad-autoban-single-comp-list .bad-autoban-status-list,
 .bad-autoban-single-comp-list .bad-autoban-conditions-list {
     list-style-type: '– ';
 }
 
-.bad-autoban-status-list > li,
 .bad-autoban-conditions-list > li {
     margin-bottom: 2px;
     padding-left: 2px;
 }
 
 /* Status container and rows (max 3 per line, left-aligned) */
-.bad-autoban-status-container,
 .bad-autoban-conditions-container {
     display: inline-flex;
     flex-direction: column;
@@ -1799,7 +1795,6 @@ div.locked-tooltip:has(.bad-autoban-tooltip) .content-link {
     vertical-align: top;
 }
 
-.bad-autoban-status-row,
 .bad-autoban-conditions-row {
     display: flex;
     flex-direction: row;
@@ -1965,14 +1960,6 @@ body > #tooltip.bad-summary-has-table-wrapper,
     overflow: hidden;
 }
 
-.bad-summary-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 4px;
-    border: 1px solid rgba(167, 139, 250, 0.35);
-    object-fit: cover;
-    flex-shrink: 0;
-}
 
 .bad-summary-title-group {
     display: flex;
