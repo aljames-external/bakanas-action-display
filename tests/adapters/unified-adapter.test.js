@@ -303,24 +303,23 @@ test('Unified Adapter delegates facade methods to layers', async () => {
 
 test('isTeleport contracts across BaseFoundryAdapter, FoundryV12Adapter, FoundryV13Adapter, and Adapter', () => {
     const base = new BaseFoundryAdapter();
-    assert.equal(base.isTeleport({}), false);
-    assert.equal(base.isTeleport({ teleport: true }), true);
+    assert.throws(() => base.isTeleport({}), /must be implemented by version subclass/);
 
-    // V12 checks options.teleport
+    // V12 checks options.teleport and options.animate
     const v12 = new FoundryV12Adapter();
     assert.equal(v12.isTeleport({}), false);
     assert.equal(v12.isTeleport({ teleport: true }), true);
     assert.equal(v12.isTeleport({ teleport: false }), false);
+    assert.equal(v12.isTeleport({ animate: false }), true);
 
-    // V13 checks movement.teleport, movement === false, and plain object teleport
+    // V13 checks movement.teleport, movement === false, without accessing deprecated options.teleport
     const v13 = new FoundryV13Adapter();
     assert.equal(v13.isTeleport({}), false);
     assert.equal(v13.isTeleport({ movement: { teleport: true } }), true);
     assert.equal(v13.isTeleport({ movement: { teleport: false } }), false);
     assert.equal(v13.isTeleport({ movement: false }), true);
-    assert.equal(v13.isTeleport({ teleport: true }), true);
 
-    // Simulated DatabaseUpdateOperation with deprecated prototype getter that warns if accessed
+    // Simulated DatabaseUpdateOperation with deprecated prototype/proxy getter that warns if accessed
     let getterCalled = false;
     class MockDatabaseUpdateOperation {
         get teleport() {

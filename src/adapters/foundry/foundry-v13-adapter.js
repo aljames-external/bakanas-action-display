@@ -80,4 +80,16 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
     async loadTemplates(paths) {
         return foundry.applications.handlebars.loadTemplates(paths);
     }
+
+    /**
+     * Determine whether an update operation represents a teleportation in Foundry V13+.
+     * Evaluates standard V13+ operation.movement properties without accessing deprecated DatabaseUpdateOperation#teleport.
+     * @override
+     * @param {Object} [options={}] Operation options or DatabaseUpdateOperation
+     * @returns {boolean}
+     */
+    isTeleport(options = {}) {
+        if (options.movement === false) return true;
+        return Boolean(options.movement?.teleport);
+    }
 }

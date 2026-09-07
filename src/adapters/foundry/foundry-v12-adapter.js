@@ -80,4 +80,19 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
     async loadTemplates(paths) {
         return loadTemplates(paths);
     }
+
+    /**
+     * Determine whether an update operation represents a teleportation in Foundry V12.
+     * Evaluates modern movement options when present, falling back to legacy V12 options.teleport and options.animate.
+     * @override
+     * @param {Object} [options={}] Operation options
+     * @returns {boolean}
+     */
+    isTeleport(options = {}) {
+        if (options.movement !== undefined) {
+            if (options.movement === false) return true;
+            return Boolean(options.movement?.teleport);
+        }
+        return Boolean(options.teleport || options.animate === false);
+    }
 }
