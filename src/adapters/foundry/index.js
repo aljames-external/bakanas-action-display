@@ -5,6 +5,8 @@ import { log } from '../../lib/logger.js';
 
 export { BaseFoundryAdapter, FoundryV12Adapter, FoundryV13Adapter, USER_PERMISSION_TIERS };
 
+let _activeFoundryAdapter = null;
+
 /**
  * Initialize and return the active Foundry VTT platform adapter.
  * Selects FoundryV13Adapter for v13+ and FoundryV12Adapter for v12 baseline.
@@ -17,6 +19,18 @@ export function initializeFoundryAdapter() {
     }
 
     const adapter = generation >= 13 ? new FoundryV13Adapter() : new FoundryV12Adapter();
+    _activeFoundryAdapter = adapter;
     log.info(`Initialized Foundry Platform Adapter (v${adapter.generation})`);
     return adapter;
+}
+
+/**
+ * Get the active Foundry VTT platform adapter, lazily initializing if needed.
+ * @returns {FoundryV13Adapter|FoundryV12Adapter}
+ */
+export function getFoundryAdapter() {
+    if (!_activeFoundryAdapter) {
+        _activeFoundryAdapter = initializeFoundryAdapter();
+    }
+    return _activeFoundryAdapter;
 }

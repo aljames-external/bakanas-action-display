@@ -1,4 +1,5 @@
 import { log } from '../lib/logger.js';
+import { getFoundryAdapter } from '../adapters/foundry/index.js';
 
 /**
  * Tracks token movement distance during active combat encounters.
@@ -77,7 +78,7 @@ export class CombatMovementTracker {
         if (!combat || !combat.started) return;
 
         // Teleportation does not consume movement distance
-        if (options?.teleport) {
+        if (getFoundryAdapter().isTeleport(options)) {
             const tokenId = tokenDoc.id;
             this.#lastPositions.set(tokenId, {
                 x: changes.x ?? tokenDoc.x,

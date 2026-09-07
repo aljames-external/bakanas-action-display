@@ -93,11 +93,38 @@ test('CombatMovementTracker accumulates token movement distance during active co
     assert.equal(result.inCombat, true);
     assert.equal(result.distance, 25);
 
-    // Teleportation does not accumulate distance
+    // Teleportation does not accumulate distance (plain options)
     CombatMovementTracker.recordTokenMovement(tokenDoc, { x: 1000, y: 1000 }, { teleport: true });
     tokenDoc.x = 1000;
     tokenDoc.y = 1000;
 
+    result = CombatMovementTracker.getMovementThisTurn(tokenDoc);
+    assert.equal(result.distance, 25); // Still 25 ft
+
+    // Teleportation via V13+ movement data structure
+    CombatMovementTracker.recordTokenMovement(tokenDoc, { x: 1500, y: 1500 }, { movement: { teleport: true } });
+    tokenDoc.x = 1500;
+    tokenDoc.y = 1500;
+
+    result = CombatMovementTracker.getMovementThisTurn(tokenDoc);
+    assert.equal(result.distance, 25); // Still 25 ft
+
+    // Simulated DatabaseUpdateOperation with deprecated getter
+    let deprecationGetterCalled = false;
+    class SimulatedV13DatabaseUpdateOperation {
+        get teleport() {
+            deprecationGetterCalled = true;
+            throw new Error('DatabaseUpdateOperation#teleport getter should never be accessed');
+        }
+    }
+    const simulatedOp = new SimulatedV13DatabaseUpdateOperation();
+    simulatedOp.movement = { teleport: true };
+
+    CombatMovementTracker.recordTokenMovement(tokenDoc, { x: 2000, y: 2000 }, simulatedOp);
+    tokenDoc.x = 2000;
+    tokenDoc.y = 2000;
+
+    assert.equal(deprecationGetterCalled, false);
     result = CombatMovementTracker.getMovementThisTurn(tokenDoc);
     assert.equal(result.distance, 25); // Still 25 ft
 

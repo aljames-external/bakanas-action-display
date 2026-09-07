@@ -300,3 +300,45 @@ test('Unified Adapter delegates facade methods to layers', async () => {
     assert.equal(testAdapter.isExclusionTab('unknown'), false);
     assert.equal(testAdapter.getItemTypeLabel('weapon'), 'Weapon');
 });
+
+test('isTeleport contracts across BaseFoundryAdapter, FoundryV12Adapter, FoundryV13Adapter, and Adapter', () => {
+    const base = new BaseFoundryAdapter();
+    assert.equal(base.isTeleport({}), false);
+    assert.equal(base.isTeleport({ teleport: true }), true);
+
+    // V12 checks options.teleport
+    const v12 = new FoundryV12Adapter();
+    assert.equal(v12.isTeleport({}), false);
+    assert.equal(v12.isTeleport({ teleport: true }), true);
+    assert.equal(v12.isTeleport({ teleport: false }), false);
+
+    // V13 checks movement.teleport, movement === false, and plain object teleport
+    const v13 = new FoundryV13Adapter();
+    assert.equal(v13.isTeleport({}), false);
+    assert.equal(v13.isTeleport({ movement: { teleport: true } }), true);
+    assert.equal(v13.isTeleport({ movement: { teleport: false } }), false);
+    assert.equal(v13.isTeleport({ movement: false }), true);
+    assert.equal(v13.isTeleport({ teleport: true }), true);
+
+    // Simulated DatabaseUpdateOperation with deprecated prototype getter that warns if accessed
+    let getterCalled = false;
+    class MockDatabaseUpdateOperation {
+        get teleport() {
+            getterCalled = true;
+            throw new Error('DatabaseUpdateOperation#teleport getter should not be called in v13+');
+        }
+    }
+    const opNormal = new MockDatabaseUpdateOperation();
+    opNormal.movement = { teleport: true };
+    assert.equal(v13.isTeleport(opNormal), true);
+    assert.equal(getterCalled, false);
+
+    const opUntracked = new MockDatabaseUpdateOperation();
+    assert.equal(v13.isTeleport(opUntracked), false);
+    assert.equal(getterCalled, false);
+
+    // Adapter facade delegates to active foundry adapter
+    const testAdapter = new Adapter();
+    testAdapter.foundry = v13;
+    assert.equal(testAdapter.isTeleport(opNormal), true);
+});

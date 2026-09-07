@@ -124,6 +124,25 @@ export class BaseFoundryAdapter {
     }
 
     /**
+     * Determine whether an update operation represents a teleportation.
+     * Inspects modern movement operation properties and own options without accessing deprecated prototype getters.
+     * @param {Object} [options={}] Operation options or DatabaseUpdateOperation
+     * @returns {boolean}
+     */
+    isTeleport(options = {}) {
+        if (options.movement) {
+            return Boolean(options.movement.teleport ?? (options.movement === false));
+        }
+        if (options.movement === false) {
+            return true;
+        }
+        if (Object.prototype.hasOwnProperty.call(options, 'teleport')) {
+            return Boolean(options.teleport);
+        }
+        return false;
+    }
+
+    /**
      * Merge two objects recursively.
      * @param {Object} original Target object
      * @param {Object} [other={}] Source object

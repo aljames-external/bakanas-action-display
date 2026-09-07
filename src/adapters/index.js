@@ -392,6 +392,15 @@ class Adapter {
     }
 
     /**
+     * Determine whether a document update operation represents a teleportation.
+     * @param {Object} [options={}] Operation options or DatabaseUpdateOperation
+     * @returns {boolean}
+     */
+    isTeleport(options = {}) {
+        return this.foundry.isTeleport(options);
+    }
+
+    /**
      * Retrieve the distance the token has moved in the current combat turn.
      * @param {Token|null} [token=null]
      * @param {Actor|null} [actor=null]
