@@ -46,24 +46,6 @@ class Adapter {
         log.info(`Unified Adapter initialized [Foundry: v${this.foundry.generation}, System: ${systemLabel}, Modules: ${this.modules.size}]`);
     }
 
-    /**
-     * Property-based accessor for instantiated module adapters.
-     * Supports bracket and dot notation: e.g. adapter.module['item-piles'] or adapter.module[MODULE_NAME].
-     * @type {Record<string, BaseModuleAdapter>}
-     */
-    get module() {
-        return new Proxy(this.modules, {
-            get: (target, prop) => {
-                if (typeof prop === 'string') {
-                    if (prop in target && typeof target[prop] === 'function') {
-                        return target[prop].bind(target);
-                    }
-                    return target.get(prop);
-                }
-                return Reflect.get(target, prop);
-            }
-        });
-    }
 
     /* -------------------------------------------- */
     /*  Action Processing Pipeline                  */
