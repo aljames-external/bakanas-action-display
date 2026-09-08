@@ -1,7 +1,9 @@
 import '../setup.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FoundryV12Adapter, BaseFoundryAdapter, FoundryV13Adapter, USER_PERMISSION_TIERS } from '../../src/adapters/foundry/index.js';
+import { BaseFoundryAdapter, USER_PERMISSION_TIERS } from '../../src/adapters/foundry/base-foundry-adapter.js';
+import { FoundryV12Adapter } from '../../src/adapters/foundry/foundry-v12-adapter.js';
+import { FoundryV13Adapter } from '../../src/adapters/foundry/foundry-v13-adapter.js';
 import { handleCombatTurnChange } from '../../src/module.js';
 import { actionDisplay } from '../../src/action-display.js';
 import { ActionDisplayApp } from '../../src/ui/action-display-app.js';

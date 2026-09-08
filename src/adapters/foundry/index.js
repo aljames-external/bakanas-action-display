@@ -1,9 +1,9 @@
-import { BaseFoundryAdapter, USER_PERMISSION_TIERS } from './base-foundry-adapter.js';
+import { BaseFoundryAdapter } from './base-foundry-adapter.js';
 import { FoundryV12Adapter } from './foundry-v12-adapter.js';
 import { FoundryV13Adapter } from './foundry-v13-adapter.js';
 import { log } from '../../lib/logger.js';
 
-export { BaseFoundryAdapter, FoundryV12Adapter, FoundryV13Adapter, USER_PERMISSION_TIERS };
+export { BaseFoundryAdapter };
 
 let _activeFoundryAdapter = null;
 

@@ -1,8 +1,10 @@
 import '../setup.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { adapter, Adapter, FoundryV12Adapter, BaseFoundryAdapter, FoundryV13Adapter, BaseSystemAdapter } from '../../src/adapters/index.js';
+import { adapter, Adapter, BaseFoundryAdapter, BaseSystemAdapter } from '../../src/adapters/index.js';
 import { initializeFoundryAdapter } from '../../src/adapters/foundry/index.js';
+import { FoundryV12Adapter } from '../../src/adapters/foundry/foundry-v12-adapter.js';
+import { FoundryV13Adapter } from '../../src/adapters/foundry/foundry-v13-adapter.js';
 import { initializeSystemAdapter } from '../../src/adapters/system/index.js';
 import { initializeModuleAdapters } from '../../src/adapters/module/index.js';
 import { MODULE_ID } from '../../src/constants.js';

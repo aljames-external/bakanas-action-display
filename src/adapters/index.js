@@ -1,4 +1,5 @@
-import { initializeFoundryAdapter, FoundryV12Adapter, BaseFoundryAdapter, FoundryV13Adapter } from './foundry/index.js';
+import { initializeFoundryAdapter, BaseFoundryAdapter } from './foundry/index.js';
+import { FoundryV13Adapter } from './foundry/foundry-v13-adapter.js';
 import { initializeSystemAdapter, BaseSystemAdapter } from './system/index.js';
 import { initializeModuleAdapters, BaseModuleAdapter } from './module/index.js';
 import { MODULE_ID } from '../constants.js';
@@ -43,6 +44,25 @@ class Adapter {
         this._initialized = true;
         const systemLabel = this.system.isSupported ? this.system.systemId : `${this.system.systemId} (unsupported)`;
         log.info(`Unified Adapter initialized [Foundry: v${this.foundry.generation}, System: ${systemLabel}, Modules: ${this.modules.size}]`);
+    }
+
+    /**
+     * Property-based accessor for instantiated module adapters.
+     * Supports bracket and dot notation: e.g. adapter.module['item-piles'] or adapter.module[MODULE_NAME].
+     * @type {Record<string, BaseModuleAdapter>}
+     */
+    get module() {
+        return new Proxy(this.modules, {
+            get: (target, prop) => {
+                if (typeof prop === 'string') {
+                    if (prop in target && typeof target[prop] === 'function') {
+                        return target[prop].bind(target);
+                    }
+                    return target.get(prop);
+                }
+                return Reflect.get(target, prop);
+            }
+        });
     }
 
     /* -------------------------------------------- */
@@ -627,4 +647,4 @@ class Adapter {
 }
 
 export const adapter = new Adapter();
-export { Adapter, FoundryV12Adapter, BaseFoundryAdapter, FoundryV13Adapter, BaseSystemAdapter, BaseModuleAdapter };
+export { Adapter, BaseFoundryAdapter, BaseSystemAdapter, BaseModuleAdapter };
