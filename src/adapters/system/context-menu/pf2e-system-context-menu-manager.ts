@@ -61,7 +61,7 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
     async #safeUpdateItem(app: any, item: any, updates: any) {
         if (!item) return;
         if (app?.actor?.items && item.id && !app.actor.items.has(item.id)) return;
-        const targetItem = app?.actor?.items?.get(item.id) ?? item;
+        const targetItem = (app?.actor?.items && item.id) ? app.actor.items.get(item.id) : item;
         await targetItem?.update?.(updates);
     }
 
