@@ -15,7 +15,7 @@
     "verified": "14"
   },
   "esmodules": [
-    "src/module.js"
+    "dist/module.js"
   ],
   "languages": [
     {

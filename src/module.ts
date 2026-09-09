@@ -10,12 +10,12 @@ import { syncActorFavorites } from './favorites/favorites-manager.js';
 import { CombatMovementTracker } from './combat/combat-movement-tracker.js';
 
 let closePersistentHUD = false;
-let explicitlyClosedTokenId = null;
-let renderDebounceTimer = null;
+let explicitlyClosedTokenId: string | null = null;
+let renderDebounceTimer: any = null;
 const wrappedHUDClasses = new WeakSet();
 const closingTokens = new WeakMap();
 
-export function setExplicitlyClosedTokenId(tokenId) {
+export function setExplicitlyClosedTokenId(tokenId: string | null): void {
     explicitlyClosedTokenId = tokenId;
 }
 
@@ -30,14 +30,15 @@ Hooks.once('init', async () => {
     registerKeybindings();
 
     // Wrap Token.prototype._onClickRight during init so it is bound correctly by all tokens' InteractionManagers
-    const TokenClass = adapter.foundry.Token;
+    const TokenClass = adapter.foundry.Token as any;
     const originalRightClick = TokenClass?.prototype?._onClickRight;
     if (originalRightClick) {
-        TokenClass.prototype._onClickRight = function (event) {
-            const isTokenHUDOpen = Boolean(canvas.hud.token.rendered && (canvas.hud.token.object === this || canvas.hud.token.object?.id === this.id));
+        TokenClass.prototype._onClickRight = function (event: any) {
+            const tokenHUD = (canvas as any)?.hud?.token;
+            const isTokenHUDOpen = Boolean(tokenHUD?.rendered && (tokenHUD.object === this || tokenHUD.object?.id === this.id));
             const currentApp = actionDisplay.activeApp;
             if (isTokenHUDOpen && (currentApp?.token === this || currentApp?.token?.id === this.id)) {
-                const persist = Boolean(game.settings.get(MODULE_ID, 'persistHUD'));
+                const persist = Boolean((game?.settings as any)?.get(MODULE_ID, 'persistHUD'));
                 if (persist) {
                     closePersistentHUD = true;
                 }
@@ -50,7 +51,8 @@ Hooks.once('init', async () => {
     actionDisplay.init();
 
     // Expose the official API for other modules and macros
-    game.modules.get(MODULE_ID).api = actionDisplay;
+    const mod = game?.modules?.get(MODULE_ID) as any;
+    if (mod) mod.api = actionDisplay;
 
     // Preload Handlebars templates
     await adapter.loadTemplates([
@@ -102,7 +104,7 @@ function wrapTokenHUD() {
  * If closingToken is provided, only closes if it matches the current activeApp token.
  * @param {Token|null} [closingToken=null]
  */
-function handleHUDClose(closingToken = null) {
+function handleHUDClose(closingToken: any = null): void {
     const currentApp = actionDisplay.activeApp;
     if (currentApp) {
         if (closingToken) {
@@ -112,7 +114,7 @@ function handleHUDClose(closingToken = null) {
             }
         }
 
-        const persist = Boolean(game.settings.get(MODULE_ID, 'persistHUD'));
+        const persist = Boolean((game?.settings as any)?.get(MODULE_ID, 'persistHUD'));
         const shouldClose = !persist || closePersistentHUD;
 
         if (shouldClose) {
@@ -134,7 +136,7 @@ function handleHUDClose(closingToken = null) {
  * @param {Document} [docParent]
  * @returns {boolean}
  */
-function isMatchingActor(docActor, docParent) {
+function isMatchingActor(docActor: any, docParent: any): boolean {
     const currentApp = actionDisplay.activeApp;
     if (!currentApp?.rendered || !currentApp.actor) return false;
     const activeActor = currentApp.actor;
@@ -187,7 +189,7 @@ Hooks.on('canvasReady', () => {
  * Handle initial binding of TokenHUD to a token (opening TokenHUD).
  * @param {Token} token
  */
-export function handleHUDBind(token) {
+export function handleHUDBind(token: any): void {
     if (!token || !token.document?.isOwner) return;
 
     explicitlyClosedTokenId = null;
@@ -224,14 +226,14 @@ export function handleHUDBind(token) {
 }
 
 // Hook into Token selection to track the last selected token for hotkey toggle
-Hooks.on('controlToken', (token, controlled) => {
+Hooks.on('controlToken', ((token: any, controlled: any) => {
     if (controlled) {
         setLastSelectedToken(token);
     }
-});
+}) as any);
 
 // Hook into Token HUD rendering to update attached overlay position if open
-Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
+Hooks.on('renderTokenHUD', ((tokenHUD: any, html: any, data: any) => {
     const token = tokenHUD?.object;
     if (!token) return;
     const currentApp = actionDisplay.activeApp;
@@ -240,10 +242,10 @@ Hooks.on('renderTokenHUD', (tokenHUD, html, data) => {
             currentApp.setPosition();
         }
     }
-});
+}) as any);
 
 // Hook into Token HUD closing to close our overlay if tracked or closed via token click
-Hooks.on('closeTokenHUD', (tokenHUD, html) => {
+Hooks.on('closeTokenHUD', ((tokenHUD: any, html: any) => {
     explicitlyClosedTokenId = null;
     const currentApp = actionDisplay.activeApp;
     if (!currentApp) return;
@@ -269,7 +271,7 @@ Hooks.on('closeTokenHUD', (tokenHUD, html) => {
     } else if (!tokenHUD?.object) {
         handleHUDClose();
     }
-});
+}) as any);
 
 // Hook into canvas pan to update attached HUD position dynamically
 Hooks.on('canvasPan', (canvas, pan) => {
@@ -308,7 +310,7 @@ const DELTA_FLAG_PREFIX = `delta.flags.${MODULE_ID}`;
  * @param {Object} [changes]
  * @returns {boolean}
  */
-function isOnlyModuleFlagChanges(changes) {
+function isOnlyModuleFlagChanges(changes: any): boolean {
     const nonMetaKeys = Object.keys(changes ?? {}).filter(k => !METADATA_KEYS.has(k) && !k.startsWith('_stats.'));
     return nonMetaKeys.length > 0 && nonMetaKeys.every(key => {
         if (key.startsWith(MODULE_FLAG_PREFIX) || key.startsWith(ACTOR_DATA_FLAG_PREFIX) || key.startsWith(DELTA_FLAG_PREFIX)) return true;
@@ -321,7 +323,7 @@ function isOnlyModuleFlagChanges(changes) {
 }
 
 // Hook into Actor updates (spell slots, resources, hp, flags, status conditions)
-Hooks.on('updateActor', (actor, changes, options, userId) => {
+Hooks.on('updateActor', ((actor: any, changes: any, options: any, userId: any) => {
     if (!actor) return;
     if (options?.badInternal) return;
 
@@ -337,10 +339,10 @@ Hooks.on('updateActor', (actor, changes, options, userId) => {
     if (isCurrent && currentApp?.rendered) {
         requestHUDRender();
     }
-});
+}) as any);
 
 // Hook into ActiveEffect updates (status conditions gained/lost) on actors
-function handleActiveEffectChange(effect) {
+function handleActiveEffectChange(effect: any): void {
     const candidate = effect?.parent ?? effect?.target;
     const actor = candidate instanceof Actor ? candidate : (candidate?.actor ?? null);
     if (!actor) return;
@@ -352,27 +354,27 @@ function handleActiveEffectChange(effect) {
     }
 }
 
-Hooks.on('createActiveEffect', (effect, options, userId) => {
+Hooks.on('createActiveEffect', ((effect: any, options: any, userId: any) => {
     handleActiveEffectChange(effect);
-});
+}) as any);
 
-Hooks.on('updateActiveEffect', (effect, changes, options, userId) => {
+Hooks.on('updateActiveEffect', ((effect: any, changes: any, options: any, userId: any) => {
     handleActiveEffectChange(effect);
-});
+}) as any);
 
-Hooks.on('deleteActiveEffect', (effect, options, userId) => {
+Hooks.on('deleteActiveEffect', ((effect: any, options: any, userId: any) => {
     handleActiveEffectChange(effect);
-});
+}) as any);
 
 /**
  * Handle combat turn updates, dynamically switching or auto-toggling HUD visibility.
  * @param {Combat} combat Active combat document
  */
-export function handleCombatTurnChange(combat) {
+export function handleCombatTurnChange(combat: any): void {
     CombatMovementTracker.resetTurn(combat);
-    const isFeatureEnabled = Boolean(game.settings.get(MODULE_ID, 'enableCombatAutoTrackButton'));
-    const isAutoTrackCombat = Boolean(game.settings.get(MODULE_ID, 'autoTrackCombat'));
-    const isAutoToggleActive = isFeatureEnabled && Boolean(game.settings.get(MODULE_ID, 'autoToggleCombat'));
+    const isFeatureEnabled = Boolean((game?.settings as any)?.get(MODULE_ID, 'enableCombatAutoTrackButton'));
+    const isAutoTrackCombat = Boolean((game?.settings as any)?.get(MODULE_ID, 'autoTrackCombat'));
+    const isAutoToggleActive = isFeatureEnabled && Boolean((game?.settings as any)?.get(MODULE_ID, 'autoToggleCombat'));
     const isAutoTrackActive = isFeatureEnabled && isAutoTrackCombat;
 
     const currentApp = actionDisplay.activeApp;
@@ -383,8 +385,8 @@ export function handleCombatTurnChange(combat) {
         const isMyTurn = Boolean(token && adapter.foundry.isUserInCharge(token));
 
         // Auto-center canvas on token if center on token feature and auto-center are active and user is in charge
-        const isCenterEnabled = Boolean(game.settings.get(MODULE_ID, 'enableCenterOnToken'));
-        const isAutoCenterActive = isCenterEnabled && Boolean(game.settings.get(MODULE_ID, 'autoCenterOnToken'));
+        const isCenterEnabled = Boolean((game?.settings as any)?.get(MODULE_ID, 'enableCenterOnToken'));
+        const isAutoCenterActive = isCenterEnabled && Boolean((game?.settings as any)?.get(MODULE_ID, 'autoCenterOnToken'));
         if (isAutoCenterActive && isMyTurn) {
             adapter.foundry.centerCanvasOnToken(token);
         }
@@ -450,14 +452,14 @@ export function handleCombatTurnChange(combat) {
 }
 
 // Hook into Combat updates and turn advancements to update End Turn button visibility and auto-track
-Hooks.on('updateCombat', (combat, changes, options, userId) => {
+Hooks.on('updateCombat', ((combat: any, changes: any, options: any, userId: any) => {
     handleCombatTurnChange(combat);
-});
+}) as any);
 
-Hooks.on('deleteCombat', (combat, options, userId) => {
+Hooks.on('deleteCombat', ((combat: any, options: any, userId: any) => {
     CombatMovementTracker.clear();
-    const isFeatureEnabled = Boolean(game.settings.get(MODULE_ID, 'enableCombatAutoTrackButton'));
-    const isAutoToggleActive = isFeatureEnabled && Boolean(game.settings.get(MODULE_ID, 'autoToggleCombat'));
+    const isFeatureEnabled = Boolean((game?.settings as any)?.get(MODULE_ID, 'enableCombatAutoTrackButton'));
+    const isAutoToggleActive = isFeatureEnabled && Boolean((game?.settings as any)?.get(MODULE_ID, 'autoToggleCombat'));
     if (isAutoToggleActive) {
         const currentApp = actionDisplay.activeApp;
         if (currentApp?.rendered) {
@@ -468,8 +470,7 @@ Hooks.on('deleteCombat', (combat, options, userId) => {
             actionDisplay.activeApp = null;
         }
     }
-    requestHUDRender();
-});
+}) as any);
 
 Hooks.on('combatTurn', (combat, updateData, updateOptions) => {
     handleCombatTurnChange(combat);
@@ -480,26 +481,26 @@ Hooks.on('combatRound', (combat, updateData, updateOptions) => {
 });
 
 // Hook into Combatant changes (token added/removed from combat, initiative rolled)
-Hooks.on('createCombatant', (combatant, options, userId) => {
+Hooks.on('createCombatant', ((combatant: any, options: any, userId: any) => {
     requestHUDRender();
-});
+}) as any);
 
-Hooks.on('deleteCombatant', (combatant, options, userId) => {
+Hooks.on('deleteCombatant', ((combatant: any, options: any, userId: any) => {
     requestHUDRender();
-});
+}) as any);
 
-Hooks.on('updateCombatant', (combatant, changes, options, userId) => {
+Hooks.on('updateCombatant', ((combatant: any, changes: any, options: any, userId: any) => {
     requestHUDRender();
-});
+}) as any);
 
 // Hook into token position changes before database persistence to record movement
-Hooks.on('preUpdateToken', (tokenDoc, changes, options, userId) => {
+Hooks.on('preUpdateToken', ((tokenDoc: any, changes: any, options: any, userId: any) => {
     CombatMovementTracker.recordTokenMovement(tokenDoc, changes, options);
-});
+}) as any);
 
 // Hook into synthetic Token document updates (actor delta mutations, position updates)
-Hooks.on('updateToken', (tokenDoc, changes, options, userId) => {
-    if (options?.badInternal) return;
+Hooks.on('updateToken', ((tokenDoc: any, changes: any, options: any, userId: any) => {
+    if ((options as any)?.badInternal) return;
     CombatMovementTracker.recordTokenMovement(tokenDoc, changes, options);
     if (isOnlyModuleFlagChanges(changes)) return;
 
@@ -507,10 +508,10 @@ Hooks.on('updateToken', (tokenDoc, changes, options, userId) => {
     if (currentApp?.rendered && (tokenDoc?.id === currentApp.token?.id || tokenDoc?.actor?.id === currentApp.actor?.id)) {
         requestHUDRender();
     }
-});
+}) as any);
 
 // Hook into Application rendering to ensure newly opened sheets/windows sit above the HUD
-Hooks.on('renderApplication', (app, html) => {
+Hooks.on('renderApplication', ((app: any, html: any) => {
     const currentHUD = actionDisplay?.activeApp;
     if (!currentHUD?.element) return;
     const hudEl = currentHUD.element;
@@ -528,4 +529,4 @@ Hooks.on('renderApplication', (app, html) => {
             appEl.style.zIndex = `${newZ}`;
         }
     }
-});
+}) as any);
