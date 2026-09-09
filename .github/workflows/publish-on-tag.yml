@@ -38,19 +38,21 @@ env:
   project_url: "https://github.com/${{github.repository}}"
 
   # A URL that will always point to the latest manifest.
-  # FoundryVTT uses this URL to check whether the current module version that
-  # is installed is the latest version. This URL should NOT change,
-  # otherwise FoundryVTT won't be able to perform this check.
   release_manifest_url: "https://github.com/${{github.repository}}/releases/latest/download/module.json"
-
-  # The URL to the module archive associated with the module release being
-  # processed by this workflow.
-  release_module_url: "https://github.com/${{github.repository}}/releases/download/${{github.event.release.tag_name}}/module.zip"
-
 
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to release (e.g. v1.0.0)'
+        required: false
+        default: ''
 
 jobs:
   publish-module:
@@ -60,57 +62,84 @@ jobs:
       packages: read
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || github.event.inputs.tag_name || github.ref_name }}
 
-      #- name: Run validation
-      #  run: npm run validate
-
-      # Extract version directly from the release event tag name.
-      # Strips any leading 'v' if present (e.g., "v1.1.2" -> "1.1.2").
-      - name: Extract Version From Tag
+      - name: Extract Version and Tag
         id: get_version
         run: |
-          TAG="${{ github.event.release.tag_name }}"
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag_name || github.ref_name }}"
           VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Type Check & Tests
+        run: |
+          npm run typecheck
+          npm test
+
+      - name: Build Module
+        run: npm run build
 
       # Modify "module.json" with values specific to the release.
-      # Since the values for the "version" and "url" keys aren't known ahead of
-      # time, the manifest file in the repository is updated with these values.
-      #
-      # While this does modify the manifest file in-place, the changes are not
-      # commited to the repository, and only exist in the action's filesystem.
       - name: Modify Module Manifest With Release-Specific Values
-        id: sub_manifest_link_version
-        uses: cschleiden/replace-tokens@v1
-        with:
-          files: 'module.json'
         env:
-          VERSION: ${{ steps.get_version.outputs.version }}
-          URL: ${{ env.project_url }}
-          MANIFEST: ${{ env.release_manifest_url }}
-          DOWNLOAD: ${{ env.release_module_url }}
+          REL_VERSION: ${{ steps.get_version.outputs.version }}
+          PROJECT_URL: ${{ env.project_url }}
+          MANIFEST_URL: ${{ env.release_manifest_url }}
+          DOWNLOAD_URL: "https://github.com/${{ github.repository }}/releases/download/${{ steps.get_version.outputs.tag }}/module.zip"
+        run: |
+          node -e '
+            const fs = require("fs");
+            let manifest = fs.readFileSync("module.json", "utf8");
+            manifest = manifest.replace(/#\{VERSION\}#/g, process.env.REL_VERSION);
+            manifest = manifest.replace(/#\{URL\}#/g, process.env.PROJECT_URL);
+            manifest = manifest.replace(/#\{MANIFEST\}#/g, process.env.MANIFEST_URL);
+            manifest = manifest.replace(/#\{DOWNLOAD\}#/g, process.env.DOWNLOAD_URL);
+            fs.writeFileSync("module.json", manifest);
+          '
 
-      # Install npm dependencies. and build the dist folder
+      - name: Validate Module Manifest
+        run: |
+          node -e '
+            const fs = require("fs");
+            const manifest = JSON.parse(fs.readFileSync("module.json", "utf8"));
+            console.log("Validated manifest:", manifest.id, "version:", manifest.version);
+            if (manifest.version.includes("#{")) {
+              throw new Error("Version token was not replaced in module.json!");
+            }
+          '
+
+      # Clean LevelDB lock and log files from compendiums before packing
+      - name: Clean LevelDB lock files
+        run: |
+          rm -f packs/*/LOCK packs/*/LOG* packs/*/*.old 2>/dev/null || true
 
       # Create a "module.zip" archive containing all the module's required files.
-      # If you have other directories or files that will need to be added to
-      # your packaged module, add them here.
       - name: Create Module Archive
         run: |
-          zip                                    \
-            --recurse-paths                      \
-             ./module.zip                        \
-            lang/                                \
-            packs/                               \
-            src/                                 \
-            styles/                              \
-            templates/                           \
-            LICENSE                              \
-            module.json
+          zip -r ./module.zip \
+            dist/ \
+            templates/ \
+            styles/ \
+            lang/ \
+            packs/ \
+            src/ \
+            LICENSE \
+            README.md \
+            module.json \
+            -x "packs/*/LOCK" "packs/*/LOG*" "packs/*/*.old" "packs/*/lost/*"
 
       # Update the GitHub release with the manifest and module archive files.
       - name: Update Release With Files
@@ -118,10 +147,10 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          name: ${{ github.event.release.name }}
-          draft: ${{ github.event.release.unpublished }}
-          prerelease: ${{ github.event.release.prerelease }}
+          name: ${{ github.event.release.name || steps.get_version.outputs.tag }}
+          draft: ${{ github.event.release.unpublished || false }}
+          prerelease: ${{ github.event.release.prerelease || false }}
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: './module.json, ./module.zip'
-          tag: ${{ github.event.release.tag_name }}
-          body: ${{ github.event.release.body }}
+          tag: ${{ steps.get_version.outputs.tag }}
+          body: ${{ github.event.release.body || '' }}
