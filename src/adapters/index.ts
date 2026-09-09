@@ -90,11 +90,11 @@ class Adapter {
         const hiddenMap = Array.isArray(rawHidden)
             ? rawHidden.reduce((acc, id) => { acc[id] = true; return acc; }, {})
             : (rawHidden ?? {});
-        const filtered = [];
+        const filtered: any[] = [];
 
         log.group(`Adapter.getActions | Processing hidden items for "${actor.name ?? 'Actor'}"`, 'debug');
         try {
-            for (const action of actions) {
+            for (const action of (actions as any[])) {
                 if (action.hidden) {
                     log.debug(`Adapter.getActions | Skipping "${action.name}" (ID: ${action.id}) — action.hidden === true`);
                     continue;
@@ -127,10 +127,10 @@ class Adapter {
      * @private
      */
     _extractBaseActions(actor) {
-        const actions = [];
+        const actions: any[] = [];
         if (!actor?.items) return actions;
 
-        const items = Array.from(actor.items.values());
+        const items = Array.from(actor.items.values()) as any[];
         log.group(`Adapter._extractBaseActions | Extracting base actions for "${actor.name ?? 'Actor'}"`, 'debug');
         try {
             for (const item of items) {
@@ -322,7 +322,7 @@ class Adapter {
      * @param {Actor} actor
      * @param {HUDTabColumn} [tabColumn]
      */
-    updateTabs(actor, tabColumn = null) {
+    updateTabs(actor: any, tabColumn: any = null) {
         this.system?.updateTabs?.(actor, tabColumn);
     }
 
@@ -345,8 +345,8 @@ class Adapter {
      * @param {string[]} rightTab
      * @returns {Object[]}
      */
-    filterSubactions(actor, subactions, leftTab, rightTab) {
-        return this.system?.filterSubactions?.(actor, subactions, leftTab, rightTab) ?? subactions;
+    filterSubactions(actor: any, subactions: any, leftTab?: any, rightTab?: any): any[] {
+        return (this.system as any)?.filterSubactions?.(subactions, { actor, leftTab, rightTab }) ?? subactions;
     }
 
     /**
@@ -394,7 +394,7 @@ class Adapter {
      * @param {boolean} [force]
      * @returns {Promise<boolean>}
      */
-    async toggleInspiration(actor, force) {
+    async toggleInspiration(actor: any, force?: boolean) {
         return (await this.system?.toggleInspiration?.(actor, force)) ?? false;
     }
 

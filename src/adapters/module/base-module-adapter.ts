@@ -4,7 +4,9 @@
  * allowing them to hide actions, add new tabs, or inject custom action types.
  */
 export class BaseModuleAdapter {
-    constructor(moduleId) {
+    moduleId: string;
+
+    constructor(moduleId: string) {
         this.moduleId = moduleId;
     }
 

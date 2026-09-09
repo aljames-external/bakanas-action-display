@@ -32,7 +32,7 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
      * @param {HTMLElement} el Clicked DOM element
      * @returns {Item|null}
      */
-    #getOwnerItem(app, el) {
+    #getOwnerItem(app: any, el: any): any {
         if (!app.actor?.isOwner) return null;
         return this.getContextItem(app, el);
     }
@@ -44,7 +44,7 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
      * @param {ApplicationV2} [app=null]
      * @returns {boolean}
      */
-    #isEquippable(item, app = null) {
+    #isEquippable(item: any, app: any = null): boolean {
         if (!item?.system) return false;
         if (app?.actor?.items && item.id && !app.actor.items.has(item.id)) return false;
         const traits = item.system.traits?.value;

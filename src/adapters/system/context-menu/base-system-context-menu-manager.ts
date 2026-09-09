@@ -5,7 +5,9 @@ import { MODULE_ID } from '../../../constants.js';
  * Manages system-specific action card context menu items and tab right-click shortcuts.
  */
 export class BaseSystemContextMenuManager {
-    constructor(adapter) {
+    adapter: any;
+
+    constructor(adapter: any) {
         this.adapter = adapter;
     }
 
@@ -14,7 +16,7 @@ export class BaseSystemContextMenuManager {
      * @param {ApplicationV2} app The ActionDisplayApp instance
      * @returns {Object[]} Array of context menu item specifications
      */
-    getContextMenuItems(app) {
+    getContextMenuItems(app: any): any[] {
         return [];
     }
 
@@ -55,7 +57,7 @@ export class BaseSystemContextMenuManager {
             }
             return actor.update(updates, { badInternal: true });
         }
-        const promises = [];
+        const promises: any[] = [];
         for (const [key, value] of Object.entries(flags)) {
             promises.push(actor.setFlag?.(scope, key, value, { badInternal: true }));
         }

@@ -14,7 +14,7 @@ const sortByName = (a, b) => (a.name ?? '').localeCompare(b.name ?? '');
  * @param {HTMLElement} targetLi Target activity list item element
  * @param {Object} subaction The subaction or activity data object
  */
-export function openActivitySubContextMenu(app, targetLi, subaction) {
+export function openActivitySubContextMenu(app: any, targetLi: any, subaction: any) {
     const menuItems = [
         {
             name: "SIDEBAR.Edit",
@@ -45,7 +45,7 @@ export function openActivitySubContextMenu(app, targetLi, subaction) {
  * @param {ApplicationV2} [app=null] Active HUD application
  * @returns {Object} Menu item configuration
  */
-export function buildSubactionMenuItem(sub, event, app = null) {
+export function buildSubactionMenuItem(sub: any, event: any, app: any = null) {
     const uses = sub?.uses;
     const iconHtml = sub?.img
         ? `<img class="bad-menu-icon bad-action-icon" src="${sub.img}" alt="${sub.name ?? ''}" />`
@@ -86,8 +86,8 @@ export function buildSubactionMenuItem(sub, event, app = null) {
         economyHtml,
         usesSlotHtml,
         callback: async () => {
-            if (game.tooltip?.locked) {
-                game.tooltip.locked = false;
+            if ((game.tooltip as any)?.locked) {
+                (game.tooltip as any).locked = false;
                 document.querySelector?.('#tooltip.locked')?.classList?.remove?.('locked');
             }
             app?._hideItemSummaryTooltip?.();
@@ -205,13 +205,13 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
                         ev.preventDefault();
                         ev.stopPropagation();
                         ev.stopImmediatePropagation();
-                        if (game.tooltip?.locked) {
-                            game.tooltip.locked = false;
+                        if ((game.tooltip as any)?.locked) {
+                            (game.tooltip as any).locked = false;
                             document.querySelector?.('#tooltip.locked')?.classList?.remove?.('locked');
                         }
                         app._hideItemSummaryTooltip();
                         try {
-                            app._activeLeftClickMenu?.close({ force: true })?.catch?.(err => {
+                            app._activeLeftClickMenu?.close({ force: true })?.catch?.((err: any) => {
                                 log.debug("LeftClickMenu.close promise rejected:", err);
                             });
                         } catch (err) {
@@ -225,15 +225,15 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
         });
     };
 
-    const applyPositioning = (menuEl) => {
+    const applyPositioning = (menuEl: any) => {
         if (!menuEl) return;
         formatMenuItems(menuEl);
         positionFloatingMenu(menuEl, target, sortedSubactions.length, targetBody);
     };
 
     const isTooltipFocused = () => {
-        if (Boolean(game.tooltip?.locked)) return true;
-        const lockedEl = document.querySelector?.('#tooltip.locked, .locked-tooltip, [data-tooltip-locked="true"]');
+        if (Boolean((game.tooltip as any)?.locked)) return true;
+        const lockedEl = document.querySelector<HTMLElement>('#tooltip.locked, .locked-tooltip, [data-tooltip-locked="true"]');
         return Boolean(lockedEl?.classList?.contains?.('locked') || lockedEl?.classList?.contains?.('locked-tooltip') || lockedEl?.dataset?.tooltipLocked === 'true');
     };
 
@@ -256,14 +256,14 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
     };
 
     const menu = new ContextMenuClass(targetBody, ".bad-action-item", menuItems, options);
-    menu._setPosition = (html) => {
+    menu._setPosition = (html: any) => {
         const menuEl = (html instanceof HTMLElement ? html : html?.[0]) ?? document.querySelector('#context-menu, .context-menu');
         if (menuEl) applyPositioning(menuEl);
     };
     menu.setPosition = menu._setPosition;
 
     const origClose = menu.close?.bind(menu);
-    menu.close = async (closeOptions = {}) => {
+    menu.close = async (closeOptions: any = {}) => {
         if (isTooltipFocused() && !closeOptions.force) {
             return;
         }

@@ -22,7 +22,7 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
             return actions;
         }
 
-        const modified = [];
+        const modified: any[] = [];
 
         for (const item of actions) {
             // Check if the 5e item has mapped activities

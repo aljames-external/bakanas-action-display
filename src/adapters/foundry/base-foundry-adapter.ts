@@ -22,63 +22,63 @@ export class BaseFoundryAdapter {
      * The major generation version of Foundry VTT, dynamically extracted from game.release.generation.
      * @returns {number}
      */
-    get generation() {
-        return game.release.generation;
+    get generation(): number {
+        return (game as any)?.release?.generation ?? 12;
     }
 
     /**
      * The active ContextMenu constructor.
      */
-    get ContextMenu() {
+    get ContextMenu(): any {
         throw new Error('BaseFoundryAdapter.ContextMenu must be implemented by version subclass');
     }
 
     /**
      * The active KeyboardManager constructor.
      */
-    get KeyboardManager() {
+    get KeyboardManager(): any {
         throw new Error('BaseFoundryAdapter.KeyboardManager must be implemented by version subclass');
     }
 
     /**
      * The active Token placeable constructor.
      */
-    get Token() {
+    get Token(): any {
         throw new Error('BaseFoundryAdapter.Token must be implemented by version subclass');
     }
 
     /**
      * The active TokenHUD constructor / class.
      */
-    get TokenHUD() {
-        return CONFIG.Token.hudClass;
+    get TokenHUD(): any {
+        return (CONFIG as any)?.Token?.hudClass;
     }
 
     /**
      * The active ApplicationV2 constructor.
      */
-    get ApplicationV2() {
-        return foundry.applications.api.ApplicationV2;
+    get ApplicationV2(): any {
+        return (foundry as any)?.applications?.api?.ApplicationV2;
     }
 
     /**
      * The active HandlebarsApplicationMixin wrapper.
      */
-    get HandlebarsApplicationMixin() {
-        return foundry.applications.api.HandlebarsApplicationMixin;
+    get HandlebarsApplicationMixin(): any {
+        return (foundry as any)?.applications?.api?.HandlebarsApplicationMixin;
     }
 
     /**
      * The active FilePicker constructor / implementation.
      */
-    get FilePicker() {
+    get FilePicker(): any {
         throw new Error('BaseFoundryAdapter.FilePicker must be implemented by version subclass');
     }
 
     /**
      * The active TextEditor constructor / implementation.
      */
-    get TextEditor() {
+    get TextEditor(): any {
         throw new Error('BaseFoundryAdapter.TextEditor must be implemented by version subclass');
     }
 
@@ -89,7 +89,7 @@ export class BaseFoundryAdapter {
      * @param {Object} [options={}] Browse options
      * @returns {Promise<{ target: string, files: string[], dirs: string[] }>}
      */
-    async browseDirectory(source, target, options = {}) {
+    async browseDirectory(source: string, target: string, options: any = {}): Promise<any> {
         return this.FilePicker.browse(source, target, options);
     }
 
@@ -99,7 +99,7 @@ export class BaseFoundryAdapter {
      * @param {string[]} paths Array of template paths
      * @returns {Promise<Function[]>}
      */
-    async loadTemplates(paths) {
+    async loadTemplates(paths: string[]): Promise<any> {
         throw new Error('BaseFoundryAdapter.loadTemplates must be implemented by version subclass');
     }
 
@@ -109,7 +109,7 @@ export class BaseFoundryAdapter {
      * @param {Object} [options={}] Resolution options
      * @returns {Document|null}
      */
-    fromUuidSync(uuid, options = {}) {
+    fromUuidSync(uuid: string, options: any = {}): any {
         throw new Error('BaseFoundryAdapter.fromUuidSync must be implemented by version subclass');
     }
 
@@ -119,7 +119,7 @@ export class BaseFoundryAdapter {
      * @param {Object} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    async fromUuid(uuid, options = {}) {
+    async fromUuid(uuid: string, options: any = {}): Promise<any> {
         throw new Error('BaseFoundryAdapter.fromUuid must be implemented by version subclass');
     }
 
@@ -129,7 +129,7 @@ export class BaseFoundryAdapter {
      * @param {Object} [options={}] Operation options or DatabaseUpdateOperation
      * @returns {boolean}
      */
-    isTeleport(options = {}) {
+    isTeleport(options: any = {}): boolean {
         throw new Error('BaseFoundryAdapter.isTeleport must be implemented by version subclass');
     }
 
@@ -208,7 +208,7 @@ export class BaseFoundryAdapter {
      * @param {Object} [options={}] Enrichment options (rollData, secrets, relativeTo, etc.)
      * @returns {Promise<string>}
      */
-    async enrichHTML(content, options = {}) {
+    async enrichHTML(content: string, options: any = {}): Promise<string> {
         if (!content) return '';
         return this.TextEditor.enrichHTML(content, { secrets: false, async: true, ...options });
     }
@@ -219,7 +219,7 @@ export class BaseFoundryAdapter {
      * @param {Token} token Target Token placeable
      * @returns {Combatant[]}
      */
-    getCombatantsByToken(combat, token) {
+    getCombatantsByToken(combat: any, token: any): any[] {
         throw new Error('BaseFoundryAdapter.getCombatantsByToken must be implemented by version subclass');
     }
 
@@ -229,7 +229,7 @@ export class BaseFoundryAdapter {
      * @param {Token} token Target Token placeable
      * @returns {Combatant|null}
      */
-    getCombatantByToken(combat, token) {
+    getCombatantByToken(combat: any, token: any): any {
         return this.getCombatantsByToken(combat, token)[0] ?? null;
     }
 
@@ -238,12 +238,12 @@ export class BaseFoundryAdapter {
      * @param {Combatant} combatant
      * @returns {Token|null}
      */
-    getTokenFromCombatant(combatant) {
+    getTokenFromCombatant(combatant: any): any {
         if (!combatant) return null;
         if (combatant.token?.object) {
             return combatant.token.object;
         }
-        if (combatant.tokenId && canvas.tokens?.get) {
+        if (combatant.tokenId && canvas?.tokens?.get) {
             const canvasToken = canvas.tokens.get(combatant.tokenId);
             if (canvasToken) return canvasToken;
         }
@@ -414,12 +414,12 @@ export class BaseFoundryAdapter {
      * @param {Token} token Target token to center on
      * @returns {Promise<void>}
      */
-    async centerCanvasOnToken(token) {
+    async centerCanvasOnToken(token: any): Promise<void> {
         if (!token) return;
         const center = token.center ?? {
             x: token.x + (token.w / 2),
             y: token.y + (token.h / 2)
         };
-        await canvas.animatePan({ x: center.x, y: center.y });
+        await canvas?.animatePan?.({ x: center.x, y: center.y });
     }
 }

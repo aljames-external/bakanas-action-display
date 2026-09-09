@@ -5,7 +5,7 @@ import { log } from '../../lib/logger.js';
 
 export { BaseFoundryAdapter };
 
-let _activeFoundryAdapter = null;
+let _activeFoundryAdapter: BaseFoundryAdapter | null = null;
 
 /**
  * Initialize and return the active Foundry VTT platform adapter.

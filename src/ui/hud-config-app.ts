@@ -17,6 +17,8 @@ export const DEFAULT_HUD_CONFIG = deepFreeze({
  * Modern ApplicationV2 configuration menu for Action Display HUD appearance, sizing, and positioning.
  */
 export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(adapter.foundry.ApplicationV2) {
+    config: Record<string, any>;
+
     /** @override */
     static DEFAULT_OPTIONS = {
         id: 'bad-hud-config-app',
@@ -49,7 +51,7 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
         };
     }
 
-    constructor(options = {}) {
+    constructor(options: Record<string, any> = {}) {
         super(options);
         this.config = {
             hudOpacity: Number(game.settings.get(MODULE_ID, 'hudOpacity') ?? DEFAULT_HUD_CONFIG.hudOpacity),

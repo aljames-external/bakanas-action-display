@@ -62,8 +62,8 @@ export class HUDTabColumn {
      * while preserving exclusion parent tabs (e.g. 'components') and their active sub-tabs (e.g. 'vocal', 'somatic').
      * @param {Object} [groups] Tab groups dictionary
      */
-    resetToDefault(groups = null) {
-        const exclusionParents = [];
+    resetToDefault(groups: Record<string, any> | null = null) {
+        const exclusionParents: string[] = [];
         const exclusionSubIds = new Set();
         for (const p of this.activeParents) {
             if (adapter.isExclusionTab(p)) {
@@ -122,7 +122,7 @@ export class HUDTabColumn {
         if (!isSoleActive) {
             // Deselect other category parent tabs and clear their sub-tabs,
             // while preserving exclusion parent tabs (e.g. 'components') and their active sub-tabs
-            const exclusionParents = [];
+            const exclusionParents: string[] = [];
             const exclusionSubIds = new Set();
             for (const p of this.activeParents) {
                 if (adapter.isExclusionTab(p)) {
@@ -242,7 +242,7 @@ export class HUDTabColumn {
 
         if (group) {
             const validSubIds = group.getAllSubTabIds?.() ?? new Set();
-            const activeSubsForParent = [];
+            const activeSubsForParent: string[] = [];
             for (const id of this.activeSubTypes) {
                 if (validSubIds.has(id)) activeSubsForParent.push(id);
             }
@@ -367,7 +367,7 @@ export class HUDTabColumn {
      * @param {Object} groups Available tab groups
      * @param {Function} [isExclusionFn] Function returning true if a parentId is an exclusion filter
      */
-    prune(groups, isExclusionFn = () => false) {
+    prune(groups: Record<string, any>, isExclusionFn: (parentId: string) => boolean = () => false) {
         const allAvailableSubs = new Set();
         for (const parentId in groups) {
             if (isExclusionFn(parentId) || this.activeParents.has(parentId)) {

@@ -102,7 +102,7 @@ export function validateExpression(expression) {
         getCompiledExpression(expr);
         return { valid: true, error: null };
     } catch (err) {
-        return { valid: false, error: err.message ?? 'Syntax error' };
+        return { valid: false, error: (err as any)?.message ?? 'Syntax error' };
     }
 }
 
@@ -114,7 +114,7 @@ export function validateExpression(expression) {
  * @param {Object} [context={}] Additional context such as actor, token, or user documents
  * @returns {boolean} True if expression evaluates to truthy
  */
-export function evaluateBooleanExpression(expression, action, context = {}) {
+export function evaluateBooleanExpression(expression: string, action: any, context: any = {}) {
     const expr = typeof expression === 'string' ? expression.trim() : '';
     if (!expr) return false;
 
@@ -133,15 +133,15 @@ export function evaluateBooleanExpression(expression, action, context = {}) {
 }
 
 /**
- * Categorize a list of visible Action instances according to the provided configuration.
+ * Categorizes and groups a list of actions into structured sections and subsections.
  *
- * @param {Action[]} actions Actions to categorize
- * @param {CategorizationConfig|Object} config Categorization configuration
+ * @param {Object[]} actions Actions array
+ * @param {Object} config Raw or normalized categorization config
  * @param {string} catchAllLabel Localized label for unmatched/remainder actions
  * @param {Object} [context={}] Additional evaluation context { actor, token, user }
  * @returns {CategorizedSection[]|null} Grouped category sections or null if disabled
  */
-export function categorizeActions(actions, config, catchAllLabel, context = {}) {
+export function categorizeActions(actions: any, config: any, catchAllLabel: any, context: any = {}) {
     const normalizedConfig = normalizeCategorizationConfig(config);
     if (!normalizedConfig.enabled || normalizedConfig.categories.length === 0) {
         return null;
@@ -157,18 +157,18 @@ export function categorizeActions(actions, config, catchAllLabel, context = {}) 
         for (const sub of cat.subcategories) {
             subMap.set(sub.id, {
                 subcategory: sub,
-                items: []
+                items: [] as any[]
             });
         }
         categoryMap.set(cat.id, {
             category: cat,
-            directItems: [],
+            directItems: [] as any[],
             subBuckets: subMap,
-            othersItems: []
+            othersItems: [] as any[]
         });
     }
 
-    const topLevelOthers = [];
+    const topLevelOthers: any[] = [];
 
     // Distribute each action into matching categories / subcategories
     for (const action of (actions ?? [])) {
@@ -178,7 +178,7 @@ export function categorizeActions(actions, config, catchAllLabel, context = {}) 
             if (evaluateBooleanExpression(bucket.category.expression, action, context)) {
                 const hasSubcategories = bucket.category.subcategories.length > 0;
                 if (hasSubcategories) {
-                    let matchedSubBucket = null;
+                    let matchedSubBucket: any = null;
                     for (const [subId, subEntry] of bucket.subBuckets.entries()) {
                         if (evaluateBooleanExpression(subEntry.subcategory.expression, action, context)) {
                             matchedSubBucket = subEntry;
@@ -211,7 +211,7 @@ export function categorizeActions(actions, config, catchAllLabel, context = {}) 
     }
 
     // Build the final output structure containing only non-empty sections and subsections
-    const categorizedSections = [];
+    const categorizedSections: any[] = [];
 
     for (const [catId, bucket] of categoryMap.entries()) {
         let subItemsCount = 0;
@@ -222,7 +222,7 @@ export function categorizeActions(actions, config, catchAllLabel, context = {}) 
 
         if (totalItemsInCat === 0) continue;
 
-        const subsections = [];
+        const subsections: any[] = [];
         for (const [subId, subEntry] of bucket.subBuckets.entries()) {
             if (subEntry.items.length > 0) {
                 subEntry.items.sort(sortByName);
@@ -294,6 +294,6 @@ export const DEFAULT_CATEGORIES = deepFreeze([
  * @param {Object} [customAdapter=null] Optional adapter override
  * @returns {Category[]} Default category list
  */
-export function getDefaultCategories(customAdapter = null) {
+export function getDefaultCategories(customAdapter: any = null) {
     return customAdapter?.getDefaultCategories?.() ?? DEFAULT_CATEGORIES;
 }

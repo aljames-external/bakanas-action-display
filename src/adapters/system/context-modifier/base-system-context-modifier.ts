@@ -60,10 +60,12 @@ const ABILITY_LABEL_CONFIGS = deepFreeze({
  * for a system adapter.
  */
 export class BaseSystemContextModifier {
+    adapter: any;
+
     /**
      * @param {BaseSystemAdapter} adapter Owning system adapter instance
      */
-    constructor(adapter) {
+    constructor(adapter: any) {
         this.adapter = adapter;
     }
 
@@ -133,7 +135,7 @@ export class BaseSystemContextModifier {
             default: {
                 const configLabel = CONFIG.Item?.typeLabels?.[parentId];
                 if (configLabel) {
-                    const localized = localize(configLabel, null);
+                    const localized = localize(configLabel);
                     if (localized) return localized;
                 }
                 return parentId.charAt(0).toUpperCase() + parentId.slice(1);

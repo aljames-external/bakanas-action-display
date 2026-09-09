@@ -8,36 +8,36 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
     /**
      * The active ContextMenu constructor in v13+.
      */
-    get ContextMenu() {
-        return foundry.applications.ux.ContextMenu.implementation;
+    override get ContextMenu(): any {
+        return (foundry as any).applications?.ux?.ContextMenu?.implementation;
     }
 
     /**
      * The active KeyboardManager constructor in v13+.
      */
-    get KeyboardManager() {
-        return foundry.helpers.interaction.KeyboardManager;
+    override get KeyboardManager(): any {
+        return (foundry as any).helpers?.interaction?.KeyboardManager;
     }
 
     /**
      * The active Token placeable constructor in v13+.
      */
-    get Token() {
-        return foundry.canvas.placeables.Token;
+    override get Token(): any {
+        return (foundry as any).canvas?.placeables?.Token;
     }
 
     /**
      * The active FilePicker constructor / implementation in v13+.
      */
-    get FilePicker() {
-        return foundry.applications.apps.FilePicker.implementation;
+    override get FilePicker(): any {
+        return (foundry as any).applications?.apps?.FilePicker?.implementation;
     }
 
     /**
      * The active TextEditor constructor / implementation in v13+.
      */
-    get TextEditor() {
-        return foundry.applications.ux.TextEditor.implementation;
+    override get TextEditor(): any {
+        return (foundry as any).applications?.ux?.TextEditor?.implementation;
     }
 
     /**
@@ -46,8 +46,8 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
      * @param {Object} [options={}] Resolution options
      * @returns {Document|null}
      */
-    fromUuidSync(uuid, options = {}) {
-        return foundry.utils.fromUuidSync(uuid, options);
+    override fromUuidSync(uuid: string, options: any = {}): any {
+        return (foundry.utils as any).fromUuidSync(uuid, options);
     }
 
     /**
@@ -56,8 +56,8 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
      * @param {Object} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    async fromUuid(uuid, options = {}) {
-        return foundry.utils.fromUuid(uuid, options);
+    override async fromUuid(uuid: string, options: any = {}): Promise<any> {
+        return (foundry.utils as any).fromUuid(uuid, options);
     }
 
     /**
@@ -66,7 +66,7 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
      * @param {Token} token Target Token placeable
      * @returns {Combatant[]}
      */
-    getCombatantsByToken(combat, token) {
+    override getCombatantsByToken(combat: any, token: any): any[] {
         if (!combat || !token) return [];
         return combat.getCombatantsByToken(token);
     }
@@ -77,8 +77,8 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
      * @param {string[]} paths Array of template paths
      * @returns {Promise<Function[]>}
      */
-    async loadTemplates(paths) {
-        return foundry.applications.handlebars.loadTemplates(paths);
+    override async loadTemplates(paths: string[]): Promise<any> {
+        return (foundry as any).applications?.handlebars?.loadTemplates(paths);
     }
 
     /**
@@ -88,7 +88,7 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
      * @param {Object} [options={}] Operation options or DatabaseUpdateOperation
      * @returns {boolean}
      */
-    isTeleport(options = {}) {
+    override isTeleport(options: any = {}): boolean {
         if (options.movement === false) return true;
         return Boolean(options.movement?.teleport);
     }

@@ -10,7 +10,7 @@ import { log } from '../../lib/logger.js';
  * Registry of known system adapters.
  * Maps system IDs to their corresponding adapter classes.
  */
-export const SYSTEM_ADAPTERS = {
+export const SYSTEM_ADAPTERS: Record<string, any> = {
     'dnd5e': Dnd5eSystemAdapter,
     'pf1': Pf1SystemAdapter,
     'pf2e': Pf2eSystemAdapter
@@ -23,7 +23,7 @@ export const SYSTEM_ADAPTERS = {
  * @param {BaseFoundryAdapter} foundryAdapter
  * @returns {Promise<BaseSystemAdapter>}
  */
-export async function initializeSystemAdapter(systemId = game.system?.id, foundryAdapter) {
+export async function initializeSystemAdapter(systemId: string = game.system?.id ?? 'unknown', foundryAdapter: BaseFoundryAdapter): Promise<BaseSystemAdapter> {
     if (!(foundryAdapter instanceof BaseFoundryAdapter)) {
         throw new Error(`initializeSystemAdapter requires a valid BaseFoundryAdapter instance, received: ${foundryAdapter}`);
     }

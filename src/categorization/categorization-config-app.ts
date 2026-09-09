@@ -115,13 +115,13 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
         const { type, id } = this._focusTarget;
         this._focusTarget = null;
 
-        let input = null;
+        let input: HTMLInputElement | null = null;
         if (type === 'category') {
             const card = this.element.querySelector(`.bad-config-cat-card[data-cat-id="${id}"]`);
-            input = card?.querySelector('.bad-cat-name-input') ?? null;
+            input = (card?.querySelector('.bad-cat-name-input') as HTMLInputElement | null) ?? null;
         } else if (type === 'subcategory') {
             const row = this.element.querySelector(`.bad-config-sub-row[data-sub-id="${id}"]`);
-            input = row?.querySelector('.bad-sub-name-input') ?? null;
+            input = (row?.querySelector('.bad-sub-name-input') as HTMLInputElement | null) ?? null;
         }
 
         if (input) {

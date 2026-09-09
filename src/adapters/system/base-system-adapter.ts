@@ -24,12 +24,19 @@ const DEFAULT_ECONOMY_OTHER = deepFreeze({ id: 'other', defaultColor: '#64748b',
  * They also define the localization labels and icons for the HUD tabs.
  */
 export class BaseSystemAdapter {
+    systemId: string;
+    isSupported: boolean;
+    foundry: BaseFoundryAdapter;
+    contextMenuManager: BaseSystemContextMenuManager;
+    filterManager: BaseSystemTabFilterManager;
+    contextModifier: BaseSystemContextModifier;
+
     /**
      * @param {string} systemId
      * @param {boolean} [isSupported=false]
      * @param {BaseFoundryAdapter} foundry
      */
-    constructor(systemId, isSupported = false, foundry) {
+    constructor(systemId: string, isSupported: boolean = false, foundry: BaseFoundryAdapter) {
         if (!(foundry instanceof BaseFoundryAdapter)) {
             throw new Error(`BaseSystemAdapter requires a valid BaseFoundryAdapter instance, received: ${foundry}`);
         }
@@ -184,7 +191,7 @@ export class BaseSystemAdapter {
      * @returns {Object[]} The modified/filtered/sorted actions list
      */
     async modifyActions(actions, actor) {
-        if (Boolean(game.settings.get(MODULE_ID, 'showDepleted'))) return actions;
+        if (Boolean(game?.settings?.get(MODULE_ID, 'showDepleted'))) return actions;
 
         log.group(`BaseSystemAdapter.modifyActions | Filtering depleted actions for "${actor?.name ?? 'Actor'}"`, 'debug');
         try {
@@ -202,7 +209,7 @@ export class BaseSystemAdapter {
         }
     }
 
-    extractCheckActions(actor) {
+    extractCheckActions(actor?: any): any[] {
         return [];
     }
 
@@ -211,7 +218,7 @@ export class BaseSystemAdapter {
      * @param {Actor} actor
      * @returns {Action[]}
      */
-    extractInfoActions(actor) {
+    extractInfoActions(actor?: any): any[] {
         if (!actor) return [];
         const infoAction = new Action({
             id: `token-info-${actor.id ?? 'actor'}`,
@@ -231,7 +238,7 @@ export class BaseSystemAdapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor, token = null) {
+    async getTokenInfo(actor: any, token: any = null): Promise<any> {
         return null;
     }
 
@@ -372,8 +379,8 @@ export class BaseSystemAdapter {
         return this.filterManager.getActiveExclusionSubs(filterContext);
     }
 
-    filterSubactions(subactions, filterContext) {
-        return this.filterManager.filterSubactions(subactions, filterContext);
+    filterSubactions(subactions: any, filterContext: any, itemLeft?: any) {
+        return this.filterManager.filterSubactions(subactions, filterContext, itemLeft);
     }
 
     getTabCombinator(parentId) {
@@ -462,11 +469,11 @@ export class BaseSystemAdapter {
         return this.contextModifier.getActionSubTabLabel(subId);
     }
 
-    getDefaultActiveLeftSubTypes() {
+    getDefaultActiveLeftSubTypes(): any[] {
         return [];
     }
 
-    getDefaultActiveSubTypes() {
+    getDefaultActiveSubTypes(): any[] {
         return [];
     }
 
@@ -512,7 +519,7 @@ export class BaseSystemAdapter {
      * @param {Record<string, any>} [userColors={}] User configured colors & enablement
      * @returns {boolean}
      */
-    isEconomyTypeEnabled(type, userColors = {}) {
+    isEconomyTypeEnabled(type: any, userColors: any = {}) {
         if (!type?.id || type.id === 'none' || type.id === 'all') return false;
 
         const disabled = userColors.disabled;
@@ -530,7 +537,7 @@ export class BaseSystemAdapter {
      * @param {Record<string, any>} [userColors={}] User configured color overrides
      * @returns {string|null} Hex color string or null if unmapped or disabled
      */
-    getEconomyColor(type, userColors = {}) {
+    getEconomyColor(type: string, userColors: any = {}) {
         if (!type || type === 'none' || type === 'all') return null;
 
         const types = this.getEconomyTypes() ?? [];
@@ -592,7 +599,7 @@ export class BaseSystemAdapter {
             activeTypes.add('other');
         }
 
-        const indicators = [];
+        const indicators: any[] = [];
         for (const sysType of enabledTypes) {
             const isActive = activeTypes.has(sysType.id);
             const color = isActive ? this.getEconomyColor(sysType.id, userColors) : null;
@@ -624,7 +631,7 @@ export class BaseSystemAdapter {
      * Get the default HUD categorization structure for this system.
      * @returns {Object[]} Array of category definition objects
      */
-    getDefaultCategories() {
+    getDefaultCategories(): any[] {
         return [
             {
                 id: 'cat_favorites',
@@ -699,13 +706,13 @@ export class BaseSystemAdapter {
      * @param {Object} [actor] The owning actor document
      * @returns {{title: string, subtitle?: string, img?: string, properties?: Array<string|{label?: string, value: string}>, description?: string}|null}
      */
-    async getItemSummary(action, item = action?.originalItem, actor = null) {
+    async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null) {
         if (!action && !item) return null;
         const targetItem = item ?? action?.originalItem ?? action;
         const title = action?.name ?? targetItem?.name ?? '';
         const img = (action?.img && action.img.length > 0) ? action.img : (targetItem?.img ?? '');
         const type = targetItem?.type ? (targetItem.type.charAt(0).toUpperCase() + targetItem.type.slice(1)) : '';
-        const properties = [];
+        const properties: any[] = [];
 
         const range = targetItem?.system?.range?.value
             ? `${targetItem.system.range.value} ${targetItem.system.range.units ?? ''}`.trim()
@@ -750,7 +757,7 @@ export class BaseSystemAdapter {
      * @param {Actor} actor
      * @returns {Record<'vocal'|'somatic', Array<*>>}
      */
-    getAutoBanEffectReasons(actor) {
+    getAutoBanEffectReasons(actor?: any): Record<'vocal'|'somatic', any[]> {
         return { vocal: [], somatic: [] };
     }
 

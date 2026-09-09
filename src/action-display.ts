@@ -44,7 +44,7 @@ class ActionDisplay {
         if (!adapter.system) {
             const currentSystemId = game.system?.id ?? 'unknown';
             log.warn(`No system adapter registered for system: ${currentSystemId}. Falling back to default adapter.`);
-            adapter.system = new BaseSystemAdapter(currentSystemId);
+            adapter.system = new BaseSystemAdapter(currentSystemId, false, adapter.foundry);
         }
     }
 
@@ -76,7 +76,7 @@ class ActionDisplay {
      * Active HUD application instance.
      * @type {ActionDisplayApp|null}
      */
-    activeApp = null;
+    activeApp: any = null;
 
     /**
      * Default page number for newly opened HUDs (internal module setting, resets on reload).
@@ -88,8 +88,8 @@ class ActionDisplay {
         return this._defaultPage;
     }
 
-    set defaultPage(val) {
-        const parsed = Number.parseInt(val, 10);
+    set defaultPage(val: string | number) {
+        const parsed = typeof val === 'number' ? val : Number.parseInt(val, 10);
         this._defaultPage = (Number.isFinite(parsed) && parsed > 0) ? parsed : 1;
     }
 
@@ -97,7 +97,7 @@ class ActionDisplay {
      * Handler delegate for HUD toggling.
      * @type {Function|null}
      */
-    toggleHandler = null;
+    toggleHandler: ((explicitToken?: any) => boolean) | null = null;
 
     /**
      * Run the pipeline to get actions for a given actor via the unified adapter.

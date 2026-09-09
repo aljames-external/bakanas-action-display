@@ -4,7 +4,7 @@
  * @param {string} [fallback] The fallback string if the key is not found (defaults to key)
  * @returns {string} The localized string or fallback
  */
-export function localize(key, fallback = undefined) {
+export function localize(key: string, fallback?: string | null): any {
     const defaultStr = fallback !== undefined ? fallback : key;
     if (!key) return defaultStr ?? '';
     if (!game.i18n) return defaultStr;
@@ -22,7 +22,7 @@ export function localize(key, fallback = undefined) {
  * @param {string} [fallback] Fallback string
  * @returns {string} The formatted localized string
  */
-export function format(key, data = {}, fallback = undefined) {
+export function format(key: string, data: Record<string, any> = {}, fallback?: string): string {
     const defaultStr = fallback !== undefined ? fallback : key;
     if (!key) return defaultStr ?? '';
     if (game.i18n?.format) {
@@ -49,7 +49,7 @@ export function format(key, data = {}, fallback = undefined) {
  * @param {Function|null} [mapFn=null] Optional mapper callback (element => value)
  * @returns {Set}
  */
-export function toSet(input, mapFn = null) {
+export function toSet(input: any, mapFn: ((item: any) => any) | null = null): Set<any> {
     if (!input) return new Set();
     if (!mapFn) {
         return input instanceof Set ? input : new Set(input);
@@ -71,7 +71,7 @@ export function toSet(input, mapFn = null) {
  * @param {Set|Iterable|null|undefined} setB
  * @returns {boolean}
  */
-export function hasIntersection(setA, setB) {
+export function hasIntersection(setA: any, setB: any): boolean {
     if (!setA || !setB) return false;
     if (setA instanceof Set && setB instanceof Set) {
         const [smaller, larger] = setA.size <= setB.size ? [setA, setB] : [setB, setA];
@@ -94,14 +94,14 @@ export function hasIntersection(setA, setB) {
  * @param {WeakSet<object>} [seen=new WeakSet()] Visited object tracking
  * @returns {Readonly<T>} The deeply frozen object
  */
-export function deepFreeze(obj, seen = new WeakSet()) {
+export function deepFreeze<T>(obj: T, seen: WeakSet<object> = new WeakSet()): Readonly<T> {
     if (obj === null || typeof obj !== 'object' || seen.has(obj)) {
         return obj;
     }
     seen.add(obj);
     Object.freeze(obj);
     for (const key of Reflect.ownKeys(obj)) {
-        const val = obj[key];
+        const val = (obj as any)[key];
         if (val !== null && typeof val === 'object' && !Object.isFrozen(val)) {
             deepFreeze(val, seen);
         }

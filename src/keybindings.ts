@@ -33,15 +33,15 @@ export function setLastSelectedToken(token) {
  * Retrieve the last selected token if it still exists on the active canvas and user has ownership.
  * @returns {Token|null}
  */
-export function getLastSelectedToken() {
+export function getLastSelectedToken(): any {
     if (!lastSelectedTokenId && !lastSelectedTokenRef) return null;
 
-    let token = null;
-    if (canvas.tokens?.get && lastSelectedTokenId) {
+    let token: any = null;
+    if (canvas?.tokens?.get && lastSelectedTokenId) {
         token = canvas.tokens.get(lastSelectedTokenId);
     }
     if (!token && lastSelectedTokenRef) {
-        const isPresent = canvas.tokens.placeables.some(t => t === lastSelectedTokenRef || t.id === lastSelectedTokenId);
+        const isPresent = canvas?.tokens?.placeables?.some(t => t === lastSelectedTokenRef || t.id === lastSelectedTokenId);
         if (isPresent) token = lastSelectedTokenRef;
     }
 
@@ -53,8 +53,8 @@ export function getLastSelectedToken() {
  * @param {Token} [explicitToken=null] Optional token to toggle HUD for
  * @returns {boolean} True if a toggle action was executed, false otherwise
  */
-export function toggleHUD(explicitToken = null) {
-    let token = explicitToken ?? canvas.tokens.controlled[0] ?? null;
+export function toggleHUD(explicitToken: any = null) {
+    let token = explicitToken ?? canvas?.tokens?.controlled?.[0] ?? null;
 
     // If a token is explicitly passed or currently controlled on canvas, update lastSelectedToken
     if (token) {
@@ -67,7 +67,7 @@ export function toggleHUD(explicitToken = null) {
     // If still no token, fall back to user's assigned character token
     if (!token && game.user?.character) {
         token = game.user.character.getActiveTokens()[0]
-            ?? canvas.tokens.placeables.find(t => t.actor?.id === game.user.character.id)
+            ?? canvas?.tokens?.placeables?.find(t => t.actor?.id === game.user?.character?.id)
             ?? null;
         if (token) {
             setLastSelectedToken(token);
@@ -79,7 +79,7 @@ export function toggleHUD(explicitToken = null) {
 
     if (isCurrentAppOpen) {
         // If a different token is now controlled, switch the HUD to the new token
-        const controlledToken = canvas.tokens.controlled[0];
+        const controlledToken = canvas?.tokens?.controlled?.[0];
         if (controlledToken && currentApp.token && currentApp.token !== controlledToken && currentApp.token.id !== controlledToken.id) {
             if (currentApp.element) {
                 currentApp.element.style.display = 'none';

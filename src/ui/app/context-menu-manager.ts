@@ -8,11 +8,16 @@ import { positionFloatingMenu } from './menu-utils.js';
  * Manages UI context menus for action items inside ActionDisplayApp.
  */
 export class ContextMenuManager {
+    app: any;
+    element: any;
+    _activeSubmenuEl: HTMLElement | null = null;
+    _submenuCloseTimeout: any = null;
+
     /**
      * @param {ApplicationV2} app Active ActionDisplayApp instance
      * @param {HTMLElement} element Root application DOM element
      */
-    constructor(app, element) {
+    constructor(app: any, element: any) {
         this.app = app;
         this.element = element;
     }
@@ -206,7 +211,7 @@ export class ContextMenuManager {
 
         const { item } = this._resolveActionAndItem(target);
 
-        const itemLis = contextMenuEl.querySelectorAll('.context-item');
+        const itemLis = contextMenuEl.querySelectorAll<HTMLElement>('.context-item');
         for (const li of itemLis) {
             if (li.dataset.badSubmenuBound === 'true') continue;
             li.dataset.badSubmenuBound = 'true';

@@ -143,8 +143,8 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor 
      * @returns {Object[]} The modified actions list
      */
-    async modifyActions(actions, actor) {
-        const modified = [];
+    async modifyActions(actions: any[], actor: any) {
+        const modified: any[] = [];
 
         const ammoQuantities = this.#buildAmmoQuantitiesMap(actor);
         const spellToEntryMap = this.#buildSpellToEntryMap(actor);
@@ -174,7 +174,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             consumable: Boolean(actor?.getFlag?.(MODULE_ID, 'showUnequipped_consumable'))
         };
 
-        const finalActions = [];
+        const finalActions: any[] = [];
         for (const action of modified) {
             action.available = true;
             const item = action.originalItem;
@@ -210,9 +210,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @returns {Action[]}
      */
-    extractCheckActions(actor) {
+    extractCheckActions(actor: any): any[] {
         if (!actor) return [];
-        const checkActions = [];
+        const checkActions: any[] = [];
 
         // 1. Core Saves (Fortitude, Reflex, Will) and Perception
         const fortitude = new Action({
@@ -292,9 +292,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         const skillEntries = actorSkills instanceof Map ? Array.from(actorSkills.entries()) : Object.entries(actorSkills);
 
         for (const [key, skill] of skillEntries) {
-            const slug = skill.slug ?? key;
-            const abl = PF2E_SKILL_ABILITY_MAP[slug] ?? skill.ability ?? 'dex';
-            const label = skill.label ?? skill.name ?? CONFIG?.PF2E?.skills?.[slug] ?? slug;
+            const slug = (skill as any).slug ?? key;
+            const abl = PF2E_SKILL_ABILITY_MAP[slug] ?? (skill as any).ability ?? 'dex';
+            const label = (skill as any).label ?? (skill as any).name ?? (CONFIG as any)?.PF2E?.skills?.[slug] ?? slug;
             const skillImg = PF2E_ABILITY_ICONS[abl] ?? 'icons/svg/d20.svg';
             const skillAction = new Action({
                 id: `skill-${slug}`,
@@ -464,11 +464,11 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor, token = null) {
+    async getTokenInfo(actor: any, token: any = null): Promise<any> {
         if (!actor) return null;
 
         const system = actor.system ?? {};
-        const cfg = CONFIG?.PF2E;
+        const cfg = (CONFIG as any)?.PF2E;
 
         // 1. Name and Image
         const name = token?.name ?? actor.name ?? '';
@@ -549,7 +549,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return CombatMovementTracker.getMovementThisTurn(token, actor);
     }
 
-    #extractCreatureType(actor, cfg = CONFIG?.PF2E) {
+    #extractCreatureType(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
         const system = actor?.system ?? {};
         const details = system.details ?? {};
         const traits = system.traits ?? {};
@@ -573,7 +573,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
         let typeStr = creatureType.length > 0 ? creatureType : ancestry;
         if (!typeStr && traitList.length > 0) {
-            typeStr = traitList.map(t => cfg?.creatureTraits?.[t] ? localize(cfg.creatureTraits[t], t) : (t.charAt(0).toUpperCase() + t.slice(1))).join(', ');
+            typeStr = traitList.map((t: any) => cfg?.creatureTraits?.[t] ? localize(cfg.creatureTraits[t], t) : (t.charAt(0).toUpperCase() + t.slice(1))).join(', ');
         }
 
         const fullLabel = [sizeLabel, typeStr].filter(Boolean).join(' ');
@@ -588,11 +588,11 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractArmorClass(actor) {
+    #extractArmorClass(actor: any) {
         const ac = actor?.armorClass?.value ?? actor?.system?.attributes?.ac?.value ?? 10;
         const shield = actor?.system?.attributes?.shield;
 
-        const parts = [];
+        const parts: string[] = [];
         let shieldLabel = '';
         if (shield?.raised || (shield?.hp?.value ?? 0) > 0) {
             if (shield.ac) parts.push(`+${shield.ac} Shield AC`);
@@ -607,11 +607,11 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractMovement(actor, token = null) {
+    #extractMovement(actor: any, token: any = null) {
         const speed = actor?.system?.attributes?.speed ?? {};
         const primaryVal = speed.value ?? speed.total ?? 25;
         const primary = `${primaryVal} ft`;
-        const secondaries = [];
+        const secondaries: string[] = [];
 
         const otherSpeeds = Array.isArray(speed.otherSpeeds) ? speed.otherSpeeds : [];
         for (const s of otherSpeeds) {
@@ -637,9 +637,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractResistances(actor, cfg = CONFIG?.PF2E) {
+    #extractResistances(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
         const resistances = actor?.system?.attributes?.resistances ?? [];
-        const results = [];
+        const results: string[] = [];
 
         for (const res of resistances) {
             if (!res?.type) {
@@ -656,9 +656,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return results;
     }
 
-    #extractImmunities(actor, cfg = CONFIG?.PF2E) {
+    #extractImmunities(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
         const immunities = actor?.system?.attributes?.immunities ?? [];
-        const results = [];
+        const results: string[] = [];
 
         for (const imm of immunities) {
             if (!imm?.type) {
@@ -674,9 +674,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return results;
     }
 
-    #extractWeaknesses(actor, cfg = CONFIG?.PF2E) {
+    #extractWeaknesses(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
         const weaknesses = actor?.system?.attributes?.weaknesses ?? [];
-        const results = [];
+        const results: string[] = [];
 
         for (const weak of weaknesses) {
             if (!weak?.type) {
@@ -693,11 +693,11 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return results;
     }
 
-    #extractLanguages(actor, cfg = CONFIG?.PF2E) {
+    #extractLanguages(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
         const langData = actor?.system?.details?.languages;
         if (!langData) return [];
 
-        const results = [];
+        const results: string[] = [];
         const langMap = cfg?.languages ?? {};
 
         for (const key of toSet(langData.value)) {
@@ -706,23 +706,23 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         }
 
         if (typeof langData.custom === 'string' && langData.custom.trim()) {
-            const customItems = langData.custom.split(/[;,]/).map(s => s.trim()).filter(Boolean);
+            const customItems = langData.custom.split(/[;,]/).map((s: string) => s.trim()).filter(Boolean);
             results.push(...customItems);
         }
 
         if (typeof langData.details === 'string' && langData.details.trim()) {
-            const detailsItems = langData.details.split(/[;,]/).map(s => s.trim()).filter(Boolean);
+            const detailsItems = langData.details.split(/[;,]/).map((s: string) => s.trim()).filter(Boolean);
             results.push(...detailsItems);
         }
 
         return Array.from(new Set(results));
     }
 
-    #extractSenses(actor, cfg = CONFIG?.PF2E) {
+    #extractSenses(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
         const sensesData = actor?.system?.traits?.senses ?? actor?.perception?.senses;
         if (!sensesData) return [];
 
-        const results = [];
+        const results: string[] = [];
         if (Array.isArray(sensesData)) {
             for (const sense of sensesData) {
                 if (!sense?.type) {
@@ -1094,14 +1094,14 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [actor] The owning actor document
      * @returns {{title: string, subtitle?: string, img?: string, properties?: Array<string|{label?: string, value: string}>, description?: string}|null}
      */
-    async getItemSummary(action, item = action?.originalItem, actor = null) {
+    async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null): Promise<any> {
         if (!action && !item) return null;
         const targetItem = item ?? action?.originalItem ?? action;
         const title = action?.name ?? targetItem?.name ?? '';
         const img = (action?.img && action.img.length > 0) ? action.img : (targetItem?.img ?? '');
         const system = targetItem?.system ?? {};
         const type = targetItem?.type ? (targetItem.type.charAt(0).toUpperCase() + targetItem.type.slice(1)) : '';
-        const properties = [];
+        const properties: any[] = [];
 
         if (system.damage?.dice && system.damage?.die) {
             properties.push({ label: 'Damage', value: `${system.damage.dice}${system.damage.die} ${system.damage.damageType ?? ''}`.trim() });

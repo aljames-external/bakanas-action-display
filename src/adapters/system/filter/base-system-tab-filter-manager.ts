@@ -21,10 +21,12 @@ function hasTabInPath(tab, rootId, predicate) {
  * and resource depletion checks for a system adapter.
  */
 export class BaseSystemTabFilterManager {
+    adapter: any;
+
     /**
      * @param {BaseSystemAdapter} adapter Owning system adapter instance
      */
-    constructor(adapter) {
+    constructor(adapter: any) {
         this.adapter = adapter;
     }
 
@@ -60,7 +62,7 @@ export class BaseSystemTabFilterManager {
      * @param {string} parentId Parent tab ID
      * @returns {string[]}
      */
-    getExclusionSubTabs(parentId) {
+    getExclusionSubTabs(parentId: string): string[] {
         return [];
     }
 
@@ -130,7 +132,7 @@ export class BaseSystemTabFilterManager {
             const validSubIds = parentGroup?.getAllSubTabIds?.() ?? new Set();
 
             if (this.isIntersectionTab(actionParentId)) {
-                const activeSubsForParent = [];
+                const activeSubsForParent: any[] = [];
                 for (const id of activeSubs) {
                     if (validSubIds.has(id)) activeSubsForParent.push(id);
                 }
@@ -156,7 +158,7 @@ export class BaseSystemTabFilterManager {
         const activeParents = rightContext.activeParents ?? new Set();
         const activeSubs = rightContext.activeSubTypes ?? new Set();
         const parentGroups = rightContext.groups;
-        const activeExclusionSubs = [];
+        const activeExclusionSubs: any[] = [];
 
         for (const parentId of activeParents) {
             if (!this.isExclusionTab(parentId)) continue;
@@ -182,7 +184,7 @@ export class BaseSystemTabFilterManager {
      * @param {Object} filterContext Active filter state
      * @returns {Object[]} Qualifying subactions
      */
-    filterSubactions(subactions, filterContext) {
+    filterSubactions(subactions: any, filterContext: any, itemLeft?: any) {
         if (!subactions?.length) return [];
         const { showDepleted, left } = filterContext;
 

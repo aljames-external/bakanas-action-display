@@ -13,8 +13,8 @@ import { syncActorFavorites } from '../favorites/favorites-manager.js';
 import { setExplicitlyClosedTokenId } from '../module.js';
 
 // Cache to persist tab states per actor across HUD rebuilds
-const activeTabCache = new Map();
-let lastActiveTabState = null;
+const activeTabCache = new Map<string, any>();
+let lastActiveTabState: any = null;
 
 const formatSummaryTag = tag => (tag?.label ? `${tag.label}: ${tag.value}` : (tag?.value ?? tag));
 
@@ -52,8 +52,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {number} targetPage Target page number
      * @param {ActionDisplayApp|null} [callerInstance=null] The instance initiating the change
      */
-    static setAllCachedHUDsPage(targetPage, callerInstance = null) {
-        const parsed = Number.parseInt(targetPage, 10);
+    static setAllCachedHUDsPage(targetPage: number | string, callerInstance: any = null) {
+        const parsed = typeof targetPage === 'number' ? targetPage : Number.parseInt(targetPage, 10);
         const page = (Number.isFinite(parsed) && parsed > 0) ? parsed : 1;
 
         // 0. Update internal defaultPage module setting for newly opened HUDs
@@ -73,10 +73,11 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
 
         // 3. Update any active/open HUD instances
         for (const instance of ActionDisplayApp.instances) {
-            const maxPage = instance.totalPages ?? page;
-            instance.activePage = Math.min(Math.max(1, page), maxPage);
-            if (instance !== callerInstance && instance.rendered) {
-                instance.render();
+            const inst = instance as any;
+            const maxPage = inst.totalPages ?? page;
+            inst.activePage = Math.min(Math.max(1, page), maxPage);
+            if (inst !== callerInstance && inst.rendered) {
+                inst.render();
             }
         }
 
@@ -92,9 +93,9 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             try {
                 const rawStates = game.settings.get(MODULE_ID, 'hudTabStates');
                 const allStates = rawStates ? adapter.foundry.duplicate(rawStates) : {};
-                for (const state of Object.values(allStates)) {
+                for (const state of Object.values(allStates as Record<string, any>)) {
                     if (state) {
-                        state.activePage = page;
+                        (state as any).activePage = page;
                     }
                 }
                 game.settings.set(MODULE_ID, 'hudTabStates', allStates);
@@ -122,7 +123,37 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         ActionDisplayApp.defaultPage = 1;
     }
 
-    constructor(token, options = {}) {
+    token: any;
+    actor: any;
+    actions: any[];
+    totalPages: number;
+    activePage: number;
+    private _cachedPages: any;
+    private _tabColumns: Record<string, HUDTabColumn>;
+    isAttached: boolean;
+    private _dragData: any;
+    searchQuery: string;
+    private _isSearching: boolean;
+    private _searchSelectionStart: number | null;
+    private _searchSelectionEnd: number | null;
+    private _boundOnPointerDownCapture: any;
+    private _boundOnContextMenuCapture: any;
+    private _hoveredActionItem: any;
+    private _isQuestionMarkHeld: boolean;
+    private _activeSummaryTooltip: any;
+    private _boundOnPointerOver: any;
+    private _boundOnPointerOut: any;
+    private _boundOnKeyDown: any;
+    private _boundOnKeyUp: any;
+    private _boundOnWindowBlur: any;
+    private _boundOnWheel: any;
+    private _boundOnWindowWheel: any;
+    private _boundOnAutobanPointerOverCapture: any;
+    private _lockedTooltipTarget: any;
+    private _boundOnMiddleClickCapture: any;
+    private _boundOnAuxClickCapture: any;
+
+    constructor(token: any, options: Record<string, any> = {}) {
         super(options);
         ActionDisplayApp.instances.add(this);
         this.token = token;
@@ -134,7 +165,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         const hasActorCache = Boolean(activeTabCache.has(actorKey) || (actorKey && game.settings.get(MODULE_ID, 'persistTabState') && game.settings.get(MODULE_ID, 'hudTabStates')?.[actorKey]));
         const cached = this.retrieveActorTabCache(actorKey);
         const parsedPage = Number((hasActorCache ? cached?.activePage : null) ?? ActionDisplayApp.defaultPage);
-        this.activePage = (Number.isFinite(parsedPage) && parsedPage > 0) ? parsedPage : ActionDisplayApp.defaultPage;
+        this.activePage = (Number.isFinite(parsedPage) && parsedPage > 0) ? parsedPage : Number(ActionDisplayApp.defaultPage);
         this._cachedPages = cached?.pages ?? {
             '1-left': cached?.left,
             '1-right': cached?.right
@@ -432,7 +463,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     /**
      * Close the application, logging the transition.
      */
-    async close(options = {}) {
+    async close(options: any = {}) {
         // Hide the element instantly to prevent any default close animations/transitions
         // from causing visual glitches (like shifting and covering the token).
         if (this.element) {
@@ -472,7 +503,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             this.element?.removeEventListener?.('wheel', this._boundOnWheel, { passive: false });
         }
         if (this._boundOnWindowWheel) {
-            window.removeEventListener('wheel', this._boundOnWindowWheel, { passive: false });
+            window.removeEventListener('wheel', this._boundOnWindowWheel, { capture: true });
         }
         this._hoveredActionItem = null;
         this._isQuestionMarkHeld = false;
@@ -565,8 +596,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         }
         const rawActions = allActions.filter(a => (a.page ?? 1) === this.activePage);
 
-        const existingItemCombinations = new Set();
-        const existingCombinations = new Set();
+        const existingItemCombinations = new Set<string>();
+        const existingCombinations = new Set<string>();
 
         // 1. Single-pass loop: Extract unique tabs and filter actions simultaneously (O(N) vs O(3N))
         for (const action of rawActions) {
@@ -592,7 +623,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         }
 
         // 2. Build the left-side hierarchy dynamically using the adapter
-        const leftGroups = {};
+        const leftGroups: Record<string, HUDTab> = {};
 
         // Always ensure 'all' parent is present if we have actions
         if (rawActions.length > 0) {
@@ -672,7 +703,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         }
 
         // 3. Build the right-side hierarchy dynamically using the adapter
-        const parentGroups = {};
+        const parentGroups: Record<string, HUDTab> = {};
 
         // Always ensure 'all' parent is present if we have actions
         if (rawActions.length > 0) {
@@ -861,7 +892,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             }
         }
 
-        let visibleActions = [];
+        let visibleActions: any[] = [];
         log.group(`ActionDisplayApp._prepareContext | Filtering actions for "${this.actor?.name ?? 'Actor'}"`, 'debug');
         try {
             const query = (this.searchQuery ?? '').trim().toLowerCase();
@@ -932,7 +963,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
 
         const parsedActivePage = Number(this.activePage);
         const currentActivePage = (Number.isFinite(parsedActivePage) && parsedActivePage > 0) ? parsedActivePage : 1;
-        const pages = [];
+        const pages: any[] = [];
         for (let i = 1; i <= this.totalPages; i++) {
             pages.push({
                 page: i,
@@ -961,8 +992,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
                     const needsInitiative = combatant.initiative == null;
                     showRollInitiativeButton = needsInitiative;
 
-                    if (!needsInitiative && combat.started) {
-                        const currentCombatant = combat.combatant;
+                    if (!needsInitiative && combat?.started) {
+                        const currentCombatant = combat?.combatant;
                         if (currentCombatant) {
                             const isTokenMatch = Boolean(this.token && (currentCombatant.token === this.token || (currentCombatant.token?.id ?? currentCombatant.tokenId) === this.token.id));
                             const isActorMatch = Boolean(this.actor && (currentCombatant.actor === this.actor || (currentCombatant.actor?.id ?? currentCombatant.actorId) === this.actor.id));
@@ -1725,7 +1756,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         const windows = document.querySelectorAll?.('.window-app, .application, .app, .dialog, .sidebar-popout') ?? [];
         for (const win of windows) {
             if (win === this.element) continue;
-            const rawZ = win.style?.zIndex ?? window.getComputedStyle?.(win)?.zIndex;
+            const rawZ = (win as HTMLElement).style?.zIndex ?? window.getComputedStyle?.(win)?.zIndex;
             const z = Number.parseInt(rawZ, 10);
             if (Number.isFinite(z) && z < 900000) { // Keep below context menus (999999) and tooltips (1000001)
                 maxZ = Math.max(maxZ, z);
@@ -1766,7 +1797,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {object} [options]
      * @param {boolean} [options.force=false] Force closing even if a tooltip is focused/locked
      */
-    _clearMenuState(options = {}) {
+    _clearMenuState(options: any = {}) {
         if (this.isTooltipFocused && !options.force) {
             return;
         }
@@ -1977,7 +2008,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         // 5. Verify that Foundry TooltipManager is active or #tooltip has content
         const tooltipEl = document.querySelector?.('#tooltip');
         const hasTooltipContent = Boolean(tooltipEl?.textContent?.trim() || tooltipEl?.children?.length);
-        if (!game.tooltip?.active && !hasTooltipContent) {
+        if (!(game.tooltip as any)?.active && !hasTooltipContent) {
             return;
         }
 
@@ -2017,14 +2048,14 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      */
     _closeLockedTooltips(except = null) {
         if (game.tooltip) {
-            game.tooltip.locked = false;
+            (game.tooltip as any).locked = false;
         }
 
         const lockedElements = document.querySelectorAll?.('.locked-tooltip, .locked:not(#tooltip), [data-tooltip-locked="true"]:not(#tooltip)') ?? [];
         for (const el of lockedElements) {
             if (except && (el === except || el.contains?.(except))) continue;
             try {
-                const closeBtn = el.querySelector?.('button.close, a.close, [data-action="close"], .close-button, i.fa-times, i.fa-xmark');
+                const closeBtn = el.querySelector?.('button.close, a.close, [data-action="close"], .close-button, i.fa-times, i.fa-xmark') as HTMLElement | null;
                 if (closeBtn?.click) {
                     closeBtn.click();
                 } else {
@@ -2035,7 +2066,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             }
         }
 
-        const primaryTooltip = document.querySelector?.('#tooltip');
+        const primaryTooltip = document.querySelector?.('#tooltip') as HTMLElement | null;
         if (primaryTooltip && primaryTooltip !== except) {
             primaryTooltip.classList?.remove?.('locked');
             if (primaryTooltip.dataset) {
@@ -2083,7 +2114,7 @@ this._lockedTooltipTarget = null;
      * @returns {string}
      * @protected
      */
-    _formatItemSummaryHtml(summary, targetWidth = null, needsHorizontalScroll = false) {
+    _formatItemSummaryHtml(summary: any, targetWidth: number | null = null, needsHorizontalScroll: boolean = false) {
         if (!summary) return '';
         const title = summary.title ?? '';
         const subtitle = summary.subtitle ?? '';
@@ -2157,8 +2188,8 @@ this._lockedTooltipTarget = null;
      */
     get isTooltipFocused() {
         if (Boolean(this._lockedTooltipTarget)) return true;
-        if (Boolean(game.tooltip?.locked)) return true;
-        const lockedEl = document.querySelector?.('#tooltip.locked, .locked-tooltip, [data-tooltip-locked="true"]');
+        if (Boolean((game.tooltip as any)?.locked)) return true;
+        const lockedEl = document.querySelector?.('#tooltip.locked, .locked-tooltip, [data-tooltip-locked="true"]') as HTMLElement | null;
         return Boolean(lockedEl?.classList?.contains?.('locked') || lockedEl?.classList?.contains?.('locked-tooltip') || lockedEl?.dataset?.tooltipLocked === 'true');
     }
 
@@ -2193,7 +2224,7 @@ this._lockedTooltipTarget = null;
         const rawDesc = summary.description ?? '';
         const hasTable = Boolean(rawDesc && /<table[\s>]/i.test(rawDesc));
 
-        let tableMetrics = { targetWidth: null, needsHorizontalScroll: false };
+        let tableMetrics: { targetWidth: number | null, needsHorizontalScroll: boolean } = { targetWidth: null, needsHorizontalScroll: false };
         if (hasTable) {
             tableMetrics = this._calculateTableTooltipWidth(rawDesc);
         }
@@ -2254,12 +2285,12 @@ this._lockedTooltipTarget = null;
                 table.style.setProperty('display', 'table', 'important');
 
                 const ths = table.querySelectorAll('th, thead td, tr:first-child th, tr:first-child td');
-                for (const th of ths) {
+                for (const th of (ths as NodeListOf<HTMLElement>)) {
                     th.style.setProperty('white-space', 'nowrap', 'important');
                 }
 
                 const firstColCells = table.querySelectorAll('td:first-child, th:first-child');
-                for (const td of firstColCells) {
+                for (const td of (firstColCells as NodeListOf<HTMLElement>)) {
                     td.style.setProperty('white-space', 'nowrap', 'important');
                 }
 
@@ -2287,9 +2318,9 @@ this._lockedTooltipTarget = null;
      * @param {number} targetWidth
      * @protected
      */
-    _applyTooltipWidth(targetWidth) {
+    _applyTooltipWidth(targetWidth: number) {
         const apply = () => {
-            const tooltipEl = document.querySelector?.('#tooltip');
+            const tooltipEl = document.querySelector?.('#tooltip') as HTMLElement | null;
             if (tooltipEl) {
                 tooltipEl.style?.setProperty?.('--bad-tooltip-width', `${targetWidth}px`);
                 tooltipEl.style?.setProperty?.('--bad-tooltip-max-width', `${targetWidth}px`);
@@ -2313,7 +2344,7 @@ this._lockedTooltipTarget = null;
         if (this.isTooltipFocused) return;
 
         this._activeSummaryTooltip = null;
-        const tooltipEl = document.querySelector?.('#tooltip');
+        const tooltipEl = document.querySelector?.('#tooltip') as HTMLElement | null;
         if (tooltipEl) {
             tooltipEl.style?.removeProperty?.('--bad-tooltip-width');
             tooltipEl.style?.removeProperty?.('--bad-tooltip-max-width');
@@ -2698,8 +2729,8 @@ this._lockedTooltipTarget = null;
         if (this.isAttached && this.token) {
             // --- ATTACHED MODE (Dynamic Token Placement) ---
             const tokenTransform = this.token.worldTransform ?? { tx: this.token.x ?? 0, ty: this.token.y ?? 0 };
-            const canvasScale = game.canvas.stage.scale.x;
-            const gridSize = game.canvas.grid.size;
+            const canvasScale = (game.canvas as any)?.stage?.scale?.x ?? 1;
+            const gridSize = (game.canvas as any)?.grid?.size ?? 100;
             const anchorSide = game.settings.get(MODULE_ID, 'hudAnchorSide') ?? 'vertical';
 
             const tokenWidth = (this.token.w ?? 100) * canvasScale;
@@ -2723,7 +2754,7 @@ this._lockedTooltipTarget = null;
             const positionSide = this._chooseAttachedSide(room1, room2, side1, side2, gridOffset, label1, label2);
 
             let top, left;
-            const targetPosition = { width: 'auto', height: 'auto' };
+            const targetPosition: Record<string, any> = { width: 'auto', height: 'auto' };
 
             if (isHorizontal) {
                 top = Math.clamp(tokenTop + (tokenHeight / 2) - (appHeight / 2), 10, window.innerHeight - appHeight - 10);

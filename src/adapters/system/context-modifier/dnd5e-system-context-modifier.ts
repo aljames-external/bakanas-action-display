@@ -299,7 +299,8 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
             }
             const prefix = parentId.charAt(0).toUpperCase() + parentId.slice(1);
             const subTitle = subId.charAt(0).toUpperCase() + subId.slice(1);
-            const configMap = parentId === 'weapon' ? CONFIG?.DND5E?.weaponTypes : CONFIG?.DND5E?.equipmentTypes;
+            const dndConfig = (CONFIG as any)?.DND5E;
+            const configMap = parentId === 'weapon' ? dndConfig?.weaponTypes : dndConfig?.equipmentTypes;
             return localize(`DND5E.${prefix}${subTitle}`, configMap?.[subId] ?? subId);
         }
         return super.getItemSubTabLabel(parentId, subId);
@@ -333,7 +334,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
         const config = LABEL_KEYS.action_subtab[subId];
         const fallback = config?.fallback ?? subId;
 
-        const cfg = CONFIG?.DND5E;
+        const cfg = (CONFIG as any)?.DND5E;
         const configLabel = cfg?.activityActivationCategories?.[subId]
             ?? cfg?.activityActivationTypes?.[subId];
         if (configLabel) {

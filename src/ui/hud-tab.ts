@@ -14,8 +14,8 @@ export interface HUDTabOptions {
     showUnprepared?: boolean;
     subTabs?: HUDTab[];
     tooltip?: string;
-    onLeftClick?: ((tab: HUDTab, event: Event) => void) | null;
-    onRightClick?: ((tab: HUDTab, event: Event) => void) | null;
+    onLeftClick?: ((app: any, tabColumn: any, groups: any, event?: any) => any) | null;
+    onRightClick?: ((app: any, tabColumn: any, groups: any, event?: any) => any) | null;
 }
 
 /**
@@ -36,8 +36,8 @@ export class HUDTab {
     activeParent: boolean;
     excluded: boolean;
     showUnprepared: boolean;
-    customOnLeftClick: ((tab: HUDTab, event: Event) => void) | null;
-    customOnRightClick: ((tab: HUDTab, event: Event) => void) | null;
+    customOnLeftClick: ((app: any, tabColumn: any, groups: any, event?: any) => any) | null;
+    customOnRightClick: ((app: any, tabColumn: any, groups: any, event?: any) => any) | null;
     subTabs: HUDTab[];
 
     /**

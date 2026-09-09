@@ -24,13 +24,13 @@ export class CombatMovementTracker {
      * @type {string|null}
      * @private
      */
-    static #currentTurnKey = null;
+    static #currentTurnKey: string | null = null;
 
     /**
      * Reset movement tracking state for a new combat turn or encounter reset.
      * @param {Combat|null} [combat=game.combat]
      */
-    static resetTurn(combat = game.combat) {
+    static resetTurn(combat: any = game.combat) {
         if (!combat || !combat.started) {
             this.#movedDistances.clear();
             this.#lastPositions.clear();
@@ -52,10 +52,10 @@ export class CombatMovementTracker {
      * @param {Combat} combat
      * @private
      */
-    static #initializeCombatantPositions(combat) {
+    static #initializeCombatantPositions(combat: any) {
         if (!combat?.combatants) return;
         for (const combatant of combat.combatants) {
-            const tokenDoc = combatant.token ?? canvas.tokens.get(combatant.tokenId)?.document;
+            const tokenDoc = combatant.token ?? canvas?.tokens?.get?.(combatant.tokenId)?.document;
             if (tokenDoc) {
                 this.#lastPositions.set(combatant.tokenId, {
                     x: tokenDoc.x,
@@ -133,19 +133,19 @@ export class CombatMovementTracker {
      * @param {{ x: number, y: number, elevation?: number }} p1
      * @returns {number} Distance in grid units
      */
-    static measureSegmentDistance(p0, p1) {
-        if (canvas?.grid?.measurePath) {
+    static measureSegmentDistance(p0: any, p1: any) {
+        if (canvas?.grid && (canvas.grid as any).measurePath) {
             try {
-                const result = canvas.grid.measurePath([p0, p1]);
+                const result = (canvas.grid as any).measurePath([p0, p1]);
                 if (Number.isFinite(result?.distance)) {
                     return result.distance;
                 }
             } catch (_) {}
         }
 
-        if (canvas?.grid?.measureDistance) {
+        if (canvas?.grid && (canvas.grid as any).measureDistance) {
             try {
-                return canvas.grid.measureDistance(p0, p1, { gridSpaces: true });
+                return (canvas.grid as any).measureDistance(p0, p1, { gridSpaces: true });
             } catch (_) {}
         }
 
@@ -164,7 +164,7 @@ export class CombatMovementTracker {
      * @param {Actor|null} [actor=null] Associated actor document
      * @returns {{ inCombat: boolean, distance: number, units: string }}
      */
-    static getMovementThisTurn(token = null, actor = null) {
+    static getMovementThisTurn(token: any = null, actor: any = null) {
         const combat = game.combat;
         const fallbackUnits = actor?.system?.attributes?.movement?.units ?? 'ft';
         const units = canvas?.scene?.grid?.units ?? fallbackUnits;
@@ -179,7 +179,7 @@ export class CombatMovementTracker {
         }
 
         const isCombatant = Boolean(
-            combat.combatants?.some(c => c.tokenId === tokenId || (actor && c.actorId === actor.id))
+            combat.combatants?.some((c: any) => c.tokenId === tokenId || (actor && c.actorId === actor.id))
         );
 
         if (!isCombatant) {

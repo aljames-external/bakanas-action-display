@@ -10,6 +10,8 @@ import { Dnd5eAutoBanConfigApp, DEFAULT_DND5E_AUTOBAN_CONFIG } from "./ui/dnd5e-
 import { hasActiveModuleAdapters } from "./adapters/module/index.js";
 
 Hooks.once('init', () => {
+    if (!game?.settings) return;
+
     // ==========================================
     // World Scope Settings & Menus
     // ==========================================
@@ -20,9 +22,9 @@ Hooks.once('init', () => {
         label: localize('BAD.settings.categorizationMenu.label'),
         hint: localize('BAD.settings.categorizationMenu.hint'),
         icon: 'fas fa-layer-group',
-        type: CategorizationConfigApp,
+        type: CategorizationConfigApp as any,
         restricted: true
-    });
+    } as any);
 
     // Register Categorization Configuration Storage
     game.settings.register(MODULE_ID, 'categorizationConfig', {
@@ -60,9 +62,9 @@ Hooks.once('init', () => {
             label: localize('BAD.dnd5eAutoBan.menuLabel'),
             hint: localize('BAD.dnd5eAutoBan.menuHint'),
             icon: 'fas fa-magic',
-            type: Dnd5eAutoBanConfigApp,
+            type: Dnd5eAutoBanConfigApp as any,
             restricted: true
-        });
+        } as any);
 
         game.settings.register(MODULE_ID, 'dnd5eAutoBanConditions', {
             scope: 'world',
@@ -84,9 +86,9 @@ Hooks.once('init', () => {
             label: localize('BAD.settings.moduleIntegrationsMenu.label'),
             hint: localize('BAD.settings.moduleIntegrationsMenu.hint'),
             icon: 'fas fa-puzzle-piece',
-            type: ModuleIntegrationsConfigApp,
+            type: ModuleIntegrationsConfigApp as any,
             restricted: true
-        });
+        } as any);
     }
 
     // Register Center on Token Button Setting (World Scope, default disabled)
@@ -193,9 +195,9 @@ Hooks.once('init', () => {
         label: localize('BAD.settings.economyColorsMenu.label'),
         hint: localize('BAD.settings.economyColorsMenu.hint'),
         icon: 'fas fa-palette',
-        type: EconomyColorsConfigApp,
+        type: EconomyColorsConfigApp as any,
         restricted: false
-    });
+    } as any);
 
     // Register Configure HUD Menu Button (User Scope)
     game.settings.registerMenu(MODULE_ID, 'hudConfigMenu', {
@@ -203,9 +205,9 @@ Hooks.once('init', () => {
         label: localize('BAD.settings.hudConfigMenu.label'),
         hint: localize('BAD.settings.hudConfigMenu.hint'),
         icon: 'fas fa-sliders-h',
-        type: HUDConfigApp,
+        type: HUDConfigApp as any,
         restricted: false
-    });
+    } as any);
 
     // Register Action Economy Indicators Setting (User Scope, default disabled, configured in menu)
     game.settings.register(MODULE_ID, 'enableEconomyIndicators', {
@@ -247,7 +249,7 @@ Hooks.once('init', () => {
         },
         default: 0.88,
         onChange: value => {
-            document.documentElement.style.setProperty('--bad-hud-opacity', value);
+            document.documentElement.style.setProperty('--bad-hud-opacity', String(value));
         }
     });
 
@@ -265,7 +267,7 @@ Hooks.once('init', () => {
         },
         default: 1.0,
         onChange: value => {
-            document.documentElement.style.setProperty('--bad-hud-scale', value);
+            document.documentElement.style.setProperty('--bad-hud-scale', String(value));
         }
     });
 
@@ -454,10 +456,10 @@ Hooks.once('init', () => {
 
     // Apply initial CSS variables (opacity, scale, font size) to the document root
     const initialOpacity = game.settings.get(MODULE_ID, 'hudOpacity');
-    document.documentElement.style.setProperty('--bad-hud-opacity', initialOpacity);
+    document.documentElement.style.setProperty('--bad-hud-opacity', String(initialOpacity));
 
     const initialScale = game.settings.get(MODULE_ID, 'hudScale');
-    document.documentElement.style.setProperty('--bad-hud-scale', initialScale);
+    document.documentElement.style.setProperty('--bad-hud-scale', String(initialScale));
 
     const initialFontSize = game.settings.get(MODULE_ID, 'fontSize');
     document.documentElement.style.setProperty('--bad-hud-font-size', `${initialFontSize}px`);
@@ -501,7 +503,7 @@ const SETTINGS_SECTIONS = deepFreeze([
     }
 ]);
 
-function getSettingSelector(key) {
+function getSettingSelector(key: string): string {
     return `[data-setting-id="${MODULE_ID}.${key}"], [data-entry-id="${MODULE_ID}.${key}"], [name="${MODULE_ID}.${key}"], [data-key="${MODULE_ID}.${key}"], [data-action="${MODULE_ID}.${key}"], [data-setting-id="${key}"], [data-entry-id="${key}"], [name="${key}"], [data-key="${key}"], [data-action="${key}"]`;
 }
 
@@ -511,7 +513,7 @@ function getSettingSelector(key) {
  * @param {HTMLElement|Object} html Rendered settings config DOM element or jQuery collection
  * @param {Application} [app] Application instance
  */
-export function injectSettingsHeaders(html, app) {
+export function injectSettingsHeaders(html: any, app?: any) {
     const rawRoot = (html instanceof HTMLElement ? html : html?.[0])
         ?? (app?.element instanceof HTMLElement ? app.element : app?.element?.[0])
         ?? document.querySelector?.('#client-settings, form.categories, .settings-list')
@@ -521,7 +523,7 @@ export function injectSettingsHeaders(html, app) {
     if (!root) return;
 
     // 1. Move user-scoped menus (economyColorsMenu, hudConfigMenu) into the User Settings section before the first regular user setting
-    let firstUserSettingEl = null;
+    let firstUserSettingEl: Element | null = null;
     for (const key of USER_SETTING_KEYS) {
         firstUserSettingEl = root.querySelector(getSettingSelector(key));
         if (firstUserSettingEl) break;
@@ -547,7 +549,7 @@ export function injectSettingsHeaders(html, app) {
 
     // 2. Insert section headers before the respective first setting in each scope
     for (const section of SETTINGS_SECTIONS) {
-        let targetEl = null;
+        let targetEl: Element | null = null;
         for (const key of section.keys) {
             targetEl = root.querySelector(getSettingSelector(key));
             if (targetEl) break;
@@ -560,10 +562,10 @@ export function injectSettingsHeaders(html, app) {
         if (!formGroup || !parent) continue;
 
         // Ensure we don't insert duplicate headers
-        const existing = parent.querySelector?.(`.bad-settings-section-header[data-scope="${section.scope}"]`);
+        const existing = (parent as any).querySelector?.(`.bad-settings-section-header[data-scope="${section.scope}"]`);
         if (existing) continue;
 
-        const prev = formGroup.previousElementSibling;
+        const prev = formGroup.previousElementSibling as any;
         if (prev?.classList?.contains('bad-settings-section-header') && prev?.dataset?.scope === section.scope) {
             continue;
         }
@@ -577,7 +579,7 @@ export function injectSettingsHeaders(html, app) {
     }
 }
 
-Hooks.on('renderSettingsConfig', (app, html) => {
+Hooks.on('renderSettingsConfig', (app: any, html: any) => {
     injectSettingsHeaders(html, app);
 });
 

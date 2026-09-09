@@ -8,35 +8,35 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
     /**
      * The active ContextMenu constructor in v12.
      */
-    get ContextMenu() {
+    override get ContextMenu(): any {
         return ContextMenu;
     }
 
     /**
      * The active KeyboardManager constructor in v12.
      */
-    get KeyboardManager() {
+    override get KeyboardManager(): any {
         return KeyboardManager;
     }
 
     /**
      * The active Token placeable constructor in v12.
      */
-    get Token() {
+    override get Token(): any {
         return Token;
     }
 
     /**
      * The active FilePicker constructor / implementation in v12.
      */
-    get FilePicker() {
+    override get FilePicker(): any {
         return FilePicker;
     }
 
     /**
      * The active TextEditor constructor / implementation in v12.
      */
-    get TextEditor() {
+    override get TextEditor(): any {
         return TextEditor;
     }
     /**
@@ -45,7 +45,7 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
      * @param {Object} [options={}] Resolution options
      * @returns {Document|null}
      */
-    fromUuidSync(uuid, options = {}) {
+    override fromUuidSync(uuid: string, options: any = {}): any {
         return fromUuidSync(uuid, options);
     }
 
@@ -55,7 +55,7 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
      * @param {Object} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    async fromUuid(uuid, options = {}) {
+    override async fromUuid(uuid: string, options: any = {}): Promise<any> {
         return fromUuid(uuid, options);
     }
 
@@ -65,7 +65,7 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
      * @param {Token} token Target Token placeable
      * @returns {Combatant[]}
      */
-    getCombatantsByToken(combat, token) {
+    override getCombatantsByToken(combat: any, token: any): any[] {
         if (!combat || !token?.id) return [];
         const single = combat.getCombatantByToken(token.id);
         return single ? [single] : [];
@@ -77,7 +77,7 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
      * @param {string[]} paths Array of template paths
      * @returns {Promise<Function[]>}
      */
-    async loadTemplates(paths) {
+    override async loadTemplates(paths: string[]): Promise<any> {
         return loadTemplates(paths);
     }
 
@@ -88,7 +88,7 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
      * @param {Object} [options={}] Operation options
      * @returns {boolean}
      */
-    isTeleport(options = {}) {
+    override isTeleport(options: any = {}): boolean {
         if (options.movement !== undefined) {
             if (options.movement === false) return true;
             return Boolean(options.movement?.teleport);
