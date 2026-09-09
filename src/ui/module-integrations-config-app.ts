@@ -8,6 +8,8 @@ import { actionDisplay } from '../action-display.js';
  * Modern ApplicationV2 configuration menu for third-party module integrations.
  */
 export class ModuleIntegrationsConfigApp extends adapter.foundry.HandlebarsApplicationMixin(adapter.foundry.ApplicationV2) {
+    midiQolFilterAutomationOnly: boolean;
+
     /** @override */
     static DEFAULT_OPTIONS = {
         id: 'bad-module-integrations-config-app',

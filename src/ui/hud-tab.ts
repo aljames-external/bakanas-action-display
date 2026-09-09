@@ -1,11 +1,45 @@
 import { adapter } from '../adapters/index.js';
 import { MODULE_ID } from '../constants.js';
 
+export interface HUDTabOptions {
+    id: string;
+    label?: string;
+    icon?: string;
+    level?: number;
+    combinator?: string;
+    active?: boolean;
+    expanded?: boolean;
+    activeParent?: boolean;
+    excluded?: boolean;
+    showUnprepared?: boolean;
+    subTabs?: HUDTab[];
+    tooltip?: string;
+    onLeftClick?: ((tab: HUDTab, event: Event) => void) | null;
+    onRightClick?: ((tab: HUDTab, event: Event) => void) | null;
+}
+
 /**
  * Unified tab model for parent tabs, sub-tabs, and deeply nested sub-tabs in the HUD.
  * Every node in the tab hierarchy is a HUDTab instance with a level indicator (0 = top-level parent).
  */
 export class HUDTab {
+    id: string;
+    label: string;
+    icon: string;
+    tooltip: string;
+    private _level: number;
+    combinator: string;
+    private _parent: HUDTab | null;
+    rootParent: HUDTab;
+    active: boolean;
+    expanded: boolean;
+    activeParent: boolean;
+    excluded: boolean;
+    showUnprepared: boolean;
+    customOnLeftClick: ((tab: HUDTab, event: Event) => void) | null;
+    customOnRightClick: ((tab: HUDTab, event: Event) => void) | null;
+    subTabs: HUDTab[];
+
     /**
      * @param {Object} options
      * @param {string} options.id Tab identifier
@@ -37,7 +71,7 @@ export class HUDTab {
         tooltip = '',
         onLeftClick = null,
         onRightClick = null
-    } = {}) {
+    }: Partial<HUDTabOptions> & { id: string }) {
         this.id = id;
         this.label = label;
         this.icon = icon;

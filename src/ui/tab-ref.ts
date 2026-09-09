@@ -1,14 +1,19 @@
+export interface TabRefOptions {
+    label: string;
+    parent?: TabRef | null;
+}
+
 /**
  * Structured tab reference node that pre-computes and caches its root parent ID
  * and hierarchy path string at construction.
  */
 export class TabRef {
-    /**
-     * @param {Object} options
-     * @param {string} options.label Tab identifier/label (e.g. 'action', 'evocation', 'vocal')
-     * @param {TabRef|null} [options.parent=null] Parent TabRef node in the tree
-     */
-    constructor({ label, parent = null } = {}) {
+    label: string;
+    parent: TabRef | null;
+    root: string;
+    path: string;
+
+    constructor({ label, parent = null }: TabRefOptions) {
         this.label = label;
         this.parent = parent;
 
@@ -23,8 +28,8 @@ export class TabRef {
      * @param {...string} subLabels Sub tab labels (e.g. 'standard', 'action')
      * @returns {TabRef}
      */
-    static from(rootLabel, ...subLabels) {
-        const filteredSubs = subLabels.filter(s => s && s !== 'none');
+    static from(rootLabel: string, ...subLabels: (string | undefined | null)[]): TabRef {
+        const filteredSubs = subLabels.filter((s): s is string => Boolean(s) && s !== 'none');
         if (filteredSubs.length === 0) {
             return new TabRef({ label: rootLabel });
         }

@@ -12,6 +12,11 @@ import { CombatMovementTracker } from '../combat/combat-movement-tracker.js';
  * Centralizes and abstracts Foundry-level, System-level, and Module-level capabilities.
  */
 class Adapter {
+    foundry: BaseFoundryAdapter;
+    system: BaseSystemAdapter;
+    modules: Map<string, BaseModuleAdapter>;
+    private _initialized: boolean;
+
     constructor() {
         this.foundry = (typeof game !== 'undefined' && game?.release?.generation)
             ? initializeFoundryAdapter()

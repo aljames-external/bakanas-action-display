@@ -2,11 +2,30 @@ import { log } from '../lib/logger.js';
 import { adapter } from '../adapters/index.js';
 import { hasIntersection } from '../lib/utils.js';
 
+export interface HUDTabColumnOptions {
+    side: 'left' | 'right';
+    cached?: {
+        parents?: string[];
+        focusedParent?: string;
+        subTypes?: string[];
+    };
+    defaultParent?: string;
+    getDefaultSubTypes?: () => string[];
+}
+
 /**
  * Encapsulates tab column state management and interaction rules for a single HUD column (left or right).
  * Handles parent focus, multi-select toggles, sub-tab isolation/toggling, and system default resets.
  */
 export class HUDTabColumn {
+    side: 'left' | 'right';
+    defaultParent: string;
+    getDefaultSubTypes: () => string[];
+    activeParents: Set<string>;
+    focusedParent: string;
+    activeSubTypes: Set<string>;
+    autoBanInitialized: boolean;
+
     /**
      * @param {Object} options
      * @param {'left'|'right'} options.side Left or right side column identifier
@@ -14,7 +33,7 @@ export class HUDTabColumn {
      * @param {string} [options.defaultParent='all'] Default parent tab ID
      * @param {Function} [options.getDefaultSubTypes] Function returning default active sub-types from system adapter
      */
-    constructor({ side, cached, defaultParent = 'all', getDefaultSubTypes = () => [] } = {}) {
+    constructor({ side, cached, defaultParent = 'all', getDefaultSubTypes = () => [] }: HUDTabColumnOptions) {
         this.side = side;
         this.defaultParent = defaultParent;
         this.getDefaultSubTypes = getDefaultSubTypes;

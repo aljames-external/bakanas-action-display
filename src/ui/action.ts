@@ -1,9 +1,51 @@
 import { TabRef } from './tab-ref.js';
 
+export interface ActionOptions {
+    id: string;
+    name: string;
+    type?: string;
+    img?: string;
+    page?: number;
+    right?: any[];
+    left?: string[];
+    itemCategories?: string[] | null;
+    hidden?: boolean;
+    isHidden?: boolean;
+    available?: boolean;
+    uses?: Record<string, any>;
+    roll?: ((event?: any) => any) | null;
+    originalItem?: any;
+    subactions?: Action[];
+    originalActivity?: any;
+    linkedAction?: any;
+    collapseDropdownIfSingle?: boolean;
+    extra?: Record<string, any>;
+}
+
 /**
  * Encapsulates a top-level action or sub-action displayed in the Bakana's Action Display HUD.
  */
 export class Action {
+    id: string;
+    name: string;
+    type: string;
+    img: string;
+    page: number;
+    left: string[];
+    right: any[];
+    itemCategories: string[] | null;
+    hidden: boolean;
+    isHidden: boolean;
+    available: boolean;
+    uses: Record<string, any>;
+    roll: ((event?: any) => any) | null;
+    originalItem: any;
+    subactions: Action[];
+    originalActivity: any;
+    linkedAction: any;
+    collapseDropdownIfSingle: boolean;
+    extra: Record<string, any>;
+
     /**
      * @param {Object} options
      * @param {string} options.id Unique item/action/activity ID
@@ -45,7 +87,7 @@ export class Action {
         linkedAction = null,
         collapseDropdownIfSingle = false,
         extra = {}
-    } = {}) {
+    }: ActionOptions) {
         this.id = id;
         this.name = name;
         this.type = type;
