@@ -52,7 +52,7 @@ class ActionDisplay {
      * Register and activate a system adapter.
      * @param {BaseSystemAdapter} sysAdapter
      */
-    registerSystemAdapter(sysAdapter) {
+    registerSystemAdapter(sysAdapter: any) {
         if (!(sysAdapter instanceof BaseSystemAdapter)) {
             throw new Error("System adapter must be an instance of BaseSystemAdapter");
         }
@@ -64,7 +64,7 @@ class ActionDisplay {
      * Register a module adapter.
      * @param {BaseModuleAdapter} modAdapter
      */
-    registerModuleAdapter(modAdapter) {
+    registerModuleAdapter(modAdapter: any) {
         if (!(modAdapter instanceof BaseModuleAdapter)) {
             throw new Error("Module adapter must be an instance of BaseModuleAdapter");
         }
@@ -104,7 +104,7 @@ class ActionDisplay {
      * @param {Actor} actor The actor to extract actions for
      * @returns {Promise<Action[]>} The processed actions
      */
-    async getActions(actor) {
+    async getActions(actor: any) {
         if (!actor) return [];
         return adapter.getActions(actor);
     }

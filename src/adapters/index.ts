@@ -61,7 +61,7 @@ class Adapter {
      * @param {Actor} actor
      * @returns {Promise<Action[]>}
      */
-    async getActions(actor) {
+    async getActions(actor: any) {
         if (!actor) return [];
 
         // 1. Core Base Extraction
@@ -126,7 +126,7 @@ class Adapter {
      * @returns {Action[]}
      * @private
      */
-    _extractBaseActions(actor) {
+    _extractBaseActions(actor: any) {
         const actions: any[] = [];
         if (!actor?.items) return actions;
 
@@ -166,7 +166,7 @@ class Adapter {
      * @param {Object} action
      * @returns {void}
      */
-    openEditSheet(action) {
+    openEditSheet(action: any) {
         return this.system?.openEditSheet?.(action);
     }
 
@@ -175,7 +175,7 @@ class Adapter {
      * @param {ApplicationV2} app Active HUD application
      * @returns {Object[]}
      */
-    getContextMenuItems(app) {
+    getContextMenuItems(app: any) {
         return this.system?.getContextMenuItems?.(app) ?? [];
     }
 
@@ -184,7 +184,7 @@ class Adapter {
      * @param {string} parentId
      * @returns {boolean}
      */
-    isExclusionTab(parentId) {
+    isExclusionTab(parentId: any) {
         return this.system?.isExclusionTab?.(parentId) ?? false;
     }
 
@@ -193,7 +193,7 @@ class Adapter {
      * @param {string} parentId
      * @returns {string[]}
      */
-    getExclusionSubTabs(parentId) {
+    getExclusionSubTabs(parentId: any) {
         return this.system?.getExclusionSubTabs?.(parentId) ?? [];
     }
 
@@ -204,7 +204,7 @@ class Adapter {
      * @param {Event} event
      * @returns {boolean}
      */
-    onTabRightClick(app, tab, event) {
+    onTabRightClick(app: any, tab: any, event: any) {
         return this.system?.onTabRightClick?.(app, tab, event) ?? false;
     }
 
@@ -213,7 +213,7 @@ class Adapter {
      * @param {string} id
      * @returns {string}
      */
-    getItemTypeLabel(id) {
+    getItemTypeLabel(id: any) {
         return this.system?.getItemTypeLabel?.(id) ?? id;
     }
 
@@ -222,7 +222,7 @@ class Adapter {
      * @param {string} id
      * @returns {string}
      */
-    getItemTypeIcon(id) {
+    getItemTypeIcon(id: any) {
         return this.system?.getItemTypeIcon?.(id) ?? '';
     }
 
@@ -231,7 +231,7 @@ class Adapter {
      * @param {string} id
      * @returns {number}
      */
-    getItemTypeSortOrder(id) {
+    getItemTypeSortOrder(id: any) {
         return this.system?.getItemTypeSortOrder?.(id) ?? 999;
     }
 
@@ -241,7 +241,7 @@ class Adapter {
      * @param {string} subId
      * @returns {string}
      */
-    getItemSubTabLabel(parentId, subId) {
+    getItemSubTabLabel(parentId: any, subId: any) {
         return this.system?.getItemSubTabLabel?.(parentId, subId) ?? subId;
     }
 
@@ -251,7 +251,7 @@ class Adapter {
      * @param {string} subId
      * @returns {number}
      */
-    getItemSubTabSortOrder(parentId, subId) {
+    getItemSubTabSortOrder(parentId: any, subId: any) {
         return this.system?.getItemSubTabSortOrder?.(parentId, subId) ?? 999;
     }
 
@@ -260,7 +260,7 @@ class Adapter {
      * @param {string} id
      * @returns {string}
      */
-    getActionTypeLabel(id) {
+    getActionTypeLabel(id: any) {
         return this.system?.getActionTypeLabel?.(id) ?? id;
     }
 
@@ -269,7 +269,7 @@ class Adapter {
      * @param {string} id
      * @returns {string}
      */
-    getActionTypeIcon(id) {
+    getActionTypeIcon(id: any) {
         return this.system?.getActionTypeIcon?.(id) ?? '';
     }
 
@@ -278,7 +278,7 @@ class Adapter {
      * @param {string} id
      * @returns {number}
      */
-    getActionTypeSortOrder(id) {
+    getActionTypeSortOrder(id: any) {
         return this.system?.getActionTypeSortOrder?.(id) ?? 999;
     }
 
@@ -287,7 +287,7 @@ class Adapter {
      * @param {string} subId
      * @returns {string}
      */
-    getActionSubTabLabel(subId) {
+    getActionSubTabLabel(subId: any) {
         return this.system?.getActionSubTabLabel?.(subId) ?? subId;
     }
 
@@ -297,7 +297,7 @@ class Adapter {
      * @param {string} subId
      * @returns {number}
      */
-    getActionSubTabSortOrder(parentId, subId) {
+    getActionSubTabSortOrder(parentId: any, subId: any) {
         return this.system?.getActionSubTabSortOrder?.(parentId, subId) ?? 999;
     }
 
@@ -333,7 +333,7 @@ class Adapter {
      * @param {string} subId
      * @param {boolean} isActive
      */
-    recordManualTabToggle(actor, parentId, subId, isActive) {
+    recordManualTabToggle(actor: any, parentId: any, subId: any, isActive: any) {
         this.system?.recordManualTabToggle?.(actor, parentId, subId, isActive);
     }
 
@@ -355,7 +355,7 @@ class Adapter {
      * @param {Object} filterContext
      * @returns {boolean}
      */
-    matchesEconomyTabs(action, filterContext) {
+    matchesEconomyTabs(action: any, filterContext: any) {
         return this.system?.matchesEconomyTabs?.(action, filterContext) ?? true;
     }
 
@@ -365,7 +365,7 @@ class Adapter {
      * @param {Object} options
      * @returns {Promise<void>}
      */
-    async modifyContext(context, options) {
+    async modifyContext(context: any, options: any) {
         return (await this.system?.modifyContext?.(context, options));
     }
 
@@ -375,7 +375,7 @@ class Adapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor, token = null) {
+    async getTokenInfo(actor: any, token = null) {
         return (await this.system?.getTokenInfo?.(actor, token)) ?? null;
     }
 
@@ -384,7 +384,7 @@ class Adapter {
      * @param {Actor} actor
      * @returns {{ supported: boolean, value: boolean }}
      */
-    getInspiration(actor) {
+    getInspiration(actor: any) {
         return this.system?.getInspiration?.(actor) ?? { supported: false, value: false };
     }
 
@@ -434,7 +434,7 @@ class Adapter {
      * @param {Object} context
      * @param {Object} [options]
      */
-    formatCategorizedLayout(context, options) {
+    formatCategorizedLayout(context: any, options: any) {
         this.system?.formatCategorizedLayout?.(context, options);
     }
 
@@ -460,7 +460,7 @@ class Adapter {
      * @param {Record<string, any>} [userColors]
      * @returns {boolean}
      */
-    isEconomyTypeEnabled(type, userColors) {
+    isEconomyTypeEnabled(type: any, userColors: any) {
         return this.system?.isEconomyTypeEnabled?.(type, userColors) ?? false;
     }
 
@@ -470,7 +470,7 @@ class Adapter {
      * @param {Record<string, any>} [userColors]
      * @returns {string|null}
      */
-    getEconomyColor(type, userColors) {
+    getEconomyColor(type: any, userColors: any) {
         return this.system?.getEconomyColor?.(type, userColors) ?? null;
     }
 
@@ -480,7 +480,7 @@ class Adapter {
      * @param {Record<string, any>} [userColors]
      * @returns {{ type: string, label: string, active: boolean, color: string|null }[]}
      */
-    extractEconomyIndicators(action, userColors) {
+    extractEconomyIndicators(action: any, userColors: any) {
         return this.system?.extractEconomyIndicators?.(action, userColors) ?? [];
     }
 
@@ -490,7 +490,7 @@ class Adapter {
      * @param {string|null} [color]
      * @returns {string}
      */
-    formatEconomyTooltip(sysType, color) {
+    formatEconomyTooltip(sysType: any, color: any) {
         return this.system?.formatEconomyTooltip?.(sysType, color) ?? '';
     }
 
@@ -499,7 +499,7 @@ class Adapter {
      * @param {Actor} actor
      * @returns {Record<'vocal'|'somatic', string[]>}
      */
-    getAutoBanEffectReasons(actor) {
+    getAutoBanEffectReasons(actor: any) {
         return this.system?.getAutoBanEffectReasons?.(actor) ?? { vocal: [], somatic: [] };
     }
 
@@ -509,7 +509,7 @@ class Adapter {
      * @param {string} [customLabel]
      * @returns {Promise<string>}
      */
-    async enrichCondition(condId, customLabel = null) {
+    async enrichCondition(condId: any, customLabel = null) {
         return (await this.system?.enrichCondition?.(condId, customLabel)) ?? '';
     }
 
@@ -519,7 +519,7 @@ class Adapter {
      * @param {Array<Object|string>|Record<string, Array<Object|string>>} reasons
      * @returns {Promise<string>}
      */
-    async formatAutoBanTooltip(comp, reasons) {
+    async formatAutoBanTooltip(comp: any, reasons: any) {
         return (await this.system?.formatAutoBanTooltip?.(comp, reasons)) ?? '';
     }
 
@@ -530,7 +530,7 @@ class Adapter {
      * @param {Object} [actor]
      * @returns {Promise<Object|null>}
      */
-    async getItemSummary(action, item, actor) {
+    async getItemSummary(action: any, item: any, actor: any) {
         return this.system?.getItemSummary?.(action, item, actor) ?? null;
     }
 
@@ -540,7 +540,7 @@ class Adapter {
      * @param {Object} [options={}] Enrichment options (rollData, secrets, relativeTo, etc.)
      * @returns {Promise<string>}
      */
-    async enrichHTML(content, options = {}) {
+    async enrichHTML(content: any, options = {}) {
         return this.foundry.enrichHTML(content, options);
     }
 
@@ -550,7 +550,7 @@ class Adapter {
      * @param {Object} [options={}] Resolution options
      * @returns {Document|null}
      */
-    fromUuidSync(uuid, options = {}) {
+    fromUuidSync(uuid: any, options = {}) {
         return this.foundry.fromUuidSync(uuid, options);
     }
 
@@ -560,7 +560,7 @@ class Adapter {
      * @param {Object} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    async fromUuid(uuid, options = {}) {
+    async fromUuid(uuid: any, options = {}) {
         return this.foundry.fromUuid(uuid, options);
     }
 
@@ -571,7 +571,7 @@ class Adapter {
      * @param {Object} [options={}] Merge options
      * @returns {Object}
      */
-    mergeObject(original, other = {}, options = {}) {
+    mergeObject(original: any, other = {}, options = {}) {
         return this.foundry.mergeObject(original, other, options);
     }
 
@@ -580,7 +580,7 @@ class Adapter {
      * @param {Object} obj Target object
      * @returns {Object}
      */
-    duplicate(obj) {
+    duplicate(obj: any) {
         return this.foundry.duplicate(obj);
     }
 
@@ -590,7 +590,7 @@ class Adapter {
      * @param {string} path Dot path
      * @returns {*}
      */
-    getProperty(obj, path) {
+    getProperty(obj: any, path: any) {
         return this.foundry.getProperty(obj, path);
     }
 
@@ -601,7 +601,7 @@ class Adapter {
      * @param {*} value Property value
      * @returns {boolean}
      */
-    setProperty(obj, path, value) {
+    setProperty(obj: any, path: any, value: any) {
         return this.foundry.setProperty(obj, path, value);
     }
 
@@ -619,7 +619,7 @@ class Adapter {
      * @param {Object} obj Target object
      * @returns {boolean}
      */
-    isEmpty(obj) {
+    isEmpty(obj: any) {
         return this.foundry.isEmpty(obj);
     }
 
@@ -628,7 +628,7 @@ class Adapter {
      * @param {string[]} paths Array of template paths
      * @returns {Promise<Function[]>}
      */
-    async loadTemplates(paths) {
+    async loadTemplates(paths: any) {
         return this.foundry.loadTemplates(paths);
     }
 }

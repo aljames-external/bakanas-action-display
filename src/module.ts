@@ -75,14 +75,14 @@ function wrapTokenHUD() {
     log.info(`Wrapping ${hudClass.name}.prototype.bind, clear, and close`);
 
     const originalBind = hudClass.prototype.bind;
-    hudClass.prototype.bind = function (object, ...args) {
+    hudClass.prototype.bind = function (object: any, ...args: any[]) {
         const result = originalBind.apply(this, [object, ...args]);
         handleHUDBind(object);
         return result;
     };
 
     const originalClear = hudClass.prototype.clear;
-    hudClass.prototype.clear = function (...args) {
+    hudClass.prototype.clear = function (...args: any[]) {
         const closingToken = this.object;
         if (closingToken) closingTokens.set(this, closingToken);
         handleHUDClose(closingToken);
@@ -90,7 +90,7 @@ function wrapTokenHUD() {
     };
 
     const originalClose = hudClass.prototype.close;
-    hudClass.prototype.close = function (...args) {
+    hudClass.prototype.close = function (...args: any[]) {
         const closingToken = this.object;
         if (closingToken) closingTokens.set(this, closingToken);
         handleHUDClose(closingToken);

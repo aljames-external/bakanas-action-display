@@ -74,15 +74,15 @@ export class BaseSystemContextModifier {
      * @param {Object} context The Handlebars rendering context
      * @param {ApplicationV2} app Active HUD application
      */
-    modifyContext(context, app) {}
+    modifyContext(context: any, app: any) {}
 
     /**
      * Get the sort priority order for a left-side parent item tab.
      * @param {string} parentId
      * @returns {number}
      */
-    getItemTypeSortOrder(parentId) {
-        return SORT_ORDERS.item_type[parentId] ?? 999;
+    getItemTypeSortOrder(parentId: any) {
+        return (SORT_ORDERS.item_type as Record<string, number>)[parentId] ?? 999;
     }
 
     /**
@@ -91,7 +91,7 @@ export class BaseSystemContextModifier {
      * @param {string} subId
      * @returns {number}
      */
-    getItemSubTabSortOrder(parentId, subId) {
+    getItemSubTabSortOrder(parentId: any, subId: any) {
         if (subId === 'all') return 0;
         if (subId === 'itemCharges') return 99;
         const num = Number.parseInt(subId, 10);
@@ -103,8 +103,8 @@ export class BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {number}
      */
-    getActionTypeSortOrder(parentId) {
-        return SORT_ORDERS.action_type[parentId] ?? 999;
+    getActionTypeSortOrder(parentId: any) {
+        return (SORT_ORDERS.action_type as Record<string, number>)[parentId] ?? 999;
     }
 
     /**
@@ -113,7 +113,7 @@ export class BaseSystemContextModifier {
      * @param {string} subId
      * @returns {number}
      */
-    getActionSubTabSortOrder(parentId, subId) {
+    getActionSubTabSortOrder(parentId: any, subId: any) {
         return subId === 'all' ? 0 : 999;
     }
 
@@ -122,7 +122,7 @@ export class BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getItemTypeLabel(parentId) {
+    getItemTypeLabel(parentId: any) {
         switch (parentId) {
             case 'all': return localize('BAD.core.allItems', 'All Items');
             case 'other': return localize('BAD.core.other', 'Other');
@@ -133,7 +133,7 @@ export class BaseSystemContextModifier {
             case 'tools':
                 return localize('BAD.page2.tools', 'Tools');
             default: {
-                const configLabel = CONFIG.Item?.typeLabels?.[parentId];
+                const configLabel = (CONFIG.Item as any)?.typeLabels?.[parentId];
                 if (configLabel) {
                     const localized = localize(configLabel);
                     if (localized) return localized;
@@ -148,8 +148,8 @@ export class BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getItemTypeIcon(parentId) {
-        return ICONS.item_type[parentId] ?? 'fas fa-question';
+    getItemTypeIcon(parentId: any) {
+        return (ICONS.item_type as Record<string, string>)[parentId] ?? 'fas fa-question';
     }
 
     /**
@@ -158,7 +158,7 @@ export class BaseSystemContextModifier {
      * @param {string} subId
      * @returns {string}
      */
-    getItemSubTabLabel(parentId, subId) {
+    getItemSubTabLabel(parentId: any, subId: any) {
         return subId.toUpperCase();
     }
 
@@ -167,7 +167,7 @@ export class BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getActionTypeLabel(parentId) {
+    getActionTypeLabel(parentId: any) {
         switch (parentId) {
             case 'all': return localize('BAD.core.allActions', 'All Actions');
             case 'none': return localize('BAD.core.none', 'None');
@@ -181,8 +181,8 @@ export class BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getActionTypeIcon(parentId) {
-        return ICONS.action_type[parentId] ?? 'fas fa-question';
+    getActionTypeIcon(parentId: any) {
+        return (ICONS.action_type as Record<string, string>)[parentId] ?? 'fas fa-question';
     }
 
     /**
@@ -190,8 +190,8 @@ export class BaseSystemContextModifier {
      * @param {string} subId
      * @returns {string}
      */
-    getActionSubTabLabel(subId) {
-        const config = ABILITY_LABEL_CONFIGS[subId];
+    getActionSubTabLabel(subId: any) {
+        const config = (ABILITY_LABEL_CONFIGS as Record<string, { key: string; fallback: string }>)[subId];
         return config ? localize(config.key, config.fallback) : subId.toUpperCase();
     }
 }

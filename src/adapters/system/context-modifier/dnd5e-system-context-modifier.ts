@@ -127,12 +127,12 @@ const GEAR_TYPES = deepFreeze(['weapon', 'equipment', 'consumable', 'tool', 'bac
 const GENERIC_GEAR_TYPES = deepFreeze(['consumable', 'tool', 'backpack', 'loot']);
 
 export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
-    constructor(adapter) {
+    constructor(adapter: any) {
         super(adapter);
     }
 
-    modifyContext(context, app) {
-        const findParent = id => context.itemTypes?.find(t => t.id === id);
+    modifyContext(context: any, app: any) {
+        const findParent = (id: any) => context.itemTypes?.find((t: any) => t.id === id);
 
         const showAll = app?.actor?.getFlag?.(MODULE_ID, 'showAll') ?? false;
 
@@ -217,7 +217,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {boolean} [forceShow=false] Force orange indicator if showAll is true
      * @param {string} [tooltip=''] Contextual tooltip when showTooltips is enabled
      */
-    #ensureAllSubTab(parent, app, label, flagKey, requireSubTabs = false, forceShow = false, tooltip = '') {
+    #ensureAllSubTab(parent: any, app: any, label: any, flagKey: any, requireSubTabs = false, forceShow = false, tooltip = '') {
         if (!parent || !parent.addSubTab || (requireSubTabs && parent.subTabs?.length === 0)) return;
         const flagValue = app?.actor?.getFlag?.(MODULE_ID, flagKey) ?? false;
         const showUnprepared = Boolean(forceShow || flagValue);
@@ -228,7 +228,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
             showUnprepared,
             tooltip
         });
-        parent.updateOrder?.(Object.keys(SORT_ORDERS.tabs[parent.id]));
+        parent.updateOrder?.(Object.keys((SORT_ORDERS.tabs as Record<string, any>)[parent.id] ?? {}));
     }
 
     /**
@@ -236,8 +236,8 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {number}
      */
-    getItemTypeSortOrder(parentId) {
-        return SORT_ORDERS.item_type[parentId] ?? super.getItemTypeSortOrder(parentId);
+    getItemTypeSortOrder(parentId: any) {
+        return (SORT_ORDERS.item_type as Record<string, number>)[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
     /**
@@ -246,8 +246,8 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} subId
      * @returns {number}
      */
-    getActionSubTabSortOrder(parentId, subId) {
-        return SORT_ORDERS.tabs[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
+    getActionSubTabSortOrder(parentId: any, subId: any) {
+        return (SORT_ORDERS.tabs as Record<string, any>)[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 
     /**
@@ -255,8 +255,8 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getItemTypeLabel(parentId) {
-        const config = LABEL_KEYS.item_type[parentId];
+    getItemTypeLabel(parentId: any) {
+        const config = (LABEL_KEYS.item_type as Record<string, any>)[parentId];
         return config ? localize(config.key, config.fallback) : super.getItemTypeLabel(parentId);
     }
 
@@ -265,8 +265,8 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getItemTypeIcon(parentId) {
-        return ICONS.item_type[parentId] ?? super.getItemTypeIcon(parentId);
+    getItemTypeIcon(parentId: any) {
+        return (ICONS.item_type as Record<string, string>)[parentId] ?? super.getItemTypeIcon(parentId);
     }
 
     /**
@@ -275,7 +275,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} subId
      * @returns {string}
      */
-    getItemSubTabLabel(parentId, subId) {
+    getItemSubTabLabel(parentId: any, subId: any) {
         if (parentId === 'spell') {
             if (subId === 'all') {
                 return localize('BAD.common.allSpells', 'All Spells');
@@ -287,7 +287,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
                 const num = subId.replace('level_', '');
                 if (num === '0') return localize('DND5E.SpellCantrip', 'Cantrip');
                 const key = `DND5E.SpellLevel${num}`;
-                const ord = LEVEL_ORDINALS[num] ?? `${num}th`;
+                const ord = (LEVEL_ORDINALS as Record<string, string>)[num] ?? `${num}th`;
                 return localize(key, `${ord} Level`);
             }
         }
@@ -311,8 +311,8 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getActionTypeLabel(parentId) {
-        const config = LABEL_KEYS.action_type[parentId];
+    getActionTypeLabel(parentId: any) {
+        const config = (LABEL_KEYS.action_type as Record<string, any>)[parentId];
         return config ? localize(config.key, config.fallback) : super.getActionTypeLabel(parentId);
     }
 
@@ -321,8 +321,8 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getActionTypeIcon(parentId) {
-        return ICONS.action_type[parentId] ?? super.getActionTypeIcon(parentId);
+    getActionTypeIcon(parentId: any) {
+        return (ICONS.action_type as Record<string, string>)[parentId] ?? super.getActionTypeIcon(parentId);
     }
 
     /**
@@ -330,8 +330,8 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} subId
      * @returns {string}
      */
-    getActionSubTabLabel(subId) {
-        const config = LABEL_KEYS.action_subtab[subId];
+    getActionSubTabLabel(subId: any) {
+        const config = (LABEL_KEYS.action_subtab as Record<string, any>)[subId];
         const fallback = config?.fallback ?? subId;
 
         const cfg = (CONFIG as any)?.DND5E;

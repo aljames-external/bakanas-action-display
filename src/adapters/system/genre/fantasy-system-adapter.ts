@@ -76,24 +76,24 @@ const DEFAULT_CATEGORIES = [
  * their corresponding icons, and numerical spell level sorting.
  */
 export class FantasySystemAdapter extends BaseSystemAdapter {
-    constructor(systemId, isSupported = false, foundry) {
+    constructor(systemId: any, isSupported = false, foundry: any) {
         super(systemId, isSupported, foundry);
     }
 
     /**
      * Get the default CSS icon class for a left-side item type (parent tab) in fantasy systems.
      */
-    getItemTypeIcon(parentId) {
-        return ICONS.item_type[parentId] ?? super.getItemTypeIcon(parentId);
+    getItemTypeIcon(parentId: any) {
+        return (ICONS.item_type as Record<string, string>)[parentId] ?? super.getItemTypeIcon(parentId);
     }
 
     /**
      * Get the sort index for left-side item sub-tabs in fantasy systems.
      * Easily readable list determining the exact display order for spell levels.
      */
-    getItemSubTabSortOrder(parentId, subId) {
+    getItemSubTabSortOrder(parentId: any, subId: any) {
         return parentId === 'spell'
-            ? (SORT_ORDERS.spell_subtab[subId] ?? 999)
+            ? ((SORT_ORDERS.spell_subtab as Record<string, number>)[subId] ?? 999)
             : super.getItemSubTabSortOrder(parentId, subId);
     }
 
@@ -105,7 +105,7 @@ export class FantasySystemAdapter extends BaseSystemAdapter {
      * @param {Actor} [actor=null] Target actor document
      * @returns {{ page: number, defaultLayout: string, categories: Object[]|null }}
      */
-    getPageConfig(page = 1, actor = null) {
+    getPageConfig(page: any = 1, actor: any = null) {
         const parsed = Number(page);
         const pageNum = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
         switch (pageNum) {
@@ -142,7 +142,7 @@ export class FantasySystemAdapter extends BaseSystemAdapter {
      * @param {Object} [overrides={}] Generic category overrides
      * @returns {Object[]} Array of category definition objects
      */
-    getDefaultCategories(overrides = {}) {
+    getDefaultCategories(overrides: Record<string, any> = {}) {
         return DEFAULT_CATEGORIES.map(defaultCat => {
             const key = defaultCat.id.replace('cat_', '').replace(/s$/, ''); // e.g. 'weapon', 'spell', 'feature'
             const catOverride = overrides[defaultCat.id] ?? overrides[key] ?? {};

@@ -8,7 +8,7 @@ import { adapter } from '../adapters/index.js';
  * @param {Object} actor Actor document
  * @returns {Record<string, boolean>} Map of itemId to boolean
  */
-export function getActorFavorites(actor) {
+export function getActorFavorites(actor: any) {
     if (!actor?.getFlag) return {};
     return actor.getFlag(MODULE_ID, 'favorites') ?? {};
 }
@@ -21,7 +21,7 @@ export function getActorFavorites(actor) {
  * @param {Object} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {boolean} True if favorited
  */
-export function isActorItemFavorite(actor, item, customAdapter = null) {
+export function isActorItemFavorite(actor: any, item: any, customAdapter = null) {
     if (!actor || !item?.id) return false;
 
     const favorites = getActorFavorites(actor);
@@ -40,7 +40,7 @@ export function isActorItemFavorite(actor, item, customAdapter = null) {
  * @param {Object} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {Promise<void>}
  */
-export async function setActorItemFavorite(actor, item, isFavorite, customAdapter = null) {
+export async function setActorItemFavorite(actor: any, item: any, isFavorite: any, customAdapter = null) {
     if (!actor || !item?.id) return;
 
     const targetFavorite = Boolean(isFavorite);
@@ -83,13 +83,13 @@ export async function setActorItemFavorite(actor, item, isFavorite, customAdapte
  * @param {Object} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {Promise<void>}
  */
-export async function syncActorFavorites(actor, customAdapter = null) {
+export async function syncActorFavorites(actor: any, customAdapter = null) {
     const sys = customAdapter ?? adapter.system;
     if (!actor || !sys?.hasFavorites?.() || !actor.isOwner) return;
 
     try {
         const currentFlags = getActorFavorites(actor);
-        const updatedFlags = {};
+        const updatedFlags: Record<string, boolean> = {};
 
         const items = actor.items?.values?.() ?? actor.items ?? [];
         for (const item of items) {

@@ -6,7 +6,7 @@
  * @param {number} [fallbackItemCount=1]
  * @param {HTMLElement} [targetBody=document.body]
  */
-export function positionFloatingMenu(menuEl, target, fallbackItemCount = 1, targetBody = document.body) {
+export function positionFloatingMenu(menuEl: any, target: any, fallbackItemCount = 1, targetBody = document.body) {
     if (!menuEl || !target) return;
 
     menuEl.classList?.add?.('bad-context-menu');

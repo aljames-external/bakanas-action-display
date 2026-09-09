@@ -60,7 +60,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
     }
 
     /** @override */
-    async _prepareContext(options) {
+    async _prepareContext(options: any) {
         const context = await super._prepareContext(options);
         context.config = this.config;
 
@@ -73,7 +73,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
 
         const statusMap = new Map(availableStatuses.map(s => [s.id, s]));
 
-        const formatConditions = (ids) => ids.map(id => {
+        const formatConditions = (ids: any) => ids.map((id: any) => {
             const found = statusMap.get(id);
             return {
                 id,
@@ -94,7 +94,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onToggleEnabled(event, target) {
+    _onToggleEnabled(event: any, target: any) {
         this.config.enabled = Boolean(target.checked);
     }
 
@@ -103,7 +103,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onAddCondition(event, target) {
+    _onAddCondition(event: any, target: any) {
         event.preventDefault();
         const type = target?.dataset?.type;
         if (!type || !this.config[type]) return;
@@ -121,13 +121,13 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onRemoveCondition(event, target) {
+    _onRemoveCondition(event: any, target: any) {
         event.preventDefault();
         const type = target.dataset.type;
         const id = target.dataset.id;
         if (!type || !id || !this.config[type]) return;
 
-        this.config[type] = this.config[type].filter(item => item !== id);
+        this.config[type] = this.config[type].filter((item: any) => item !== id);
         this.render();
     }
 
@@ -136,7 +136,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onResetDefaults(event, target) {
+    _onResetDefaults(event: any, target: any) {
         event.preventDefault();
         this.config = {
             enabled: DEFAULT_DND5E_AUTOBAN_CONFIG.enabled,
@@ -151,7 +151,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    async _onSaveConfig(event, target) {
+    async _onSaveConfig(event: any, target: any) {
         event.preventDefault();
         await game.settings.set(MODULE_ID, 'dnd5eAutoBanConditions', this.config);
         log.info('Saved D&D 5e auto-ban spell components configuration:', this.config);
@@ -171,7 +171,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onCloseConfig(event, target) {
+    _onCloseConfig(event: any, target: any) {
         event.preventDefault();
         this.close();
     }

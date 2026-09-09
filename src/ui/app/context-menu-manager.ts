@@ -28,9 +28,9 @@ export class ContextMenuManager {
      * @returns {{ action: Action|null, item: Item|null }}
      * @private
      */
-    _resolveActionAndItem(el) {
+    _resolveActionAndItem(el: any) {
         const actionId = el?.dataset?.actionId;
-        const action = this.app.actions?.find(a => a.id === actionId) ?? null;
+        const action = this.app.actions?.find((a: any) => a.id === actionId) ?? null;
         const item = action?.originalItem ?? this.app.actor?.items?.get(actionId) ?? null;
         return { action, item };
     }
@@ -44,12 +44,12 @@ export class ContextMenuManager {
             {
                 name: "SIDEBAR.Edit",
                 icon: '<i class="fas fa-edit"></i>',
-                condition: el => {
+                condition: (el: any) => {
                     if (!this.app.actor?.isOwner) return false;
                     const { item } = this._resolveActionAndItem(el);
                     return Boolean(item?.sheet?.render);
                 },
-                callback: el => {
+                callback: (el: any) => {
                     const { action, item } = this._resolveActionAndItem(el);
                     if (action) {
                         adapter.openEditSheet(action);
@@ -61,12 +61,12 @@ export class ContextMenuManager {
             {
                 name: "BAD.actionMenu.addFavorite",
                 icon: '<i class="fas fa-star"></i>',
-                condition: el => {
+                condition: (el: any) => {
                     if (!this.app.actor?.isOwner) return false;
                     const { item } = this._resolveActionAndItem(el);
                     return Boolean(item && !isActorItemFavorite(this.app.actor, item));
                 },
-                callback: async el => {
+                callback: async (el: any) => {
                     const { item } = this._resolveActionAndItem(el);
                     if (item) {
                         await setActorItemFavorite(this.app.actor, item, true);
@@ -77,12 +77,12 @@ export class ContextMenuManager {
             {
                 name: "BAD.actionMenu.removeFavorite",
                 icon: '<i class="far fa-star"></i>',
-                condition: el => {
+                condition: (el: any) => {
                     if (!this.app.actor?.isOwner) return false;
                     const { item } = this._resolveActionAndItem(el);
                     return Boolean(item && isActorItemFavorite(this.app.actor, item));
                 },
-                callback: async el => {
+                callback: async (el: any) => {
                     const { item } = this._resolveActionAndItem(el);
                     if (item) {
                         await setActorItemFavorite(this.app.actor, item, false);
@@ -93,24 +93,24 @@ export class ContextMenuManager {
             {
                 name: "BAD.core.hideAction",
                 icon: '<i class="fas fa-eye-slash"></i>',
-                condition: el => {
+                condition: (el: any) => {
                     if (!this.app.actor?.isOwner) return false;
                     const { action } = this._resolveActionAndItem(el);
                     return Boolean(action && !action.isHidden);
                 },
-                callback: el => {
+                callback: (el: any) => {
                     this.app._toggleActionHidden(el.dataset.actionId, true);
                 }
             },
             {
                 name: "BAD.core.unhideAction",
                 icon: '<i class="fas fa-eye"></i>',
-                condition: el => {
+                condition: (el: any) => {
                     if (!this.app.actor?.isOwner) return false;
                     const { action } = this._resolveActionAndItem(el);
                     return Boolean(action && action.isHidden);
                 },
-                callback: el => {
+                callback: (el: any) => {
                     this.app._toggleActionHidden(el.dataset.actionId, false);
                 }
             }
@@ -125,12 +125,12 @@ export class ContextMenuManager {
 
         const options = {
             jQuery: false,
-            onOpen: (target) => {
+            onOpen: (target: any) => {
                 if (this.app._activeLeftClickMenu) {
                     const prevLeftMenu = this.app._activeLeftClickMenu;
                     this.app._activeLeftClickMenu = null;
                     try {
-                        prevLeftMenu.close()?.catch?.(err => {
+                        prevLeftMenu.close()?.catch?.((err: any) => {
                             log.debug("LeftClickMenu.close promise rejected:", err);
                         });
                     } catch (err) {
@@ -145,7 +145,7 @@ export class ContextMenuManager {
                 this.closeSubmenu();
 
                 this.app._activeContextMenuTarget = target;
-                this.element.querySelectorAll('.bad-action-item').forEach(el => {
+                this.element.querySelectorAll('.bad-action-item').forEach((el: any) => {
                     if (el !== target) el.classList.remove('bad-menu-active');
                 });
                 target.classList.add('bad-menu-active');
@@ -178,7 +178,7 @@ export class ContextMenuManager {
      * @param {number} itemCount Number of items in context menu
      * @private
      */
-    _positionContextMenu(target, itemCount) {
+    _positionContextMenu(target: any, itemCount: any) {
         const targetBody = this.app?.element?.ownerDocument?.body ?? document.body;
         const menuEl = document.querySelector('#context-menu, .context-menu:not(.bad-sub-context-menu)');
         if (!menuEl) return;
@@ -205,7 +205,7 @@ export class ContextMenuManager {
      * @param {Object[]} menuItems List of menu item configurations
      * @private
      */
-    _bindSubmenus(target, menuItems) {
+    _bindSubmenus(target: any, menuItems: any) {
         const contextMenuEl = document.querySelector('#context-menu, .context-menu');
         if (!contextMenuEl) return;
 
@@ -217,7 +217,7 @@ export class ContextMenuManager {
             li.dataset.badSubmenuBound = 'true';
 
             const text = li.textContent.trim();
-            const matchedItem = menuItems.find(m => {
+            const matchedItem = menuItems.find((m: any) => {
                 const localized = localize(m.name);
                 return localized && text.includes(localized);
             });
@@ -229,7 +229,7 @@ export class ContextMenuManager {
                     li.appendChild(arrow);
                 }
 
-                const openThisSubmenu = (event) => {
+                const openThisSubmenu = (event: any) => {
                     event?.stopPropagation?.();
                     if (this._submenuCloseTimeout) {
                         clearTimeout(this._submenuCloseTimeout);
@@ -264,10 +264,10 @@ export class ContextMenuManager {
      * @param {Object[]} submenuItems Submenu item specifications
      * @private
      */
-    _openSubmenu(parentLi, target, item, submenuItems) {
+    _openSubmenu(parentLi: any, target: any, item: any, submenuItems: any) {
         this.closeSubmenu();
 
-        const qualifying = submenuItems.filter(sub => {
+        const qualifying = submenuItems.filter((sub: any) => {
             return sub.condition ? Boolean(sub.condition(item)) : true;
         });
 
@@ -365,7 +365,7 @@ export class ContextMenuManager {
  * @param {HTMLElement} element Root application DOM element
  * @returns {ContextMenu} The created ContextMenu instance
  */
-export function createActionContextMenu(app, element) {
+export function createActionContextMenu(app: any, element: any) {
     const manager = new ContextMenuManager(app, element);
     return manager.createActionContextMenu();
 }

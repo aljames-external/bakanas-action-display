@@ -51,7 +51,7 @@ const ICONS = {
  * Handles PF1e's multi-action items, prepared/spontaneous spellcasting, and toggleable buffs.
  */
 export class BasePf1SystemAdapter extends FantasySystemAdapter {
-    constructor(foundry) {
+    constructor(foundry: any) {
         super('pf1', true, foundry);
         this.contextMenuManager = new Pf1SystemContextMenuManager(this);
     }
@@ -61,7 +61,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {boolean}
      */
-    getItemEquipped(item) {
+    getItemEquipped(item: any) {
         if (!item?.system) return true;
         if (item.system.equipped !== undefined) {
             return Boolean(item.system.equipped);
@@ -75,7 +75,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * Determine if a specific item should be extracted as a base action for PF1e.
      * Prevents allocating objects for unhandled item types (like containers).
      */
-    shouldExtractItem(item) {
+    shouldExtractItem(item: any) {
         return EXTRACTABLE_TYPES.has(item.type);
     }
 
@@ -130,7 +130,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                     action.uses = this.#calculateSpellUses(spellbook, item);
 
                     // Roll function
-                    action.roll = (event) => this.#executeItemRoll(item, null, event);
+                    action.roll = (event: any) => this.#executeItemRoll(item, null, event);
 
                     modified.push(action);
                 } else if (item.type === 'attack') {
@@ -187,7 +187,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                             action.left = ['equipment'];
                             action.uses = { available: null, max: null };
                             action.available = !isUnequipped;
-                            action.roll = (event) => this.#executeItemRoll(item, null, event);
+                            action.roll = (event: any) => this.#executeItemRoll(item, null, event);
                             modified.push(action);
                             continue;
                         }
@@ -213,7 +213,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                     action.activationType = 'other';
                     action.left = ['buff'];
 
-                    action.roll = async (event) => {
+                    action.roll = async (event: any) => {
                         const active = this.#getBuffActiveState(item);
                         await item.update({ "system.active": !active });
                     };
@@ -389,7 +389,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * Modify the rendering context before it is sent to the template.
      * Used here to sort the spell sub-tabs (Cantrips, Orisons, Levels, SLAs), format Page 2 categorized checks, Page 3 token info, and display showUnprepared indicators.
      */
-    modifyContext(context, app) {
+    modifyContext(context: any, app: any) {
         const result = super.modifyContext?.(context, app);
 
         const showAll = Boolean(app?.actor?.getFlag?.(MODULE_ID, 'showAll'));
@@ -400,7 +400,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
             equipment: { flag: 'showUnequipped_equipment', tooltip: 'BAD.tabs.unequippedEquipmentTooltip', defaultTooltip: '<b>Right Click:</b> Toggle Show Unequipped Equipment' }
         };
 
-        const allParent = context.itemTypes?.find(g => g.id === 'all');
+        const allParent = context.itemTypes?.find((g: any) => g.id === 'all');
         if (allParent) {
             allParent.showUnprepared = showAll;
             if (context.showTooltips) {
@@ -409,7 +409,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         }
 
         for (const [type, cfg] of Object.entries(unequippedTabMap)) {
-            const parent = context.itemTypes?.find(g => g.id === type);
+            const parent = context.itemTypes?.find((g: any) => g.id === type);
             if (parent) {
                 const showFlag = Boolean(app?.actor?.getFlag?.(MODULE_ID, cfg.flag));
                 parent.showUnprepared = Boolean(showFlag || showAll);
@@ -419,9 +419,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
             }
         }
 
-        const spellGroup = context.itemTypes?.find(g => g.id === 'spell');
+        const spellGroup = context.itemTypes?.find((g: any) => g.id === 'spell');
         if (spellGroup?.subTabs?.length) {
-            spellGroup.subTabs.sort((a, b) =>
+            spellGroup.subTabs.sort((a: any, b: any) =>
                 (SPELL_SUB_TAB_ORDER.get(a.id) ?? 999) - (SPELL_SUB_TAB_ORDER.get(b.id) ?? 999)
             );
         }
@@ -737,8 +737,8 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a right-side action type (parent tab) in PF1e.
      */
-    getActionTypeLabel(parentId) {
-        const labels = {
+    getActionTypeLabel(parentId: any) {
+        const labels: Record<string, string> = {
             'economy': localize('BAD.common.actionEconomy', 'Action Economy')
         };
         return labels[parentId] ?? super.getActionTypeLabel(parentId);
@@ -747,15 +747,15 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the CSS icon class for a right-side action type (parent tab) in PF1e.
      */
-    getActionTypeIcon(parentId) {
-        return ICONS.action_type[parentId] ?? super.getActionTypeIcon(parentId);
+    getActionTypeIcon(parentId: any) {
+        return (ICONS.action_type as Record<string, string>)[parentId] ?? super.getActionTypeIcon(parentId);
     }
 
     /**
      * Get the localized label for a right-side action sub-tab in PF1e.
      */
-    getActionSubTabLabel(subId) {
-        const abilityLabels = {
+    getActionSubTabLabel(subId: any) {
+        const abilityLabels: Record<string, string> = {
             str: localize('PF1.AbilityStr', 'Strength'),
             dex: localize('PF1.AbilityDex', 'Dexterity'),
             con: localize('PF1.AbilityCon', 'Constitution'),
@@ -791,7 +791,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item type (parent tab) in PF1e.
      */
-    getItemTypeLabel(parentId) {
+    getItemTypeLabel(parentId: any) {
         switch (parentId) {
             case 'weapon': return localize('PF1.InventoryWeapons', 'Weapons');
             case 'equipment': return localize('PF1.InventoryEquipment', localize('PF1.Equipment', 'Equipment'));
@@ -806,7 +806,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item sub-tab (spell level/spellbook) in PF1e.
      */
-    getItemSubTabLabel(parentId, subId) {
+    getItemSubTabLabel(parentId: any, subId: any) {
         if (parentId !== 'spell') return super.getItemSubTabLabel(parentId, subId);
 
         switch (subId) {
@@ -824,18 +824,18 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the CSS icon class for a left-side item type (parent tab) in PF1e.
      */
-    getItemTypeIcon(parentId) {
+    getItemTypeIcon(parentId: any) {
         if (parentId === 'buff') return 'fas fa-sparkles';
         if (parentId === 'equipment') return 'fas fa-shield';
         return super.getItemTypeIcon(parentId);
     }
 
-    getItemTypeSortOrder(parentId) {
-        return SORT_ORDERS.item_type[parentId] ?? super.getItemTypeSortOrder(parentId);
+    getItemTypeSortOrder(parentId: any) {
+        return (SORT_ORDERS.item_type as Record<string, number>)[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
-    getActionSubTabSortOrder(parentId, subId) {
-        return SORT_ORDERS.tabs[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
+    getActionSubTabSortOrder(parentId: any, subId: any) {
+        return (SORT_ORDERS.tabs as Record<string, any>)[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 
 
@@ -848,7 +848,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 
     // #region System Specific Data Extractors & Schema Helpers
 
-    #executeItemRoll(item, actionId, event) {
+    #executeItemRoll(item: any, actionId: any, event: any) {
         const proxiedEvent = this._createRollEvent(event);
         const options = actionId ? { actionId, event: proxiedEvent } : { event: proxiedEvent };
         if (item.use) {
@@ -909,7 +909,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @returns {string|null} Normalized activation type
      * @private
      */
-    #parseActivationType(actType) {
+    #parseActivationType(actType: any) {
         if (!actType) return null;
 
         switch (actType.toLowerCase()) {
@@ -965,7 +965,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Item} weapon
      * @returns {Object[]} Link children objects
      */
-    #getWeaponLinkChildren(weapon) {
+    #getWeaponLinkChildren(weapon: any) {
         return weapon.system.links?.children ?? [];
     }
 
@@ -975,18 +975,18 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {string} spellbookId
      * @returns {Object|undefined}
      */
-    #getSpellbook(actor, spellbookId) {
+    #getSpellbook(actor: any, spellbookId: any) {
         return actor.system.attributes?.spells?.spellbooks?.[spellbookId];
     }
 
-    #getSpellSubTab(spellbookId, spellbook, level) {
+    #getSpellSubTab(spellbookId: any, spellbook: any, level: any) {
         if (spellbookId === 'spelllike' || spellbookId === 'sla') return 'sla';
         if (level === 0 && spellbook?.kind === 'arcane') return 'cantrip';
         if (level === 0 && spellbook?.kind === 'divine') return 'orison';
         return level.toString();
     }
 
-    #promoteFirstSubaction(action, subactions, left, uses) {
+    #promoteFirstSubaction(action: any, subactions: any, left: any, uses: any) {
         const firstSub = subactions[0];
         action.subactions = subactions;
         action.activationType = firstSub.activationType;
@@ -1000,7 +1000,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {Object[]} Sub-action objects
      */
-    #getItemActions(item) {
+    #getItemActions(item: any) {
         return item.system.actions ?? [];
     }
 
@@ -1009,14 +1009,14 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {boolean}
      */
-    #getBuffActiveState(item) {
+    #getBuffActiveState(item: any) {
         return item.system.active ?? false;
     }
 
     /**
      * Calculate remaining charges/uses for PF1e items.
      */
-    #calculateUses(item, actor) {
+    #calculateUses(item: any, actor: any) {
         // 1. Ranged weapon ammunition tracking
         if (item.type === 'weapon' && item.system.weaponSubtype === 'ranged' && item.system.ammo?.type) {
             const ammoId = item.system.ammo?.default;
@@ -1046,7 +1046,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Calculate spell slot / prepared uses for PF1e spells.
      */
-    #calculateSpellUses(spellbook, spell) {
+    #calculateSpellUses(spellbook: any, spell: any) {
         const level = spell.system.level ?? 0;
         if (level === 0) return { available: null, max: null }; // Cantrips have infinite uses
 
@@ -1077,7 +1077,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Object} [overrides={}] Generic category overrides
      * @returns {Object[]} Array of category definition objects
      */
-    getDefaultCategories(overrides = {}) {
+    getDefaultCategories(overrides: Record<string, any> = {}) {
         const categories = super.getDefaultCategories(this.mergeObject({
             weapon: {
                 expression: `item.type === 'weapon' || item.type === 'attack' || item.type === 'equipment'`
@@ -1235,7 +1235,7 @@ export class Pf1SystemAdapter_11_0 extends BasePf1SystemAdapter {
  * Automatically delegates to Pf1SystemAdapter_11_0 on v11+ and BasePf1SystemAdapter on legacy versions.
  */
 export class Pf1SystemAdapter extends BasePf1SystemAdapter {
-    constructor(foundry) {
+    constructor(foundry: any) {
         if (!foundry) {
             throw new Error(`Pf1SystemAdapter requires a valid Foundry adapter instance, received: ${foundry}`);
         }

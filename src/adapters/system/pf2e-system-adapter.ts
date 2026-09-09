@@ -93,7 +93,7 @@ const PF2E_SIZE_MAP = deepFreeze({
  * Modifies the base actions list by mapping feats and spells, and injecting Strikes (attacks).
  */
 export class BasePf2eSystemAdapter extends FantasySystemAdapter {
-    constructor(foundry) {
+    constructor(foundry: any) {
         super('pf2e', true, foundry);
         this.contextMenuManager = new Pf2eSystemContextMenuManager(this);
     }
@@ -106,13 +106,13 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {boolean}
      */
-    getItemEquipped(item) {
+    getItemEquipped(item: any) {
         if (!item?.system) return true;
         if (item.isPhysical === false) return true;
         if (item.category === 'unarmed' || item.system.category?.value === 'unarmed') return true;
 
         const traits = item.system.traits?.value;
-        const hasTrait = (trait) => Boolean(traits instanceof Set ? traits.has(trait) : traits?.includes?.(trait));
+        const hasTrait = (trait: any) => Boolean(traits instanceof Set ? traits.has(trait) : traits?.includes?.(trait));
         if (hasTrait('unarmed') || hasTrait('natural')) {
             return true;
         }
@@ -133,7 +133,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * Determine if a specific item should be extracted as a base action for PF2e.
      * Prevents allocating objects for unhandled item types (like equipment/consumables).
      */
-    shouldExtractItem(item) {
+    shouldExtractItem(item: any) {
         return EXTRACTABLE_TYPES.has(item.type);
     }
 
@@ -168,7 +168,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
         // 3. Filter unequipped items (stowed/dropped) unless showAll / showUnequipped flag is enabled
         const showAll = Boolean(actor?.getFlag?.(MODULE_ID, 'showAll'));
-        const showUnequippedMap = {
+        const showUnequippedMap: Record<string, boolean> = {
             weapon: Boolean(actor?.getFlag?.(MODULE_ID, 'showUnequipped_weapon')),
             equipment: Boolean(actor?.getFlag?.(MODULE_ID, 'showUnequipped_equipment')),
             consumable: Boolean(actor?.getFlag?.(MODULE_ID, 'showUnequipped_consumable'))
@@ -293,9 +293,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
         for (const [key, skill] of skillEntries) {
             const slug = (skill as any).slug ?? key;
-            const abl = PF2E_SKILL_ABILITY_MAP[slug] ?? (skill as any).ability ?? 'dex';
+            const abl = (PF2E_SKILL_ABILITY_MAP as Record<string, string>)[slug] ?? (skill as any).ability ?? 'dex';
             const label = (skill as any).label ?? (skill as any).name ?? (CONFIG as any)?.PF2E?.skills?.[slug] ?? slug;
-            const skillImg = PF2E_ABILITY_ICONS[abl] ?? 'icons/svg/d20.svg';
+            const skillImg = (PF2E_ABILITY_ICONS as Record<string, string>)[abl] ?? 'icons/svg/d20.svg';
             const skillAction = new Action({
                 id: `skill-${slug}`,
                 name: label,
@@ -334,7 +334,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item type (parent tab) in PF2e.
      */
-    getItemTypeLabel(parentId) {
+    getItemTypeLabel(parentId: any) {
         switch (parentId) {
             case 'feat': return localize('PF2E.Item.Feat.Plural', 'Feats');
             case 'spell': return localize('PF2E.Item.Spell.Plural', 'Spells');
@@ -348,7 +348,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item sub-tab (spell rank) in PF2e.
      */
-    getItemSubTabLabel(parentId, subId) {
+    getItemSubTabLabel(parentId: any, subId: any) {
         if (parentId === 'spell') {
             switch (subId) {
                 case 'focus': return localize('PF2E.Focus.Spells', 'Focus Spells');
@@ -364,32 +364,32 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a right-side action type (parent tab) in PF2e.
      */
-    getActionTypeLabel(parentId) {
+    getActionTypeLabel(parentId: any) {
         return parentId === 'economy'
             ? localize('BAD.common.actionEconomy', 'Action Economy')
             : super.getActionTypeLabel(parentId);
     }
 
-    getItemTypeSortOrder(parentId) {
-        return SORT_ORDERS.item_type[parentId] ?? super.getItemTypeSortOrder(parentId);
+    getItemTypeSortOrder(parentId: any) {
+        return (SORT_ORDERS.item_type as Record<string, number>)[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
-    getActionSubTabSortOrder(parentId, subId) {
-        return SORT_ORDERS.tabs[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
+    getActionSubTabSortOrder(parentId: any, subId: any) {
+        return (SORT_ORDERS.tabs as Record<string, any>)[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 
     /**
      * Get the CSS icon class for a right-side action type (parent tab) in PF2e.
      */
-    getActionTypeIcon(parentId) {
-        return ICONS.action_type[parentId] ?? super.getActionTypeIcon(parentId);
+    getActionTypeIcon(parentId: any) {
+        return (ICONS.action_type as Record<string, string>)[parentId] ?? super.getActionTypeIcon(parentId);
     }
 
     /**
      * Get the localized label for a right-side action sub-tab in PF2e.
      */
-    getActionSubTabLabel(subId) {
-        const abilityLabels = {
+    getActionSubTabLabel(subId: any) {
+        const abilityLabels: Record<string, string> = {
             str: localize('PF2E.AbilityStr', 'Strength'),
             dex: localize('PF2E.AbilityDex', 'Dexterity'),
             con: localize('PF2E.AbilityCon', 'Constitution'),
@@ -424,12 +424,12 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * Modify the rendering context before it is sent to the template.
      * Used here to sort the spell sub-tabs (Cantrips, Ranks 1-10, Focus, Innate, Rituals), format Page 2 categorized checks, Page 3 token info, and display showUnprepared tab indicators.
      */
-    modifyContext(context, app) {
+    modifyContext(context: any, app: any) {
         const result = super.modifyContext?.(context, app);
 
         const showAll = Boolean(app?.actor?.getFlag?.(MODULE_ID, 'showAll'));
 
-        const allParent = context.itemTypes?.find(g => g.id === 'all');
+        const allParent = context.itemTypes?.find((g: any) => g.id === 'all');
         if (allParent) {
             allParent.showUnprepared = showAll;
             if (context.showTooltips) {
@@ -438,7 +438,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         }
 
         for (const [type, cfg] of Object.entries(PF2E_UNEQUIPPED_TAB_CONFIG)) {
-            const parent = context.itemTypes?.find(g => g.id === type);
+            const parent = context.itemTypes?.find((g: any) => g.id === type);
             if (parent) {
                 const showFlag = Boolean(app?.actor?.getFlag?.(MODULE_ID, cfg.flag));
                 parent.showUnprepared = Boolean(showFlag || showAll);
@@ -448,9 +448,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             }
         }
 
-        const spellGroup = context.itemTypes?.find(g => g.id === 'spell');
+        const spellGroup = context.itemTypes?.find((g: any) => g.id === 'spell');
         if (spellGroup?.subTabs?.length) {
-            spellGroup.subTabs.sort((a, b) =>
+            spellGroup.subTabs.sort((a: any, b: any) =>
                 (PF2E_SPELL_SUB_TAB_ORDER.get(a.id) ?? 999) - (PF2E_SPELL_SUB_TAB_ORDER.get(b.id) ?? 999)
             );
         }
@@ -488,7 +488,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
         // 6. Immunities
         const damageImmunities = this.#extractImmunities(actor, cfg);
-        const conditionImmunities = [];
+        const conditionImmunities: any[] = [];
 
         // 7. Weaknesses (PF2e vulnerabilities)
         const vulnerabilities = this.#extractWeaknesses(actor, cfg);
@@ -557,7 +557,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         // Size
         const rawSize = traits.size;
         const sizeStr = rawSize?.value ?? rawSize?.label ?? rawSize?.id ?? rawSize ?? 'med';
-        const sizeLabel = cfg?.actorSizes?.[sizeStr] ? localize(cfg.actorSizes[sizeStr], sizeStr) : (PF2E_SIZE_MAP[sizeStr.toLowerCase()] ?? (sizeStr ? sizeStr.charAt(0).toUpperCase() + sizeStr.slice(1) : 'Medium'));
+        const sizeLabel = cfg?.actorSizes?.[sizeStr] ? localize(cfg.actorSizes[sizeStr], sizeStr) : ((PF2E_SIZE_MAP as Record<string, string>)[sizeStr.toLowerCase()] ?? (sizeStr ? sizeStr.charAt(0).toUpperCase() + sizeStr.slice(1) : 'Medium'));
 
         // Level / CR
         const level = actor.level ?? details.level?.value ?? 1;
@@ -743,7 +743,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
     // #region System Specific Data Extractors & Schema Helpers
 
-    #buildAmmoQuantitiesMap(actor) {
+    #buildAmmoQuantitiesMap(actor: any) {
         const ammoQuantities = new Map();
         for (const i of actor.items ?? []) {
             const { baseItem, quantity } = this.#getAmmoInfo(i);
@@ -754,7 +754,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return ammoQuantities;
     }
 
-    #buildSpellToEntryMap(actor) {
+    #buildSpellToEntryMap(actor: any) {
         const spellToEntryMap = new Map();
         for (const entry of this.#getSpellcastingEntries(actor)) {
             for (const spell of entry.spells ?? []) {
@@ -769,7 +769,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {{ baseItem: string|undefined, quantity: number }}
      */
-    #getAmmoInfo(item) {
+    #getAmmoInfo(item: any) {
         return item.type === 'ammo'
             ? { baseItem: item.system.baseItem, quantity: item.system.quantity ?? 0 }
             : { baseItem: undefined, quantity: 0 };
@@ -780,8 +780,8 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {string|null}
      */
-    #getActionType(item) {
-        return PF2E_ACTION_TYPE_MAP[item.system.actionType?.value] ?? null;
+    #getActionType(item: any) {
+        return (PF2E_ACTION_TYPE_MAP as Record<string, string>)[item.system.actionType?.value] ?? null;
     }
 
     /**
@@ -789,7 +789,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @returns {Object[]}
      */
-    #getSpellcastingEntries(actor) {
+    #getSpellcastingEntries(actor: any) {
         return actor.spellcasting ?? [];
     }
 
@@ -798,18 +798,18 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @returns {Object[]}
      */
-    #getActorStrikes(actor) {
+    #getActorStrikes(actor: any) {
         return actor.system.actions ?? [];
     }
 
-    #getSpellSubTab(entry, spellLevel) {
+    #getSpellSubTab(entry: any, spellLevel: any) {
         if (entry.isFocusPool) return 'focus';
         if (entry.isInnate) return 'innate';
         if (entry.isRitual) return 'ritual';
         return spellLevel.toString();
     }
 
-    #executeFeatRoll(item, event) {
+    #executeFeatRoll(item: any, event: any) {
         const proxiedEvent = this._createRollEvent(event);
         if (item.toMessage) {
             return item.toMessage();
@@ -817,7 +817,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return item.use?.({ event: proxiedEvent });
     }
 
-    #executeSpellRoll(entry, item, event) {
+    #executeSpellRoll(entry: any, item: any, event: any) {
         const proxiedEvent = this._createRollEvent(event);
         if (entry?.cast) {
             return entry.cast(item, { event: proxiedEvent });
@@ -825,12 +825,12 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return item.toMessage?.();
     }
 
-    #executeStrikeRoll(strike, event) {
+    #executeStrikeRoll(strike: any, event: any) {
         const proxiedEvent = this._createRollEvent(event);
         return (strike.variants?.[0] ?? strike)?.roll?.({ event: proxiedEvent });
     }
 
-    #executeConsumableRoll(item, event) {
+    #executeConsumableRoll(item: any, event: any) {
         const proxiedEvent = this._createRollEvent(event);
         if (item.consume) {
             return item.consume();
@@ -841,7 +841,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return item.use?.({ event: proxiedEvent });
     }
 
-    #executeEquipmentRoll(item, event) {
+    #executeEquipmentRoll(item: any, event: any) {
         const proxiedEvent = this._createRollEvent(event);
         if (item.toMessage) {
             return item.toMessage();
@@ -849,7 +849,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return item.use?.({ event: proxiedEvent });
     }
 
-    #createStrikeAction(strike, ammoQuantities) {
+    #createStrikeAction(strike: any, ammoQuantities: any) {
         return {
             id: `strike-${strike.slug ?? strike.label}`,
             name: strike.label,
@@ -861,13 +861,13 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             hidden: false,
             available: true,
             uses: this.#getStrikeAmmoUses(strike, ammoQuantities),
-            roll: (event) => this.#executeStrikeRoll(strike, event),
+            roll: (event: any) => this.#executeStrikeRoll(strike, event),
             originalItem: strike.item,
             extra: { pf2eStrike: strike }
         };
     }
 
-    #formatActionRow(action, spellToEntryMap) {
+    #formatActionRow(action: any, spellToEntryMap: any) {
         const item = action.originalItem;
         if (!item) return false;
         if (item.type === 'action' || item.type === 'feat') {
@@ -885,7 +885,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return false;
     }
 
-    #formatFeatAction(action, item) {
+    #formatFeatAction(action: any, item: any) {
         const activationType = this.#getActionType(item);
         if (!activationType) {
             const rawType = item.system.actionType?.value;
@@ -897,11 +897,11 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         action.right = [TabRef.from('economy', activationType)];
         action.left = [item.type === 'action' ? 'feat' : item.type];
         action.uses = this.#getUses(item);
-        action.roll = (event) => this.#executeFeatRoll(item, event);
+        action.roll = (event: any) => this.#executeFeatRoll(item, event);
         return true;
     }
 
-    #formatSpellAction(action, item, entry) {
+    #formatSpellAction(action: any, item: any, entry: any) {
         if (!entry) {
             log.debug(`Pf2eSystemAdapter.#formatSpellAction | Filtering out spell "${item.name}" (ID: ${item.id}) — no spellcasting entry found in spellToEntryMap (spell is not registered in any spellcasting entry on this actor)`);
             return false;
@@ -911,35 +911,35 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         action.right = [TabRef.from('economy', 'action')];
         action.activationType = 'action';
         action.left = ['spell', this.#getSpellSubTab(entry, spellLevel)];
-        action.roll = (event) => this.#executeSpellRoll(entry, item, event);
+        action.roll = (event: any) => this.#executeSpellRoll(entry, item, event);
         action.uses = this.#getSpellUses(entry, item);
         action.name = `${item.name} (${entry.name})`;
         return true;
     }
 
-    #formatConsumableAction(action, item) {
+    #formatConsumableAction(action: any, item: any) {
         action.name = action.name ?? item.name;
         const activationType = this.#getActionType(item) ?? 'action';
         action.activationType = activationType;
         action.right = [TabRef.from('economy', activationType)];
         action.left = ['consumable'];
         action.uses = this.#getConsumableUses(item);
-        action.roll = (event) => this.#executeConsumableRoll(item, event);
+        action.roll = (event: any) => this.#executeConsumableRoll(item, event);
         return true;
     }
 
-    #formatEquipmentAction(action, item) {
+    #formatEquipmentAction(action: any, item: any) {
         action.name = action.name ?? item.name;
         const activationType = this.#getActionType(item) ?? 'action';
         action.activationType = activationType;
         action.right = [TabRef.from('economy', activationType)];
         action.left = ['equipment'];
         action.uses = this.#getUses(item);
-        action.roll = (event) => this.#executeEquipmentRoll(item, event);
+        action.roll = (event: any) => this.#executeEquipmentRoll(item, event);
         return true;
     }
 
-    #getConsumableUses(item) {
+    #getConsumableUses(item: any) {
         const uses = item.system.uses;
         if (uses && uses.max > 0) {
             return { available: uses.value ?? 0, max: uses.max };
@@ -956,7 +956,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {{ available: number|null, max: number|null }}
      */
-    #getUses(item) {
+    #getUses(item: any) {
         const freq = item.system.frequency;
         return freq
             ? { available: freq.value ?? 0, max: freq.max ?? 0 }
@@ -969,7 +969,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} spell Spell item
      * @returns {{ available: number|null, max: number|null }}
      */
-    #getSpellUses(entry, spell) {
+    #getSpellUses(entry: any, spell: any) {
         if (entry.isFocusPool) {
             const focus = entry.actor?.system?.resources?.focus;
             return { available: focus?.value ?? 0, max: focus?.max ?? 0 };
@@ -990,7 +990,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Map<string, number>} ammoQuantities
      * @returns {{ available: number|null, max: number|null }}
      */
-    #getStrikeAmmoUses(strike, ammoQuantities) {
+    #getStrikeAmmoUses(strike: any, ammoQuantities: any) {
         const baseType = strike.item?.type === 'weapon' && strike.item.system.ammo?.baseType;
         return baseType
             ? { available: ammoQuantities.get(baseType) ?? 0, max: null }
@@ -1002,7 +1002,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [overrides={}] Generic category overrides
      * @returns {Object[]} Array of category definition objects
      */
-    getDefaultCategories(overrides = {}) {
+    getDefaultCategories(overrides: Record<string, any> = {}) {
         const categories = super.getDefaultCategories(this.mergeObject({
             weapon: {
                 name: 'Weapons & Strikes',
@@ -1148,7 +1148,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
  * Dynamically instantiates the appropriate version subclass based on game.system.version.
  */
 export class Pf2eSystemAdapter extends BasePf2eSystemAdapter {
-    constructor(foundry) {
+    constructor(foundry: any) {
         if (!foundry) {
             throw new Error(`Pf2eSystemAdapter requires a valid Foundry adapter instance, received: ${foundry}`);
         }

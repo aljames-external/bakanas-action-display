@@ -51,7 +51,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * Pre-calculates ammo quantities, highest available spell slot, and cached item lookups for O(1) lookups during action modification.
      * @param {Actor} actor
      */
-    init(actor) {
+    init(actor: any) {
         this.#actor = actor;
         this.#highestAvailableSlot = actor ? this.#getHighestAvailableSpellSlot(actor) : 0;
         this.#ammoQuantities = actor ? this.#getAmmoQuantities(actor) : new Map();
@@ -75,7 +75,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {string} cachedFor
      * @returns {string|null}
      */
-    #normalizeCachedForKey(cachedFor) {
+    #normalizeCachedForKey(cachedFor: any) {
         if (typeof cachedFor !== 'string' || !cachedFor) return null;
         const match = cachedFor.match(/(?:Item\.)?([^.]+)\.(?:Activity\.)?([^.]+)$/);
         if (match) {
@@ -94,7 +94,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * Determine if a specific item should be extracted as a base action for DnD5e.
      * Prevents allocating objects for unallowed types, cached helper items, and unequipped gear.
      */
-    shouldExtractItem(item) {
+    shouldExtractItem(item: any) {
         const type = item.type;
         if (!ALLOWED_TYPES.has(type)) {
             log.debug(`Dnd5eSystemAdapter.shouldExtractItem | Skipping "${item.name}" (${type}, ID: ${item.id}) — type not in ALLOWED_TYPES`);
@@ -457,7 +457,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         if (configLabel) return localize(configLabel, configLabel);
 
         // 4. Well-known D&D 5e tool categories / abbreviations fallback
-        const TOOL_FALLBACKS = {
+        const TOOL_FALLBACKS: Record<string, string> = {
             art: "Artisan's Tools",
             artisan: "Artisan's Tools",
             disg: 'Disguise Kit',
@@ -492,7 +492,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {string} type
      * @returns {string|null} Category identifier ('standard', 'time', 'rest', 'combat', 'monster', 'vehicle') or null if direct
      */
-    #getEconomyCategory(type) {
+    #getEconomyCategory(type: any) {
         if (!type) return null;
         const norm = String(type).toLowerCase();
         switch (norm) {
@@ -536,7 +536,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {string} type
      * @returns {string} Canonical sub-tab identifier
      */
-    #getCanonicalSubTab(type) {
+    #getCanonicalSubTab(type: any) {
         if (!type) return 'none';
         const norm = String(type).toLowerCase();
         switch (norm) {
@@ -594,7 +594,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {ApplicationV2} app Active HUD application
      * @returns {Promise<Object>|Object}
      */
-    modifyContext(context, app) {
+    modifyContext(context: any, app: any) {
         return super.modifyContext(context, app);
     }
 
@@ -604,7 +604,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} [actor]
      * @param {Token} [token]
      */
-    async formatTokenInfoLayout(context, actor = null, token = null) {
+    async formatTokenInfoLayout(context: any, actor = null, token = null) {
         context.layout = 'tokenInfo';
         context.isCategorized = false;
         context.itemTypes = [];
@@ -710,7 +710,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor Target actor document
      * @returns {{ supported: boolean, value: boolean }}
      */
-    getInspiration(actor) {
+    getInspiration(actor: any) {
         if (!actor) return { supported: false, value: false };
         const system = actor.system ?? {};
         const supported = actor.type === 'character' || system.attributes?.inspiration !== undefined;
@@ -724,7 +724,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {boolean} [force] Optional explicit state to set
      * @returns {Promise<boolean>} Resulting inspiration state
      */
-    async toggleInspiration(actor, force) {
+    async toggleInspiration(actor: any, force: any) {
         if (!actor) return false;
         const current = Boolean(actor.system?.attributes?.inspiration);
         const next = force ?? !current;
@@ -757,7 +757,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         return key.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     }
 
-    #extractCreatureType(actor, cfg = CONFIG?.DND5E) {
+    #extractCreatureType(actor: any, cfg = CONFIG?.DND5E) {
         const system = actor?.system ?? {};
         const details = system.details ?? {};
         const traits = system.traits ?? {};
@@ -821,7 +821,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractArmorClass(actor, cfg = CONFIG?.DND5E) {
+    #extractArmorClass(actor: any, cfg = CONFIG?.DND5E) {
         const acData = actor?.system?.attributes?.ac ?? {};
         const value = acData.value ?? 10;
         const calc = acData.calc ?? 'default';
@@ -1099,7 +1099,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [sensesMap]
      * @returns {string}
      */
-    formatSenseLabel(key, sensesMap = CONFIG?.DND5E?.senses) {
+    formatSenseLabel(key: any, sensesMap = CONFIG?.DND5E?.senses) {
         const formatted = this.#formatLabel(key, sensesMap);
         return (formatted && formatted.length > 0 ? formatted : null) ?? (key.charAt(0).toUpperCase() + key.slice(1));
     }
@@ -1113,7 +1113,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} doc
      * @returns {boolean}
      */
-    #isItemDocument(doc) {
+    #isItemDocument(doc: any) {
         return doc?.documentName === 'Item';
     }
 
@@ -1122,7 +1122,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} obj
      * @returns {Item|null}
      */
-    #extractItemSpell(obj) {
+    #extractItemSpell(obj: any) {
         if (!obj) return null;
         if (obj.linkedAction !== undefined) return obj.linkedAction;
         const spell = obj.spell;
@@ -1146,7 +1146,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             const fullKey = parentItemId && actId ? `${parentItemId}.${actId}` : null;
             if (fullKey) {
                 doc = this.#cachedForMap.get(fullKey)
-                    ?? this.#actor?.items?.find?.(i => {
+                    ?? this.#actor?.items?.find?.((i: any) => {
                         const cf = i.flags?.dnd5e?.cachedFor ?? i.getFlag?.('dnd5e', 'cachedFor');
                         return this.#normalizeCachedForKey(cf) === fullKey;
                     });
@@ -1212,7 +1212,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         if (actor && fullKey) {
-            const cached = actor.items?.find?.(i => {
+            const cached = actor.items?.find?.((i: any) => {
                 const cf = i.flags?.dnd5e?.cachedFor ?? i.getFlag?.('dnd5e', 'cachedFor');
                 return this.#normalizeCachedForKey(cf) === fullKey;
             });
@@ -1241,7 +1241,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Document} doc
      * @returns {TabRef[]}
      */
-    #getComponentTabs(doc) {
+    #getComponentTabs(doc: any) {
         return this.filterManager.getComponentTabs(doc);
     }
 
@@ -1250,7 +1250,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object[]} activities
      * @returns {TabRef[]}
      */
-    #collectUniqueTabs(activities) {
+    #collectUniqueTabs(activities: any) {
         const uniqueTabsMap = new Map();
         for (const activity of activities) {
             for (const tab of activity.right ?? []) {
@@ -1269,13 +1269,13 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object[]} filteredActivities
      * @returns {string[]}
      */
-    #getItemTabTypes(item, type, filteredActivities) {
+    #getItemTabTypes(item: any, type: any, filteredActivities: any) {
         if (type === 'spell') {
             return ['spell', `level_${item.system.level ?? 0}`];
         }
 
         const hasLimited = this.#hasLimitedUses(item);
-        const hasCastActivity = filteredActivities.some(act => act.originalActivity?.type === 'cast');
+        const hasCastActivity = filteredActivities.some((act: any) => act.originalActivity?.type === 'cast');
         const isItemCharges = (type === 'equipment' && hasLimited)
             || (LIMITED_ITEM_TYPES.has(type) && hasLimited && hasCastActivity);
 
@@ -1294,7 +1294,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {boolean}
      */
-    getItemEquipped(item) {
+    getItemEquipped(item: any) {
         return item.system.equipped !== false;
     }
 
@@ -1303,7 +1303,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {Activities[]}
      */
-    getItemActivities(item) {
+    getItemActivities(item: any) {
         const activities = item.system?.activities;
         if (!activities) return [];
         if (activities.values) {
@@ -1321,7 +1321,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
     /**
      * Calculate available and maximum uses for an item.
      */
-    calculateUses(item) {
+    calculateUses(item: any) {
         return this.#calculateUses(item);
     }
 
@@ -1330,7 +1330,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {{available: number|null, max: number|null}}
      */
-    #calculateUses(item) {
+    #calculateUses(item: any) {
         const system = item?.system;
         if (!system) return { available: null, max: null };
 
@@ -1383,7 +1383,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item The item to check
      * @returns {boolean} True if the item has limited uses
      */
-    #hasLimitedUses(item) {
+    #hasLimitedUses(item: any) {
         if (this.#calculateLimitedUses(item?.system?.uses)) return true;
         if (item?.system?.recharge?.value) return true;
         return this.getItemActivities(item)
@@ -1395,7 +1395,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} uses
      * @returns {{available: number|null, max: number|null}|null}
      */
-    #calculateLimitedUses(uses) {
+    #calculateLimitedUses(uses: any) {
         if (!uses) return null;
 
         const rawMax = Number(uses.max);
@@ -1424,7 +1424,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @returns {Item|null}
      */
-    #resolveTargetItem(targetId, item, actor) {
+    #resolveTargetItem(targetId: any, item: any, actor: any) {
         if (!targetId) return null;
         return targetId.includes('.')
             ? (this.fromUuidSync(targetId, { relative: item })
@@ -1443,7 +1443,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {number} [highestAvailableSlot=this.#highestAvailableSlot] The highest available spell slot level on the actor
      * @returns {{available: number|null, max: number|null}} The uses count
      */
-    #calculateActivityUses(activity, item, actor = this.#actor, ammoQuantities = this.#ammoQuantities, highestAvailableSlot = this.#highestAvailableSlot) {
+    #calculateActivityUses(activity: any, item: any, actor = this.#actor, ammoQuantities = this.#ammoQuantities, highestAvailableSlot = this.#highestAvailableSlot) {
         const targets = activity.consumption?.targets ?? [];
         
         // 1. If the activity has its own explicit limited uses
@@ -1524,7 +1524,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {number} highestAvailableSlot
      * @returns {{available: number|string|null, max: number|null, isUpcast?: boolean}}
      */
-    #getSpellSlotUses(actor, level, highestAvailableSlot) {
+    #getSpellSlotUses(actor: any, level: any, highestAvailableSlot: any) {
         const actorSpells = actor?.system?.spells;
         const isPact = level === 'pact';
         const numLevel = Number(level);
@@ -1556,7 +1556,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {number} [highestAvailableSlot=this.#highestAvailableSlot]
      * @returns {{available: number|string|null, max: number|null, isUpcast?: boolean}}
      */
-    #calculateSpellSlots(item, actor = this.#actor, highestAvailableSlot = this.#highestAvailableSlot) {
+    #calculateSpellSlots(item: any, actor = this.#actor, highestAvailableSlot = this.#highestAvailableSlot) {
         const system = item.system;
         const prepMode = system.method;
         const level = system.level ?? 0;
@@ -1575,7 +1575,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Map<string, number>} ammoQuantities
      * @returns {{available: number, max: null}}
      */
-    #calculateWeaponAmmunition(item, ammoQuantities) {
+    #calculateWeaponAmmunition(item: any, ammoQuantities: any) {
         const ammoType = item.system.ammunition?.type;
         const quantity = ammoQuantities.get(ammoType) ?? 0;
         return {
@@ -1589,7 +1589,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @returns {Map<string, number>}
      */
-    #getAmmoQuantities(actor) {
+    #getAmmoQuantities(actor: any) {
         const ammoQuantities = new Map();
         for (const i of actor?.items ?? []) {
             if (i.type === 'consumable' && i.system.type?.value === 'ammo') {
@@ -1608,7 +1608,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @returns {number}
      */
-    #getHighestAvailableSpellSlot(actor) {
+    #getHighestAvailableSpellSlot(actor: any) {
         const actorSpells = actor?.system?.spells;
         if (!actorSpells) return 0;
 
@@ -1630,7 +1630,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {*} type
      * @returns {string|null}
      */
-    #normalizeActivationType(type) {
+    #normalizeActivationType(type: any) {
         if (!type || type === true || type === 'none') return null;
         const str = String(type).trim().toLowerCase();
         return str.length > 0 && str !== 'none' ? str : null;
@@ -1643,7 +1643,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item|null} [linkedAction=null]
      * @returns {string}
      */
-    #getActivityActivationType(activity, item, linkedAction = null) {
+    #getActivityActivationType(activity: any, item: any, linkedAction = null) {
         const actOverride = Boolean(activity.activation?.override ?? activity.system?.activation?.override);
         if (actOverride) {
             const overrideType = this.#normalizeActivationType(activity.activation?.type ?? activity.system?.activation?.type);
@@ -1667,7 +1667,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * Handles opening the DnD5e Activity configuration sheet directly for activities.
      * @param {Object} action
      */
-    openEditSheet(action) {
+    openEditSheet(action: any) {
         const activity = action?.originalActivity;
         if (activity) {
             if (activity.sheet?.render) {
@@ -1704,7 +1704,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item Item document
      * @returns {boolean} True if favorited in dnd5e
      */
-    isFavorite(actor, item) {
+    isFavorite(actor: any, item: any) {
         if (!item) return false;
 
         // 1. Direct system.favorite property (dnd5e 3.x+)
@@ -1720,7 +1720,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         // 3. Actor system.favorites set/array (dnd5e 3.x+ actor favorites collection)
         if (actor?.system?.favorites?.some) {
             const relUuid = item.getRelativeUUID?.(actor) ?? null;
-            return actor.system.favorites.some(f => f?.id === item.id || (relUuid && f?.id === relUuid) || f?.id === item.uuid);
+            return actor.system.favorites.some((f: any) => f?.id === item.id || (relUuid && f?.id === relUuid) || f?.id === item.uuid);
         }
 
         return false;
@@ -1734,7 +1734,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {boolean} favorite True to favorite, false to unfavorite
      * @returns {Promise<any>|null} Result of update
      */
-    async setFavorite(actor, item, favorite) {
+    async setFavorite(actor: any, item: any, favorite: any) {
         if (!item) return null;
         const isFav = Boolean(favorite);
 
@@ -1767,7 +1767,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [overrides={}] Generic category overrides
      * @returns {Object[]} Array of category definition objects
      */
-    getDefaultCategories(overrides = {}) {
+    getDefaultCategories(overrides: Record<string, any> = {}) {
         const categories = super.getDefaultCategories(overrides);
         const dnd5eCategories = [
             {
@@ -1986,7 +1986,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         // 11. Description: prioritize activity-specific description, then linked spell/item description, then parent item description fallback
-        const resolveDescription = (desc) => {
+        const resolveDescription = (desc: any) => {
             if (!desc) return null;
             const rawText = typeof desc === 'string' ? desc : (desc.value ?? desc.chatFlavor ?? desc.chat);
             const text = typeof rawText === 'string' ? rawText.trim() : '';
@@ -2121,7 +2121,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @returns {Set<string>}
      */
-    getActorStatuses(actor) {
+    getActorStatuses(actor: any) {
         if (!actor) return new Set();
         const statuses = new Set();
 
@@ -2147,7 +2147,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @param {HUDTabColumn} [tabColumn]
      */
-    updateTabs(actor, tabColumn = null) {
+    updateTabs(actor: any, tabColumn = null) {
         this.syncActorAutoBans(actor, tabColumn);
     }
 
@@ -2158,7 +2158,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {string} subId
      * @param {boolean} isActive
      */
-    recordManualTabToggle(actor, parentId, subId, isActive) {
+    recordManualTabToggle(actor: any, parentId: any, subId: any, isActive: any) {
         if (!actor || parentId !== 'components' || !SPELL_COMPONENT_KEYS.has(subId)) return;
         const autoBanState = actor.getFlag?.(MODULE_ID, 'autoBanState') ?? {};
         const conditions = autoBanState.conditions ?? {};
@@ -2176,7 +2176,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             actor.setFlag(MODULE_ID, 'autoBanState', {
                 conditions,
                 manualUnbans
-            }, { badInternal: true }).catch(err => {
+            }, { badInternal: true }).catch((err: any) => {
                 log.debug('Error setting autoBanState flag on manual toggle:', err);
             });
         }
@@ -2261,7 +2261,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 conditions: updatedConditions,
                 manualUnbans: updatedManualUnbans,
                 effectReasons
-            }, { badInternal: true }).catch(err => {
+            }, { badInternal: true }).catch((err: any) => {
                 log.debug('Error setting autoBanState flag:', err);
             });
         }
@@ -2273,7 +2273,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @returns {string}
      * @private
      */
-    #getConditionLabel(condId) {
+    #getConditionLabel(condId: any) {
         const condConfig = CONFIG?.DND5E?.conditionTypes?.[condId];
         const condName = condConfig?.label ?? condConfig?.name ?? condConfig;
         const fallbackStatus = CONFIG?.statusEffects?.find?.(e => e.id === condId)?.name;
@@ -2491,7 +2491,7 @@ export class Dnd5eSystemAdapter_5_3 extends BaseDnd5eSystemAdapter {
  * Automatically delegates to Dnd5eSystemAdapter_5_3 on v5.3+ and BaseDnd5eSystemAdapter on earlier baseline.
  */
 export class Dnd5eSystemAdapter extends BaseDnd5eSystemAdapter {
-    constructor(foundry) {
+    constructor(foundry: any) {
         if (!foundry) {
             throw new Error(`Dnd5eSystemAdapter requires a valid Foundry adapter instance, received: ${foundry}`);
         }

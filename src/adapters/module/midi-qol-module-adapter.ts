@@ -16,7 +16,7 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
      * @param {Object[]} actions The current list of actions
      * @returns {Object[]} The modified actions
      */
-    async modifyActions(actions) {
+    async modifyActions(actions: any) {
         const filterAutomationOnly = Boolean(game.settings?.get?.(MODULE_ID, 'midiQolFilterAutomationOnly') ?? true);
         if (!filterAutomationOnly) {
             return actions;
@@ -29,7 +29,7 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
             const activities = item.subactions;
             if (activities?.length > 0) {
                 // Filter out D&D 5e Activities that are marked as automationOnly by Midi-QOL
-                const filteredActivities = activities.filter(activity => !this.isAutomationOnly(activity));
+                const filteredActivities = activities.filter((activity: any) => !this.isAutomationOnly(activity));
 
                 // If all D&D 5e Activities on the item are automation-only, hide the entire item card!
                 if (filteredActivities.length === 0) {
@@ -42,12 +42,12 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
 
                     // Identify root tab categories controlled by D&D 5e activities (e.g. 'economy')
                     const activityRootCategories = toSet(
-                        activities.flatMap(act => act.right ?? []),
+                        activities.flatMap((act: any) => act.right ?? []),
                         tab => tab.root
                     );
 
                     // Preserve non-activity tabs from other categories (e.g. spell components under 'components')
-                    const preservedTabs = (item.right ?? []).filter(tab => !activityRootCategories.has(tab.root));
+                    const preservedTabs = (item.right ?? []).filter((tab: any) => !activityRootCategories.has(tab.root));
 
                     // Recalculate unique activity tabs using only the remaining non-removed activities
                     const uniqueTabsMap = new Map();
@@ -80,7 +80,7 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
      * @param {Object} activity The subAction / activity object
      * @returns {boolean} True if the activity should be hidden from player view
      */
-    isAutomationOnly(activity) {
+    isAutomationOnly(activity: any) {
         return Boolean(activity?.originalActivity?.midiProperties?.automationOnly);
     }
 }

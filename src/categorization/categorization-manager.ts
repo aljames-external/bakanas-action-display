@@ -1,7 +1,7 @@
 import { log } from '../lib/logger.js';
 import { deepFreeze } from '../lib/utils.js';
 
-const sortByName = (a, b) => (a.name ?? '').localeCompare(b.name ?? '');
+const sortByName = (a: any, b: any) => (a.name ?? '').localeCompare(b.name ?? '');
 
 /**
  * @typedef {Object} SubCategory
@@ -31,18 +31,18 @@ const sortByName = (a, b) => (a.name ?? '').localeCompare(b.name ?? '');
  * @param {Object} [raw] Raw configuration object from settings or user input
  * @returns {CategorizationConfig} Strict normalized configuration
  */
-export function normalizeCategorizationConfig(raw) {
+export function normalizeCategorizationConfig(raw: any) {
     const enabled = Boolean(raw?.enabled);
     const rawCategories = raw?.categories ?? [];
 
-    const categories = rawCategories.map((cat, catIndex) => {
+    const categories = rawCategories.map((cat: any, catIndex: any) => {
         const catId = cat?.id ?? `cat_${Date.now()}_${catIndex}`;
         const name = cat?.name ?? '';
         const expression = cat?.expression ?? '';
         const fallthrough = Boolean(cat?.fallthrough);
         const rawSubs = cat?.subcategories ?? [];
 
-        const subcategories = rawSubs.map((sub, subIndex) => {
+        const subcategories = rawSubs.map((sub: any, subIndex: any) => {
             const subId = sub?.id ?? `sub_${Date.now()}_${subIndex}`;
             const subName = sub?.name ?? '';
             const subExpr = sub?.expression ?? '';
@@ -75,7 +75,7 @@ const expressionCache = new Map();
  * @param {string} expr Trimmed boolean expression string
  * @returns {Function}
  */
-function getCompiledExpression(expr) {
+function getCompiledExpression(expr: any) {
     let fn = expressionCache.get(expr);
     if (!fn) {
         fn = new Function(
@@ -93,7 +93,7 @@ function getCompiledExpression(expr) {
  * @param {string} expression JS boolean expression
  * @returns {{ valid: boolean, error: string|null }} Validation result
  */
-export function validateExpression(expression) {
+export function validateExpression(expression: any) {
     const expr = typeof expression === 'string' ? expression.trim() : '';
     if (!expr) {
         return { valid: false, error: 'Expression cannot be empty.' };

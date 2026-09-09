@@ -113,7 +113,7 @@ export class HUDTab {
      * @param {HUDTab} root 
      * @private
      */
-    _setRootParent(root) {
+    _setRootParent(root: any) {
         this.rootParent = root;
         if (this.subTabs.length > 0) {
             for (const child of this.subTabs) {
@@ -127,14 +127,14 @@ export class HUDTab {
      * Automatically derived from parent hierarchy if part of a tab tree.
      * @type {number}
      */
-    get level() {
+    get level(): number {
         if (this.parent) {
             return this.parent.level + 1;
         }
         return this._level;
     }
 
-    set level(val) {
+    set level(val: number) {
         this._level = val;
     }
 
@@ -152,7 +152,7 @@ export class HUDTab {
      * @param {Object|HUDTab} subTabConfig Sub-tab configuration or instance
      * @returns {HUDTab} The created or added child HUDTab instance
      */
-    addSubTab(subTabConfig) {
+    addSubTab(subTabConfig: any) {
         const subTab = subTabConfig instanceof HUDTab 
             ? subTabConfig 
             : new HUDTab(subTabConfig);
@@ -173,7 +173,7 @@ export class HUDTab {
      * Update and re-order child sub-tabs using an array of ordered sub-tab IDs.
      * @param {string[]} orderArray Array of sub-tab IDs in the desired display order
      */
-    updateOrder(orderArray) {
+    updateOrder(orderArray: any) {
         if (!Array.isArray(orderArray) || this.subTabs.length === 0) return;
         const orderMap = new Map(orderArray.map((id, index) => [id, index]));
         this.subTabs.sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999));
@@ -184,10 +184,10 @@ export class HUDTab {
      * @param {string} subId 
      * @returns {HUDTab|undefined}
      */
-    getSubTab(subId) {
+    getSubTab(subId: any): any {
         for (const st of this.subTabs) {
             if (st.id === subId) return st;
-            const found = st.getSubTab(subId);
+            const found: any = st.getSubTab(subId);
             if (found) return found;
         }
         return undefined;
@@ -214,7 +214,7 @@ export class HUDTab {
      * @param {Object} groups Tab groups dictionary
      * @param {Event} [event] 
      */
-    onLeftClick(app, tabColumn, groups, event) {
+    onLeftClick(app: any, tabColumn: any, groups: any, event: any) {
         if (this.customOnLeftClick) {
             const handled = this.customOnLeftClick(app, tabColumn, groups, event);
             if (handled) return;
@@ -244,7 +244,7 @@ export class HUDTab {
      * @param {Object} groups Tab groups dictionary
      * @param {Event} [event] 
      */
-    onRightClick(app, tabColumn, groups, event) {
+    onRightClick(app: any, tabColumn: any, groups: any, event: any) {
         if (this.customOnRightClick) {
             const handled = this.customOnRightClick(app, tabColumn, groups, event);
             if (handled) return;

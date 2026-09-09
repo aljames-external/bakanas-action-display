@@ -54,7 +54,7 @@ export class BaseSystemAdapter {
      * @param {string} b Target version string to compare against
      * @returns {boolean}
      */
-    isNewerVersion(a, b) {
+    isNewerVersion(a: any, b: any) {
         return this.foundry.isNewerVersion(a, b);
     }
 
@@ -64,7 +64,7 @@ export class BaseSystemAdapter {
      * @param {Object} [options={}] Enrichment options
      * @returns {Promise<string>}
      */
-    async enrichHTML(content, options = {}) {
+    async enrichHTML(content: any, options = {}) {
         return this.foundry.enrichHTML(content, options);
     }
 
@@ -74,7 +74,7 @@ export class BaseSystemAdapter {
      * @param {Object} [options={}] Resolution options
      * @returns {Document|null}
      */
-    fromUuidSync(uuid, options = {}) {
+    fromUuidSync(uuid: any, options = {}) {
         return this.foundry.fromUuidSync(uuid, options);
     }
 
@@ -84,7 +84,7 @@ export class BaseSystemAdapter {
      * @param {Object} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    async fromUuid(uuid, options = {}) {
+    async fromUuid(uuid: any, options = {}) {
         return this.foundry.fromUuid(uuid, options);
     }
 
@@ -95,7 +95,7 @@ export class BaseSystemAdapter {
      * @param {Object} [options={}] Merge options
      * @returns {Object}
      */
-    mergeObject(original, other = {}, options = {}) {
+    mergeObject(original: any, other = {}, options = {}) {
         return this.foundry.mergeObject(original, other, options);
     }
 
@@ -104,7 +104,7 @@ export class BaseSystemAdapter {
      * @param {Object} obj Target object
      * @returns {Object}
      */
-    duplicate(obj) {
+    duplicate(obj: any) {
         return this.foundry.duplicate(obj);
     }
 
@@ -114,7 +114,7 @@ export class BaseSystemAdapter {
      * @param {string} path Dot path
      * @returns {*}
      */
-    getProperty(obj, path) {
+    getProperty(obj: any, path: any) {
         return this.foundry.getProperty(obj, path);
     }
 
@@ -125,15 +125,15 @@ export class BaseSystemAdapter {
      * @param {*} value Property value
      * @returns {boolean}
      */
-    setProperty(obj, path, value) {
+    setProperty(obj: any, path: any, value: any) {
         return this.foundry.setProperty(obj, path, value);
     }
 
-    getContextMenuItems(app) {
+    getContextMenuItems(app: any) {
         return this.contextMenuManager.getContextMenuItems(app);
     }
 
-    onTabRightClick(app, el, event) {
+    onTabRightClick(app: any, el: any, event: any) {
         return this.contextMenuManager.onTabRightClick(app, el, event);
     }
 
@@ -146,13 +146,13 @@ export class BaseSystemAdapter {
      * @returns {Event|object} A proxy event or empty object
      * @protected
      */
-    _createRollEvent(event) {
+    _createRollEvent(event: any) {
         if (!event) return {};
 
         return new Proxy(event, {
             get: (target, prop) => {
                 if (prop in MODIFIER_KEY_MAP) {
-                    return Boolean(event[prop] || game.keyboard?.isModifierActive(MODIFIER_KEY_MAP[prop]));
+                    return Boolean((event as any)[prop] || game.keyboard?.isModifierActive((MODIFIER_KEY_MAP as Record<string, any>)[prop as string]));
                 }
                 const val = Reflect.get(target, prop);
                 return typeof val === 'function' ? val.bind(target) : val;
@@ -170,7 +170,7 @@ export class BaseSystemAdapter {
      * @param {Item} item The Foundry Item instance
      * @returns {boolean} True if the item should be extracted
      */
-    shouldExtractItem(item) {
+    shouldExtractItem(item: any) {
         return true;
     }
 
@@ -180,7 +180,7 @@ export class BaseSystemAdapter {
      * @returns {boolean} True if available uses is 0 or less
      * @protected
      */
-    _isResourceDepleted(action) {
+    _isResourceDepleted(action: any) {
         return this.filterManager.isResourceDepleted(action);
     }
 
@@ -190,12 +190,12 @@ export class BaseSystemAdapter {
      * @param {Actor} actor The actor these actions belong to
      * @returns {Object[]} The modified/filtered/sorted actions list
      */
-    async modifyActions(actions, actor) {
+    async modifyActions(actions: any, actor: any) {
         if (Boolean(game?.settings?.get(MODULE_ID, 'showDepleted'))) return actions;
 
         log.group(`BaseSystemAdapter.modifyActions | Filtering depleted actions for "${actor?.name ?? 'Actor'}"`, 'debug');
         try {
-            return actions.filter(action => {
+            return actions.filter((action: any) => {
                 // Never hide weapons, even if they are out of ammo or charges
                 if (action.originalItem?.type === 'weapon') return true;
                 if (this._isResourceDepleted(action)) {
@@ -248,7 +248,7 @@ export class BaseSystemAdapter {
      * @param {Actor} actor Target actor document
      * @returns {{ supported: boolean, value: boolean }}
      */
-    getInspiration(actor) {
+    getInspiration(actor: any) {
         return { supported: false, value: false };
     }
 
@@ -259,7 +259,7 @@ export class BaseSystemAdapter {
      * @param {boolean} [force] Optional explicit state to set
      * @returns {Promise<boolean>} Resulting inspiration state
      */
-    async toggleInspiration(actor, force) {
+    async toggleInspiration(actor: any, force: any) {
         return false;
     }
 
@@ -278,7 +278,7 @@ export class BaseSystemAdapter {
      * Open the sheet or edit dialog for an action or its underlying item/activity.
      * @param {Object} action The Action instance to edit
      */
-    openEditSheet(action) {
+    openEditSheet(action: any) {
         const entity = action?.originalActivity ?? action?.originalItem;
         if (entity?.sheet?.render) {
             entity.sheet.render(true);
@@ -312,7 +312,7 @@ export class BaseSystemAdapter {
      * Apply a flat layout template to the HUD context.
      * @param {Object} context The Handlebars render context
      */
-    formatFlatLayout(context) {
+    formatFlatLayout(context: any) {
         context.layout = 'flat';
     }
 
@@ -328,7 +328,7 @@ export class BaseSystemAdapter {
      * @param {Token} [options.token] Token document
      * @param {User} [options.user] User document
      */
-    formatCategorizedLayout(context, { categories = null, catchAllLabel = null, actor = null, token = null, user = null } = {}) {
+    formatCategorizedLayout(context: any, { categories = null, catchAllLabel = null, actor = null, token = null, user = null } = {}) {
         context.layout = 'categorized';
         const rawCats = categories ?? this.getDefaultCategories();
         const cats = (rawCats ?? []).map(cat => (categories ? cat : { ...cat, subcategories: [] }));
@@ -348,7 +348,7 @@ export class BaseSystemAdapter {
      * @param {Actor} [actor]
      * @param {Token} [token]
      */
-    async formatTokenInfoLayout(context, actor = null, token = null) {
+    async formatTokenInfoLayout(context: any, actor = null, token = null) {
         context.layout = 'tokenInfo';
         context.isCategorized = false;
         context.itemTypes = [];
@@ -371,11 +371,11 @@ export class BaseSystemAdapter {
      * @param {Object} filterContext Current HUD filter context { left, right, filterNoResources }
      * @returns {boolean} True if the action matches current filter selection
      */
-    matchesEconomyTabs(action, filterContext) {
+    matchesEconomyTabs(action: any, filterContext: any) {
         return this.filterManager.matchesEconomyTabs(action, filterContext);
     }
 
-    getActiveExclusionSubs(filterContext) {
+    getActiveExclusionSubs(filterContext: any) {
         return this.filterManager.getActiveExclusionSubs(filterContext);
     }
 
@@ -383,19 +383,19 @@ export class BaseSystemAdapter {
         return this.filterManager.filterSubactions(subactions, filterContext, itemLeft);
     }
 
-    getTabCombinator(parentId) {
+    getTabCombinator(parentId: any) {
         return this.filterManager.getTabCombinator(parentId);
     }
 
-    isExclusionTab(parentId) {
+    isExclusionTab(parentId: any) {
         return this.filterManager.isExclusionTab(parentId);
     }
 
-    getExclusionSubTabs(parentId) {
+    getExclusionSubTabs(parentId: any) {
         return this.filterManager.getExclusionSubTabs(parentId);
     }
 
-    isIntersectionTab(parentId) {
+    isIntersectionTab(parentId: any) {
         return this.filterManager.isIntersectionTab(parentId);
     }
 
@@ -410,7 +410,7 @@ export class BaseSystemAdapter {
      * @param {ActionDisplayApp} app The UI application instance
      * @returns {Promise<Object>|Object} The modified context
      */
-    modifyContext(context, app) {
+    modifyContext(context: any, app: any) {
         const activePage = Number(app?.activePage ?? 1);
         const pageConfig = this.getPageConfig(activePage, app?.actor);
 
@@ -429,43 +429,43 @@ export class BaseSystemAdapter {
         return this.contextModifier.modifyContext(context, app) ?? context;
     }
 
-    getItemTypeSortOrder(parentId) {
+    getItemTypeSortOrder(parentId: any) {
         return this.contextModifier.getItemTypeSortOrder(parentId);
     }
 
-    getItemSubTabSortOrder(parentId, subId) {
+    getItemSubTabSortOrder(parentId: any, subId: any) {
         return this.contextModifier.getItemSubTabSortOrder(parentId, subId);
     }
 
-    getActionTypeSortOrder(parentId) {
+    getActionTypeSortOrder(parentId: any) {
         return this.contextModifier.getActionTypeSortOrder(parentId);
     }
 
-    getActionSubTabSortOrder(parentId, subId) {
+    getActionSubTabSortOrder(parentId: any, subId: any) {
         return this.contextModifier.getActionSubTabSortOrder(parentId, subId);
     }
 
-    getItemTypeLabel(parentId) {
+    getItemTypeLabel(parentId: any) {
         return this.contextModifier.getItemTypeLabel(parentId);
     }
 
-    getItemTypeIcon(parentId) {
+    getItemTypeIcon(parentId: any) {
         return this.contextModifier.getItemTypeIcon(parentId);
     }
 
-    getItemSubTabLabel(parentId, subId) {
+    getItemSubTabLabel(parentId: any, subId: any) {
         return this.contextModifier.getItemSubTabLabel(parentId, subId);
     }
 
-    getActionTypeLabel(parentId) {
+    getActionTypeLabel(parentId: any) {
         return this.contextModifier.getActionTypeLabel(parentId);
     }
 
-    getActionTypeIcon(parentId) {
+    getActionTypeIcon(parentId: any) {
         return this.contextModifier.getActionTypeIcon(parentId);
     }
 
-    getActionSubTabLabel(subId) {
+    getActionSubTabLabel(subId: any) {
         return this.contextModifier.getActionSubTabLabel(subId);
     }
 
@@ -483,7 +483,7 @@ export class BaseSystemAdapter {
      * @param {Actor} actor
      * @param {HUDTabColumn} [tabColumn]
      */
-    updateTabs(actor, tabColumn = null) {
+    updateTabs(actor: any, tabColumn = null) {
         // NOP for base system adapter
     }
 
@@ -495,7 +495,7 @@ export class BaseSystemAdapter {
      * @param {string} subId
      * @param {boolean} isActive
      */
-    recordManualTabToggle(actor, parentId, subId, isActive) {
+    recordManualTabToggle(actor: any, parentId: any, subId: any, isActive: any) {
         // NOP for base system adapter
     }
 
@@ -562,7 +562,7 @@ export class BaseSystemAdapter {
      * @param {Record<string, any>} [userColors={}] User configured color overrides
      * @returns {{ type: string, label: string, active: boolean, color: string|null }[]}
      */
-    extractEconomyIndicators(action, userColors = {}) {
+    extractEconomyIndicators(action: any, userColors = {}) {
         if (!action) return [];
 
         const systemTypes = this.getEconomyTypes() ?? [];
@@ -572,14 +572,14 @@ export class BaseSystemAdapter {
         const activeTypes = new Set();
         if (action.subactions?.length) {
             for (const sub of action.subactions) {
-                const econRef = sub.right?.find(r => r?.root === 'economy');
+                const econRef = sub.right?.find((r: any) => r?.root === 'economy');
                 const subType = econRef?.label;
                 if (subType && !EXCLUDED_ECONOMY_LABELS.has(subType)) {
                     activeTypes.add(subType);
                 }
             }
         } else if (action.right?.length) {
-            const econRef = action.right.find(r => r?.root === 'economy');
+            const econRef = action.right.find((r: any) => r?.root === 'economy');
             const subType = econRef?.label;
             if (subType && !EXCLUDED_ECONOMY_LABELS.has(subType)) {
                 activeTypes.add(subType);
@@ -621,7 +621,7 @@ export class BaseSystemAdapter {
      * @param {string|null} [color=null] Active bar color
      * @returns {string} HTML string for the tooltip
      */
-    formatEconomyTooltip(sysType, color = null) {
+    formatEconomyTooltip(sysType: any, color = null) {
         const econColor = color ?? sysType?.defaultColor ?? '#64748b';
         const label = sysType?.label ?? sysType?.id ?? '';
         return `<div class="bad-economy-tooltip"><div class="bad-economy-tooltip-header"><span class="bad-economy-tooltip-bar" style="background-color: ${econColor}; box-shadow: 0 0 6px ${econColor};"></span><span class="bad-economy-tooltip-label">${label}</span></div></div>`;
@@ -679,7 +679,7 @@ export class BaseSystemAdapter {
      * @param {Item} item Item document
      * @returns {boolean} True if the item is favorited
      */
-    isFavorite(actor, item) {
+    isFavorite(actor: any, item: any) {
         return false;
     }
 
@@ -691,7 +691,7 @@ export class BaseSystemAdapter {
      * @param {boolean} favorite True to favorite, false to unfavorite
      * @returns {Promise<any>|null} Result of update or null if unsupported
      */
-    async setFavorite(actor, item, favorite) {
+    async setFavorite(actor: any, item: any, favorite: any) {
         return null;
     }
 
@@ -768,7 +768,7 @@ export class BaseSystemAdapter {
      * @param {string} [customLabel]
      * @returns {Promise<string>}
      */
-    async enrichCondition(condId, customLabel = null) {
+    async enrichCondition(condId: any, customLabel = null) {
         return '';
     }
 
@@ -779,7 +779,7 @@ export class BaseSystemAdapter {
      * @param {Array<Object|string>|Record<string, Array<Object|string>>} reasons
      * @returns {Promise<string>}
      */
-    async formatAutoBanTooltip(comp, reasons) {
+    async formatAutoBanTooltip(comp: any, reasons: any) {
         return '';
     }
 

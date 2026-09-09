@@ -47,7 +47,7 @@ export class ModuleIntegrationsConfigApp extends adapter.foundry.HandlebarsAppli
     }
 
     /** @override */
-    async _prepareContext(options) {
+    async _prepareContext(options: any) {
         const context = await super._prepareContext(options);
         const isMidiActive = Boolean(game.modules?.get('midi-qol')?.active);
 
@@ -67,7 +67,7 @@ export class ModuleIntegrationsConfigApp extends adapter.foundry.HandlebarsAppli
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    async _onSaveConfig(event, target) {
+    async _onSaveConfig(event: any, target: any) {
         event.preventDefault();
 
         const form = this.element?.querySelector('form') ?? this.element;
@@ -92,7 +92,7 @@ export class ModuleIntegrationsConfigApp extends adapter.foundry.HandlebarsAppli
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onCloseConfig(event, target) {
+    _onCloseConfig(event: any, target: any) {
         event.preventDefault();
         this.close();
     }

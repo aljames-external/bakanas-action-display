@@ -6,7 +6,7 @@ import { positionFloatingMenu } from './menu-utils.js';
 export const dropdownSubactionMap = new WeakMap();
 const attachedDropdownItems = new WeakSet();
 
-const sortByName = (a, b) => (a.name ?? '').localeCompare(b.name ?? '');
+const sortByName = (a: any, b: any) => (a.name ?? '').localeCompare(b.name ?? '');
 
 /**
  * Open a context submenu for an individual subaction/activity item (e.g. right-clicking an activity in the dropdown).
@@ -35,7 +35,7 @@ export function openActivitySubContextMenu(app: any, targetLi: any, subaction: a
     const subMenu = new ContextMenuClass(targetBody, ".context-item", menuItems, {
         jQuery: false
     });
-    subMenu?.render?.(targetLi)?.catch?.(err => log.error("SubContextMenu render error:", err));
+    subMenu?.render?.(targetLi)?.catch?.((err: any) => log.error("SubContextMenu render error:", err));
 }
 
 /**
@@ -110,15 +110,15 @@ export function buildSubactionMenuItem(sub: any, event: any, app: any = null) {
  * @param {Event} event Triggering click event
  * @param {Object} [parentAction=null] Optional parent action card object
  */
-export function showActivityDropdown(app, target, subactions, event, parentAction = null) {
+export function showActivityDropdown(app: any, target: any, subactions: any, event: any, parentAction = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
     app?._hideItemSummaryTooltip?.();
 
-    const action = parentAction ?? (app?.displayedActions ?? app?.actions)?.find?.(a => a.id === target?.dataset?.actionId);
+    const action = parentAction ?? (app?.displayedActions ?? app?.actions)?.find?.((a: any) => a.id === target?.dataset?.actionId);
     if (action?.subactions?.length && action.subactions.length > (subactions?.length ?? 0)) {
-        const qualifyingIds = new Set((subactions ?? []).map(s => s.id));
-        const filteredSubs = action.subactions.filter(sub => !qualifyingIds.has(sub.id));
+        const qualifyingIds = new Set((subactions ?? []).map((s: any) => s.id));
+        const filteredSubs = action.subactions.filter((sub: any) => !qualifyingIds.has(sub.id));
         if (filteredSubs.length > 0) {
             log.group(`showActivityDropdown | Activities filtered from dropdown context menu on "${action.name ?? 'Action'}" (${action.id})`, 'debug');
             try {
@@ -138,7 +138,7 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
         const prevLeftMenu = app._activeLeftClickMenu;
         app._activeLeftClickMenu = null;
         try {
-            prevLeftMenu.close()?.catch?.(err => {
+            prevLeftMenu.close()?.catch?.((err: any) => {
                 log.debug("LeftClickMenu.close promise rejected:", err);
             });
         } catch (err) {
@@ -150,7 +150,7 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
         const prevContextTarget = app._activeContextMenuTarget;
         app._activeContextMenuTarget = null;
         try {
-            app._contextMenu.close()?.catch?.(err => {
+            app._contextMenu.close()?.catch?.((err: any) => {
                 log.debug("ContextMenu.close promise rejected:", err);
             });
         } catch (err) {
@@ -165,10 +165,10 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
     const ContextMenuClass = adapter.foundry.ContextMenu;
     const targetBody = app?.element?.ownerDocument?.body ?? document.body;
 
-    const formatMenuItems = (menuEl) => {
+    const formatMenuItems = (menuEl: any) => {
         if (!menuEl) return;
         const lis = menuEl.querySelectorAll('.context-item');
-        lis.forEach((li, idx) => {
+        lis.forEach((li: any, idx: any) => {
             const sub = sortedSubactions[idx];
             const itemData = menuItems[idx];
             if (sub) {
@@ -193,7 +193,7 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
                         }
                     });
 
-                    li.addEventListener('pointerout', (ev) => {
+                    li.addEventListener('pointerout', (ev: any) => {
                         const related = ev.relatedTarget?.closest?.('.context-item');
                         if (related !== li && app._hoveredActionItem === li) {
                             app._hoveredActionItem = null;
@@ -201,7 +201,7 @@ export function showActivityDropdown(app, target, subactions, event, parentActio
                         }
                     });
 
-                    li.addEventListener('contextmenu', (ev) => {
+                    li.addEventListener('contextmenu', (ev: any) => {
                         ev.preventDefault();
                         ev.stopPropagation();
                         ev.stopImmediatePropagation();

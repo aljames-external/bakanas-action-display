@@ -37,7 +37,7 @@ export function format(key: string, data: Record<string, any> = {}, fallback?: s
         str = defaultStr;
     }
     if (data && typeof data === 'object' && str) {
-        return str.replace(/\{(\w+)\}/g, (match, p1) => data[p1] ?? match);
+        return str.replace(/\{(\w+)\}/g, (match: any, p1: any) => data[p1] ?? match);
     }
     return str;
 }

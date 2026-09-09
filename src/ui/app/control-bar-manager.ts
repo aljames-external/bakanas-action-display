@@ -34,7 +34,7 @@ export class ControlBarManager {
      * @param {boolean} isAttached Whether HUD is currently attached to token
      * @returns {ControlBarModel}
      */
-    static prepareControlButtons(context, isAttached) {
+    static prepareControlButtons(context: any, isAttached: any) {
         const showTooltips = Boolean(context.showTooltips);
         const showDepleted = Boolean(context.showDepleted);
         const autoTrackCombat = Boolean(context.autoTrackCombat);
@@ -153,7 +153,7 @@ export class ControlBarManager {
      * @param {Event} event The triggering contextmenu event
      * @returns {Promise<boolean>} True if event was handled
      */
-    static async dispatchContextAction(app, event) {
+    static async dispatchContextAction(app: any, event: any) {
         const contextTarget = event?.target?.closest?.('[data-context-action]');
         if (contextTarget) {
             event.preventDefault?.();

@@ -23,21 +23,21 @@ const SPELL_COMPONENTS = deepFreeze(['vocal', 'somatic', 'material']);
  * @param {string} component Component identifier
  * @returns {boolean}
  */
-function docHasComponent(doc, component) {
+function docHasComponent(doc: any, component: any) {
     if (!doc) return false;
-    const names = COMPONENT_NAMES[component] ?? [component];
-    const shortKey = COMPONENT_SHORT_KEYS[component];
+    const names = (COMPONENT_NAMES as Record<string, string[]>)[component] ?? [component];
+    const shortKey = (COMPONENT_SHORT_KEYS as Record<string, string>)[component];
 
     // 1. Check system.properties (Set of full spell property names: 'vocal', 'somatic', 'material')
     const props = doc.system?.properties ?? doc.spell?.system?.properties ?? doc.properties;
     if (props) {
-        if (names.some(name => props.has?.(name) || props.includes?.(name))) return true;
+        if (names.some((name: any) => props.has?.(name) || props.includes?.(name))) return true;
     }
 
     // 2. Check system.components (Boolean map: { vocal: true, v: true, material: true, m: true })
     const comps = doc.system?.components ?? doc.spell?.system?.components ?? doc.components;
     if (comps) {
-        if (names.some(name => Boolean(comps[name])) || Boolean(shortKey && comps[shortKey])) return true;
+        if (names.some((name: any) => Boolean(comps[name])) || Boolean(shortKey && comps[shortKey])) return true;
     }
 
     return false;
@@ -51,7 +51,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
     /**
      * @param {Dnd5eSystemAdapter} adapter Owning D&D 5e adapter instance
      */
-    constructor(adapter) {
+    constructor(adapter: any) {
         super(adapter);
     }
 
@@ -62,7 +62,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @param {string} component Component identifier ('vocal'|'somatic'|'material')
      * @returns {boolean}
      */
-    requiresComponent(sub, component) {
+    requiresComponent(sub: any, component: any) {
         if (!sub) return false;
 
         // 1. Direct spell document check (item or subaction of type 'spell')
@@ -100,7 +100,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @param {Object} doc Document or activity
      * @returns {TabRef[]}
      */
-    getComponentTabs(doc) {
+    getComponentTabs(doc: any) {
         return SPELL_COMPONENTS
             .filter(comp => this.requiresComponent(doc, comp))
             .map(comp => TabRef.from('components', comp));
@@ -111,7 +111,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @param {string} parentId Parent tab ID
      * @returns {'union'|'intersection'|'difference'}
      */
-    getTabCombinator(parentId) {
+    getTabCombinator(parentId: any) {
         return parentId === 'components' ? 'difference' : super.getTabCombinator(parentId);
     }
 
@@ -120,7 +120,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @param {string} parentId Parent tab ID
      * @returns {string[]}
      */
-    getExclusionSubTabs(parentId) {
+    getExclusionSubTabs(parentId: any) {
         return parentId === 'components' ? [...SPELL_COMPONENTS] : super.getExclusionSubTabs(parentId);
     }
 
@@ -130,7 +130,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @returns {string}
      * @private
      */
-    #formatReasonsText(reasons) {
+    #formatReasonsText(reasons: any) {
         if (!Array.isArray(reasons)) return '';
         return reasons.map(r => {
             if (!r) return '';
@@ -149,7 +149,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @param {Object} filterContext Active filter state
      * @returns {boolean}
      */
-    matchesEconomyTabs(action, filterContext) {
+    matchesEconomyTabs(action: any, filterContext: any) {
         if (!action) return false;
         const activeCompSubs = this.getActiveExclusionSubs(filterContext);
 
@@ -161,7 +161,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
 
             // If action has no subactions, evaluate direct component bans on action
             if (!action.subactions?.length) {
-                const matchedBannedComp = activeCompSubs.find(comp => this.requiresComponent(action, comp) || action.right?.some(tab => tab.root === 'components' && tab.label === comp));
+                const matchedBannedComp = activeCompSubs.find(comp => this.requiresComponent(action, comp) || action.right?.some((tab: any) => tab.root === 'components' && tab.label === comp));
                 if (matchedBannedComp) {
                     const reasons = effectReasons[matchedBannedComp] ?? [];
                     const reasonsText = this.#formatReasonsText(reasons);
@@ -181,7 +181,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @param {Object} filterContext Active filter state
      * @returns {Object[]} Qualifying subactions
      */
-    filterSubactions(subactions, filterContext) {
+    filterSubactions(subactions: any, filterContext: any) {
         const baseFiltered = super.filterSubactions(subactions, { ...filterContext, _inFilterSubactions: true });
         const activeCompSubs = this.getActiveExclusionSubs(filterContext);
 
@@ -194,8 +194,8 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
 
         log.debug(`Dnd5eSystemTabFilterManager.filterSubactions | Current ban lists: [${activeCompSubs.join(', ')}] | Effect causing reasons:`, effectReasons);
 
-        return baseFiltered.filter(sub => {
-            const matchedBannedComp = activeCompSubs.find(comp => this.requiresComponent(sub, comp) || sub.right?.some(tab => tab.root === 'components' && tab.label === comp));
+        return baseFiltered.filter((sub: any) => {
+            const matchedBannedComp = activeCompSubs.find(comp => this.requiresComponent(sub, comp) || sub.right?.some((tab: any) => tab.root === 'components' && tab.label === comp));
             if (matchedBannedComp) {
                 const reasons = effectReasons[matchedBannedComp] ?? [];
                 const reasonsText = this.#formatReasonsText(reasons);

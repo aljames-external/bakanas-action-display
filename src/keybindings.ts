@@ -5,15 +5,15 @@ import { syncActorFavorites } from './favorites/favorites-manager.js';
 import { adapter } from './adapters/index.js';
 import { log } from './lib/logger.js';
 
-let lastSelectedTokenRef = null;
-let lastSelectedTokenId = null;
+let lastSelectedTokenRef: any = null;
+let lastSelectedTokenId: string | null = null;
 
 /**
  * Determine if the user owns a valid token document or actor.
  * @param {Token|null} token
  * @returns {boolean}
  */
-export function isTokenOwned(token) {
+export function isTokenOwned(token: any) {
     if (!token || token.destroyed) return false;
     return Boolean(token.document?.isOwner || token.actor?.isOwner);
 }
@@ -22,7 +22,7 @@ export function isTokenOwned(token) {
  * Record a token as the last selected / interacted token.
  * @param {Token|null} token
  */
-export function setLastSelectedToken(token) {
+export function setLastSelectedToken(token: any) {
     if (isTokenOwned(token)) {
         lastSelectedTokenRef = token;
         lastSelectedTokenId = token.id;

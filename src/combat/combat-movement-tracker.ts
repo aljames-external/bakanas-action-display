@@ -72,7 +72,7 @@ export class CombatMovementTracker {
      * @param {Object} changes Document change delta
      * @param {Object} [options={}] Operation options
      */
-    static recordTokenMovement(tokenDoc, changes, options = {}) {
+    static recordTokenMovement(tokenDoc: any, changes: any, options = {}) {
         if (!tokenDoc) return;
         const combat = game.combat;
         if (!combat || !combat.started) return;
@@ -196,7 +196,7 @@ export class CombatMovementTracker {
      * @param {string} tokenId
      * @param {number} distance
      */
-    static setMovedDistance(tokenId, distance) {
+    static setMovedDistance(tokenId: any, distance: any) {
         if (!tokenId) return;
         this.#movedDistances.set(tokenId, distance);
     }

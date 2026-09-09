@@ -28,7 +28,7 @@ export class BaseSystemContextMenuManager {
      * @param {*} value Flag value
      * @returns {Promise<Actor>|undefined} Persistence promise
      */
-    setActorFlagOptimistic(actor, scope, key, value) {
+    setActorFlagOptimistic(actor: any, scope: any, key: any, value: any) {
         if (!actor) return;
         actor.flags ??= {};
         actor.flags[scope] ??= {};
@@ -43,7 +43,7 @@ export class BaseSystemContextMenuManager {
      * @param {Object.<string, *>} flags Map of flag keys to values
      * @returns {Promise<Actor|Actor[]>|undefined} Persistence promise
      */
-    updateActorFlagsOptimistic(actor, scope, flags) {
+    updateActorFlagsOptimistic(actor: any, scope: any, flags: any) {
         if (!actor) return;
         actor.flags ??= {};
         actor.flags[scope] ??= {};
@@ -51,7 +51,7 @@ export class BaseSystemContextMenuManager {
             actor.flags[scope][key] = value;
         }
         if (actor.update) {
-            const updates = {};
+            const updates: Record<string, any> = {};
             for (const [key, value] of Object.entries(flags)) {
                 updates[`flags.${scope}.${key}`] = value;
             }
@@ -72,7 +72,7 @@ export class BaseSystemContextMenuManager {
      * @param {string[]} allFilterFlags Array of all flag keys toggled by 'all' tab
      * @returns {boolean} True if handled
      */
-    handleFilterTabRightClick(app, el, flagMap, allFilterFlags) {
+    handleFilterTabRightClick(app: any, el: any, flagMap: any, allFilterFlags: any) {
         if (!app.actor?.isOwner || !el) return false;
 
         const isParentTab = Boolean(el.classList?.contains?.('bad-left-tab'));
@@ -88,7 +88,7 @@ export class BaseSystemContextMenuManager {
         if (parentType === 'all') {
             const current = Boolean(app.actor.getFlag(MODULE_ID, 'showAll'));
             const nextState = !current;
-            const flagUpdates = {};
+            const flagUpdates: Record<string, boolean> = {};
             for (const key of allFilterFlags) {
                 flagUpdates[key] = nextState;
             }
@@ -113,7 +113,7 @@ export class BaseSystemContextMenuManager {
      * @param {Event} event The trigger event
      * @returns {boolean} True if handled by the system context manager
      */
-    onTabRightClick(app, el, event) {
+    onTabRightClick(app: any, el: any, event: any) {
         return false;
     }
 
@@ -123,10 +123,10 @@ export class BaseSystemContextMenuManager {
      * @param {HTMLElement} el The clicked context menu target element
      * @returns {Object|null} The resolved Item document
      */
-    getContextItem(app, el) {
+    getContextItem(app: any, el: any) {
         const actionId = el?.dataset?.actionId;
         if (!actionId) return null;
-        const action = app.actions?.find(a => a.id === actionId);
+        const action = app.actions?.find((a: any) => a.id === actionId);
         return action?.originalItem ?? null;
     }
 }

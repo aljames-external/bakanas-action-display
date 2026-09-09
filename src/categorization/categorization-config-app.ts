@@ -60,7 +60,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
     }
 
     /** @override */
-    async _prepareContext(options) {
+    async _prepareContext(options: any) {
         const context = await super._prepareContext(options);
         context.config = this.config;
         context.helpTooltip = this._getExpressionHelpTooltip();
@@ -73,12 +73,12 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @returns {string} HTML string for the tooltip
      */
     _getExpressionHelpTooltip() {
-        const format = (key, data, fallback = '') => {
+        const format = (key: any, data: any, fallback = '') => {
             let str = localize(key, fallback);
             if (!str || str === key) {
                 str = fallback;
             }
-            return str.replace(/\{(\w+)\}/g, (match, p1) => data[p1] ?? match);
+            return str.replace(/\{(\w+)\}/g, (match: any, p1: any) => data[p1] ?? match);
         };
 
         const trueCode = '<code>true</code>';
@@ -100,7 +100,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
     }
 
     /** @override */
-    _onRender(context, options) {
+    _onRender(context: any, options: any) {
         super._onRender(context, options);
         this._attachDragListeners();
         this._attachInputListeners();
@@ -137,7 +137,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
         if (!this.element) return;
 
         const inputs = this.element.querySelectorAll('input[type="text"]');
-        inputs.forEach(input => {
+        inputs.forEach((input: any) => {
             input.addEventListener('input', () => {
                 this._syncFormData();
             });
@@ -152,7 +152,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
 
         // Category drag handles & cards
         const catCards = this.element.querySelectorAll('.bad-config-cat-card');
-        catCards.forEach(card => {
+        catCards.forEach((card: any) => {
             const catIndex = Number(card.dataset.catIndex);
             const handle = card.querySelector('.bad-config-drag-handle[data-drag-type="category"]');
 
@@ -162,7 +162,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
                 });
             }
 
-            card.addEventListener('dragstart', (e) => {
+            card.addEventListener('dragstart', (e: any) => {
                 this._syncFormData();
                 this._dragState = { type: 'category', fromIndex: catIndex };
                 e.dataTransfer.effectAllowed = 'move';
@@ -177,7 +177,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
                 this._dragState = null;
             });
 
-            card.addEventListener('dragover', (e) => {
+            card.addEventListener('dragover', (e: any) => {
                 if (this._dragState?.type === 'category') {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
@@ -189,7 +189,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
                 card.classList.remove('drag-over');
             });
 
-            card.addEventListener('drop', (e) => {
+            card.addEventListener('drop', (e: any) => {
                 if (this._dragState?.type === 'category') {
                     e.preventDefault();
                     card.classList.remove('drag-over');
@@ -207,7 +207,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
 
         // Subcategory drag handles & rows
         const subRows = this.element.querySelectorAll('.bad-config-sub-row');
-        subRows.forEach(row => {
+        subRows.forEach((row: any) => {
             const catIndex = Number(row.dataset.catIndex);
             const subIndex = Number(row.dataset.subIndex);
             const handle = row.querySelector('.bad-config-drag-handle[data-drag-type="subcategory"]');
@@ -218,7 +218,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
                 });
             }
 
-            row.addEventListener('dragstart', (e) => {
+            row.addEventListener('dragstart', (e: any) => {
                 e.stopPropagation();
                 this._syncFormData();
                 this._dragState = { type: 'subcategory', catIndex, fromIndex: subIndex };
@@ -227,7 +227,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
                 row.classList.add('dragging');
             });
 
-            row.addEventListener('dragend', (e) => {
+            row.addEventListener('dragend', (e: any) => {
                 e.stopPropagation();
                 row.setAttribute('draggable', 'false');
                 row.classList.remove('dragging');
@@ -235,7 +235,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
                 this._dragState = null;
             });
 
-            row.addEventListener('dragover', (e) => {
+            row.addEventListener('dragover', (e: any) => {
                 if (this._dragState?.type === 'subcategory' && this._dragState.catIndex === catIndex) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -244,12 +244,12 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
                 }
             });
 
-            row.addEventListener('dragleave', (e) => {
+            row.addEventListener('dragleave', (e: any) => {
                 e.stopPropagation();
                 row.classList.remove('drag-over');
             });
 
-            row.addEventListener('drop', (e) => {
+            row.addEventListener('drop', (e: any) => {
                 if (this._dragState?.type === 'subcategory' && this._dragState.catIndex === catIndex) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -273,7 +273,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      */
     _clearDragHighlights() {
         if (!this.element) return;
-        this.element.querySelectorAll('.drag-over, .dragging').forEach(el => {
+        this.element.querySelectorAll('.drag-over, .dragging').forEach((el: any) => {
             el.classList.remove('drag-over', 'dragging');
             el.setAttribute('draggable', 'false');
         });
@@ -291,7 +291,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
         }
 
         const catElements = this.element.querySelectorAll('.bad-config-cat-row');
-        catElements.forEach(catEl => {
+        catElements.forEach((catEl: any) => {
             const catIndex = Number(catEl.dataset.catIndex);
             if (!Number.isFinite(catIndex) || !this.config.categories[catIndex]) return;
 
@@ -301,7 +301,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
             if (exprInput) this.config.categories[catIndex].expression = exprInput.value;
 
             const subElements = catEl.parentElement?.querySelectorAll('.bad-config-sub-row') ?? [];
-            subElements.forEach(subEl => {
+            subElements.forEach((subEl: any) => {
                 const subIndex = Number(subEl.dataset.subIndex);
                 if (!Number.isFinite(subIndex) || !this.config.categories[catIndex].subcategories?.[subIndex]) return;
 
@@ -322,7 +322,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLInputElement} target
      */
-    _onToggleEnabled(event, target) {
+    _onToggleEnabled(event: any, target: any) {
         this._syncFormData();
         this.config.enabled = target.checked;
     }
@@ -332,7 +332,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onAddCategory(event, target) {
+    _onAddCategory(event: any, target: any) {
         event.preventDefault();
         this._syncFormData();
         const newCatId = `cat_${Date.now()}_${this.config.categories.length}`;
@@ -352,7 +352,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onToggleFallthrough(event, target) {
+    _onToggleFallthrough(event: any, target: any) {
         event.preventDefault();
         this._syncFormData();
         const catIndex = Number(target.dataset.catIndex);
@@ -367,7 +367,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onAddSubCategory(event, target) {
+    _onAddSubCategory(event: any, target: any) {
         event.preventDefault();
         this._syncFormData();
         const catIndex = Number(target.dataset.catIndex);
@@ -389,7 +389,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onRemoveCategory(event, target) {
+    _onRemoveCategory(event: any, target: any) {
         event.preventDefault();
         this._syncFormData();
         const catIndex = Number(target.dataset.catIndex);
@@ -404,7 +404,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onRemoveSubCategory(event, target) {
+    _onRemoveSubCategory(event: any, target: any) {
         event.preventDefault();
         this._syncFormData();
         const catIndex = Number(target.dataset.catIndex);
@@ -420,7 +420,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onLoadPresets(event, target) {
+    _onLoadPresets(event: any, target: any) {
         event.preventDefault();
         const rawDefaults = getDefaultCategories(adapter);
         this.config.categories = normalizeCategorizationConfig({ categories: rawDefaults }).categories;
@@ -432,7 +432,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    async _onSaveConfig(event, target) {
+    async _onSaveConfig(event: any, target: any) {
         event.preventDefault();
         this._syncFormData();
 
@@ -479,7 +479,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onCloseConfig(event, target) {
+    _onCloseConfig(event: any, target: any) {
         event.preventDefault();
         this.close();
     }

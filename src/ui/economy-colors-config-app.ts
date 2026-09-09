@@ -54,7 +54,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     }
 
     /** @override */
-    async _prepareContext(options) {
+    async _prepareContext(options: any) {
         const context = await super._prepareContext(options);
         const systemTypes = adapter.getEconomyTypes() ?? [];
         const userColorsConfig = {
@@ -88,7 +88,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     }
 
     /** @override */
-    _onRender(context, options) {
+    _onRender(context: any, options: any) {
         super._onRender?.(context, options);
         this._attachInputListeners();
     }
@@ -99,7 +99,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
      * @param {boolean} isEnabled
      * @private
      */
-    _setTypeEnabled(typeId, isEnabled) {
+    _setTypeEnabled(typeId: any, isEnabled: any) {
         if (!typeId) return;
         if (isEnabled) {
             delete this.disabled[typeId];
@@ -117,7 +117,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
      * @param {string} value
      * @private
      */
-    _syncRowColor(row, typeId, value) {
+    _syncRowColor(row: any, typeId: any, value: any) {
         this.colors[typeId] = value;
         this._setTypeEnabled(typeId, true);
 
@@ -143,7 +143,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
         this._listenersAttached = true;
 
         // Delegated change listener for toggles and presets
-        this.element.addEventListener('change', (event) => {
+        this.element.addEventListener('change', (event: any) => {
             const enableToggle = event.target.closest('.bad-economy-enable-toggle');
             if (enableToggle) {
                 this.enabled = Boolean(enableToggle.checked);
@@ -171,7 +171,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
         });
 
         // Delegated input listener for color pickers & text inputs (auto-enables category)
-        this.element.addEventListener('input', (event) => {
+        this.element.addEventListener('input', (event: any) => {
             const picker = event.target.closest('.bad-economy-color-picker');
             if (picker) {
                 const typeId = picker.dataset.typeId;
@@ -198,14 +198,14 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     /**
      * Handle master enable checkbox toggling.
      */
-    async _onToggleEnabled(event, target) {
+    async _onToggleEnabled(event: any, target: any) {
         this.enabled = target.checked;
     }
 
     /**
      * Handle individual category enable checkbox toggling.
      */
-    async _onToggleTypeEnabled(event, target) {
+    async _onToggleTypeEnabled(event: any, target: any) {
         this._setTypeEnabled(target.dataset.typeId, Boolean(target.checked));
     }
 
@@ -213,14 +213,14 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
      * Apply a color palette preset to current colors and re-render.
      * @param {string} presetId
      */
-    applyPreset(presetId) {
+    applyPreset(presetId: any) {
         this.selectedPreset = presetId;
-        const preset = ECONOMY_COLOR_PRESETS[presetId];
+        const preset = (ECONOMY_COLOR_PRESETS as Record<string, any>)[presetId];
         if (preset?.colors) {
             const systemTypes = adapter.getEconomyTypes() ?? [];
             for (const type of systemTypes) {
-                if (preset.colors[type.id]) {
-                    this.colors[type.id] = preset.colors[type.id];
+                if ((preset.colors as Record<string, string>)[type.id]) {
+                    this.colors[type.id] = (preset.colors as Record<string, string>)[type.id];
                 }
             }
         }
@@ -230,7 +230,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     /**
      * Reset all colors to default system values.
      */
-    async _onResetDefaults(event, target) {
+    async _onResetDefaults(event: any, target: any) {
         event.preventDefault();
         this.colors = {};
         this.disabled = {};
@@ -242,7 +242,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     /**
      * Save configuration and notify user.
      */
-    async _onSaveConfig(event, target) {
+    async _onSaveConfig(event: any, target: any) {
         event.preventDefault();
 
         // Sync directly from DOM inputs if element exists
@@ -284,7 +284,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     /**
      * Close the modal without saving changes.
      */
-    async _onCloseConfig(event, target) {
+    async _onCloseConfig(event: any, target: any) {
         event.preventDefault();
         await this.close();
     }

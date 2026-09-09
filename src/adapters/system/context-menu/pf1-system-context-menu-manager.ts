@@ -24,7 +24,7 @@ export class Pf1SystemContextMenuManager extends BaseSystemContextMenuManager {
     /**
      * @param {Pf1SystemAdapter} adapter Owning PF1e adapter instance
      */
-    constructor(adapter) {
+    constructor(adapter: any) {
         super(adapter);
     }
 
@@ -34,7 +34,7 @@ export class Pf1SystemContextMenuManager extends BaseSystemContextMenuManager {
      * @param {HTMLElement} el Clicked DOM element
      * @returns {Item|null}
      */
-    #getOwnerItem(app, el) {
+    #getOwnerItem(app: any, el: any) {
         if (!app.actor?.isOwner) return null;
         return this.getContextItem(app, el);
     }
@@ -44,16 +44,16 @@ export class Pf1SystemContextMenuManager extends BaseSystemContextMenuManager {
      * @param {ApplicationV2} app Active HUD application
      * @returns {Object[]} Context menu items definition
      */
-    getContextMenuItems(app) {
+    getContextMenuItems(app: any) {
         return [
             {
                 name: "BAD.common.equipItem",
                 icon: '<i class="fas fa-shield-halved"></i>',
-                condition: el => {
+                condition: (el: any) => {
                     const item = this.#getOwnerItem(app, el);
                     return Boolean(item && EQUIPPABLE_ITEM_TYPES.has(item.type) && item.system?.equipped !== undefined && !this.adapter.getItemEquipped(item));
                 },
-                callback: async el => {
+                callback: async (el: any) => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
                         await item.update({ "system.equipped": true });
@@ -63,11 +63,11 @@ export class Pf1SystemContextMenuManager extends BaseSystemContextMenuManager {
             {
                 name: "BAD.common.unequipItem",
                 icon: '<i class="fas fa-shield-slash"></i>',
-                condition: el => {
+                condition: (el: any) => {
                     const item = this.#getOwnerItem(app, el);
                     return Boolean(item && EQUIPPABLE_ITEM_TYPES.has(item.type) && item.system?.equipped !== undefined && this.adapter.getItemEquipped(item));
                 },
-                callback: async el => {
+                callback: async (el: any) => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
                         await item.update({ "system.equipped": false });
@@ -84,7 +84,7 @@ export class Pf1SystemContextMenuManager extends BaseSystemContextMenuManager {
      * @param {Event} event Triggering event
      * @returns {boolean} True if handled
      */
-    onTabRightClick(app, el, event) {
+    onTabRightClick(app: any, el: any, event: any) {
         return this.handleFilterTabRightClick(app, el, PF1_TAB_FLAG_MAP, ALL_FILTER_FLAGS);
     }
 }

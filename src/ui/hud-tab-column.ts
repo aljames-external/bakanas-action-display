@@ -106,7 +106,7 @@ export class HUDTabColumn {
      * @param {string} parentId The parent tab ID
      * @param {Object} groups Available tab groups
      */
-    selectParent(parentId, groups) {
+    selectParent(parentId: any, groups: any) {
         if (parentId === 'all') {
             this.resetToDefault(groups);
             return;
@@ -164,7 +164,7 @@ export class HUDTabColumn {
      * @param {string} parentId The parent tab ID
      * @param {Object} groups Available tab groups
      */
-    toggleParent(parentId, groups) {
+    toggleParent(parentId: any, groups: any) {
         if (parentId === 'all') {
             this.resetToDefault(groups);
             return;
@@ -208,7 +208,7 @@ export class HUDTabColumn {
      * @param {Object} groups Available tab groups
      * @param {boolean} [isExclusion=false] Whether this parent tab is an exclusion filter
      */
-    selectSub(parentId, type, groups, isExclusion = false) {
+    selectSub(parentId: any, type: any, groups: any, isExclusion = false) {
         if (isExclusion) {
             this.toggleSub(parentId, type, groups, isExclusion);
             return;
@@ -279,7 +279,7 @@ export class HUDTabColumn {
      * @param {Object} groups Available tab groups
      * @param {boolean} [isExclusion=false] Whether this parent tab is an exclusion filter
      */
-    toggleSub(parentId, type, groups, isExclusion = false) {
+    toggleSub(parentId: any, type: any, groups: any, isExclusion = false) {
         if (parentId) {
             this.activeParents.add(parentId);
             if (!isExclusion) {
@@ -341,8 +341,8 @@ export class HUDTabColumn {
                 this.activeSubTypes.add(type);
                 // If all siblings under ancestor category are now active, collapse them into the ancestor category
                 if (ancestorCategory && ancestorCategory.subTabs.length > 0) {
-                    const nonAllSiblings = ancestorCategory.subTabs.filter(s => s.id !== 'all');
-                    const allSiblingsActive = nonAllSiblings.every(s => this.activeSubTypes.has(s.id));
+                    const nonAllSiblings = ancestorCategory.subTabs.filter((s: any) => s.id !== 'all');
+                    const allSiblingsActive = nonAllSiblings.every((s: any) => this.activeSubTypes.has(s.id));
                     if (allSiblingsActive) {
                         for (const s of nonAllSiblings) {
                             this.activeSubTypes.delete(s.id);

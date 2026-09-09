@@ -140,7 +140,7 @@ export class BaseFoundryAdapter {
      * @param {Object} [options={}] Merge options
      * @returns {Object}
      */
-    mergeObject(original, other = {}, options = {}) {
+    mergeObject(original: any, other = {}, options = {}) {
         return foundry.utils.mergeObject(original, other, options);
     }
 
@@ -149,7 +149,7 @@ export class BaseFoundryAdapter {
      * @param {Object} obj Target object
      * @returns {Object}
      */
-    duplicate(obj) {
+    duplicate(obj: any) {
         return foundry.utils.duplicate(obj);
     }
 
@@ -159,7 +159,7 @@ export class BaseFoundryAdapter {
      * @param {string} path Dot path
      * @returns {*}
      */
-    getProperty(obj, path) {
+    getProperty(obj: any, path: any) {
         return foundry.utils.getProperty(obj, path);
     }
 
@@ -170,7 +170,7 @@ export class BaseFoundryAdapter {
      * @param {*} value Property value
      * @returns {boolean}
      */
-    setProperty(obj, path, value) {
+    setProperty(obj: any, path: any, value: any) {
         return foundry.utils.setProperty(obj, path, value);
     }
 
@@ -188,7 +188,7 @@ export class BaseFoundryAdapter {
      * @param {Object} obj Target object
      * @returns {boolean}
      */
-    isEmpty(obj) {
+    isEmpty(obj: any) {
         return foundry.utils.isEmpty(obj);
     }
 
@@ -198,7 +198,7 @@ export class BaseFoundryAdapter {
      * @param {string} b Target version string to compare against
      * @returns {boolean}
      */
-    isNewerVersion(a, b) {
+    isNewerVersion(a: any, b: any) {
         return foundry.utils.isNewerVersion(a, b);
     }
 
@@ -270,7 +270,7 @@ export class BaseFoundryAdapter {
      * @param {User} user Concrete User document
      * @returns {number|null} 1 for Player, 2 for Trusted, 3 for GM, or null if invalid/none
      */
-    getUserPermissionTier(user) {
+    getUserPermissionTier(user: any) {
         if (!user) return null;
         if (user.isGM) return USER_PERMISSION_TIERS.GM;
 
@@ -299,7 +299,7 @@ export class BaseFoundryAdapter {
      * @param {Document} doc Concrete Document (Actor or TokenDocument)
      * @returns {boolean} True if the user has an ownership role
      */
-    isUserDocumentOwner(user, doc) {
+    isUserDocumentOwner(user: any, doc: any) {
         if (!user || !doc) return false;
 
         // GM / Co-GM always has ownership over all documents in Foundry
@@ -334,13 +334,13 @@ export class BaseFoundryAdapter {
      * @param {User} [user=game.user] Target user to evaluate (defaults to active client user)
      * @returns {boolean} True if the user is in-charge of the token
      */
-    isUserInCharge(token, user = game.user) {
+    isUserInCharge(token: any, user = game.user) {
         if (!token || !user) return false;
 
         const tokenDoc = token.document;
         const actor = token.actor;
 
-        const isOwner = (u) => this.isUserDocumentOwner(u, actor) || this.isUserDocumentOwner(u, tokenDoc);
+        const isOwner = (u: any) => this.isUserDocumentOwner(u, actor) || this.isUserDocumentOwner(u, tokenDoc);
 
         if (!isOwner(user)) {
             return false;
@@ -391,7 +391,7 @@ export class BaseFoundryAdapter {
      * @param {User} [user=game.user] Target user to evaluate (defaults to active client user)
      * @returns {boolean} True if the token is visible to the user
      */
-    isTokenVisible(token, user = game.user) {
+    isTokenVisible(token: any, user = game.user) {
         if (!token || !user) return false;
         if (user.isGM) return true;
         if (token.visible !== undefined) return Boolean(token.visible);
@@ -404,7 +404,7 @@ export class BaseFoundryAdapter {
      * @param {Token} token Target token placeable to select
      * @returns {void}
      */
-    selectToken(token) {
+    selectToken(token: any) {
         if (!token) return;
         token.control?.({ releaseOthers: true });
     }

@@ -22,7 +22,7 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
     /**
      * @param {Pf2eSystemAdapter} adapter Owning PF2e adapter instance
      */
-    constructor(adapter) {
+    constructor(adapter: any) {
         super(adapter);
     }
 
@@ -58,7 +58,7 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
      * @param {Item} item Target item document
      * @param {Object} updates Update data payload
      */
-    async #safeUpdateItem(app, item, updates) {
+    async #safeUpdateItem(app: any, item: any, updates: any) {
         if (!item) return;
         if (app?.actor?.items && item.id && !app.actor.items.has(item.id)) return;
         const targetItem = app?.actor?.items?.get(item.id) ?? item;
@@ -70,12 +70,12 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
      * @param {ApplicationV2} app Active HUD application
      * @returns {Object[]} Context menu items definition
      */
-    getContextMenuItems(app) {
+    getContextMenuItems(app: any) {
         return [
             {
                 name: "PF2E.Actor.Inventory.CarryType.OpenMenu",
                 icon: '<i class="fas fa-shield-halved"></i>',
-                condition: el => {
+                condition: (el: any) => {
                     const item = this.#getOwnerItem(app, el);
                     return Boolean(this.#isEquippable(item, app));
                 },
@@ -83,9 +83,9 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                     {
                         name: "PF2E.CarryType.held1",
                         icon: '<i class="fas fa-hand"></i>',
-                        active: (item) => item?.system?.equipped?.carryType === 'held' && item?.system?.equipped?.handsHeld === 1,
-                        condition: (item) => item?.type !== 'armor',
-                        callback: async (item) => {
+                        active: (item: any) => item?.system?.equipped?.carryType === 'held' && item?.system?.equipped?.handsHeld === 1,
+                        condition: (item: any) => item?.type !== 'armor',
+                        callback: async (item: any) => {
                             await this.#safeUpdateItem(app, item, {
                                 "system.equipped.carryType": "held",
                                 "system.equipped.handsHeld": 1
@@ -95,9 +95,9 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                     {
                         name: "PF2E.CarryType.held2",
                         icon: '<i class="fas fa-hands"></i>',
-                        active: (item) => item?.system?.equipped?.carryType === 'held' && item?.system?.equipped?.handsHeld === 2,
-                        condition: (item) => item?.type === 'weapon' || item?.type === 'equipment',
-                        callback: async (item) => {
+                        active: (item: any) => item?.system?.equipped?.carryType === 'held' && item?.system?.equipped?.handsHeld === 2,
+                        condition: (item: any) => item?.type === 'weapon' || item?.type === 'equipment',
+                        callback: async (item: any) => {
                             await this.#safeUpdateItem(app, item, {
                                 "system.equipped.carryType": "held",
                                 "system.equipped.handsHeld": 2
@@ -107,9 +107,9 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                     {
                         name: "PF2E.CarryType.worn",
                         icon: '<i class="fas fa-shirt"></i>',
-                        active: (item) => item?.system?.equipped?.carryType === 'worn',
+                        active: (item: any) => item?.system?.equipped?.carryType === 'worn',
                         condition: () => true,
-                        callback: async (item) => {
+                        callback: async (item: any) => {
                             await this.#safeUpdateItem(app, item, {
                                 "system.equipped.carryType": "worn",
                                 "system.equipped.handsHeld": 0
@@ -119,9 +119,9 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                     {
                         name: "PF2E.CarryType.stowed",
                         icon: '<i class="fas fa-box-archive"></i>',
-                        active: (item) => item?.system?.equipped?.carryType === 'stowed',
+                        active: (item: any) => item?.system?.equipped?.carryType === 'stowed',
                         condition: () => true,
-                        callback: async (item) => {
+                        callback: async (item: any) => {
                             await this.#safeUpdateItem(app, item, {
                                 "system.equipped.carryType": "stowed",
                                 "system.equipped.handsHeld": 0
@@ -131,9 +131,9 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                     {
                         name: "PF2E.CarryType.dropped",
                         icon: '<i class="fas fa-arrow-down"></i>',
-                        active: (item) => item?.system?.equipped?.carryType === 'dropped',
+                        active: (item: any) => item?.system?.equipped?.carryType === 'dropped',
                         condition: () => true,
-                        callback: async (item) => {
+                        callback: async (item: any) => {
                             await this.#safeUpdateItem(app, item, {
                                 "system.equipped.carryType": "dropped",
                                 "system.equipped.handsHeld": 0
@@ -152,7 +152,7 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
      * @param {Event} event Triggering event
      * @returns {boolean} True if handled
      */
-    onTabRightClick(app, el, event) {
+    onTabRightClick(app: any, el: any, event: any) {
         return this.handleFilterTabRightClick(app, el, PF2E_TAB_FLAG_MAP, ALL_FILTER_FLAGS);
     }
 }

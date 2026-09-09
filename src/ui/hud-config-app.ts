@@ -64,7 +64,7 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
     }
 
     /** @override */
-    async _prepareContext(options) {
+    async _prepareContext(options: any) {
         const context = await super._prepareContext(options);
         context.config = { ...this.config };
         context.anchorSideChoices = [
@@ -83,7 +83,7 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
     }
 
     /** @override */
-    _onRender(context, options) {
+    _onRender(context: any, options: any) {
         super._onRender?.(context, options);
         this._attachInputListeners();
     }
@@ -97,7 +97,7 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
         const sliders = this.element.querySelectorAll('input[type="range"]');
         for (const slider of sliders) {
             const output = this.element.querySelector(`.bad-range-value[data-for="${slider.name}"]`);
-            slider.addEventListener('input', event => {
+            slider.addEventListener('input',(event: any) => {
                 if (output) {
                     const unit = slider.dataset?.unit ?? '';
                     output.textContent = `${event.target.value}${unit}`;
@@ -111,7 +111,7 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
      * @param {Event} [event]
      * @param {HTMLElement} [target]
      */
-    _onResetDefaults(event, target) {
+    _onResetDefaults(event: any, target: any) {
         event?.preventDefault?.();
         if (!this.element) return;
 
@@ -133,12 +133,12 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
      * @param {Event} [event]
      * @param {HTMLElement} [target]
      */
-    async _onSaveConfig(event, target) {
+    async _onSaveConfig(event: any, target: any) {
         event?.preventDefault?.();
         const form = this.element?.querySelector('form') ?? this.element;
         if (!form) return;
 
-        const getVal = (name, parser, fallback) => {
+        const getVal = (name: any, parser: any, fallback: any) => {
             const el = form.querySelector(`[name="${name}"]`);
             if (!el) return fallback;
             const parsed = parser(el.value);
@@ -147,7 +147,7 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
 
         const hudOpacity = getVal('hudOpacity', Number.parseFloat, DEFAULT_HUD_CONFIG.hudOpacity);
         const hudScale = getVal('hudScale', Number.parseFloat, DEFAULT_HUD_CONFIG.hudScale);
-        const fontSize = getVal('fontSize', val => Number.parseInt(val, 10), DEFAULT_HUD_CONFIG.fontSize);
+        const fontSize = getVal('fontSize',(val: any) => Number.parseInt(val, 10), DEFAULT_HUD_CONFIG.fontSize);
         const hudAnchorSide = form.querySelector?.('[name="hudAnchorSide"]')?.value ?? DEFAULT_HUD_CONFIG.hudAnchorSide;
         const hudGridOffset = getVal('hudGridOffset', Number.parseFloat, DEFAULT_HUD_CONFIG.hudGridOffset);
         const hudGridOffsetHorizontal = getVal('hudGridOffsetHorizontal', Number.parseFloat, DEFAULT_HUD_CONFIG.hudGridOffsetHorizontal);
@@ -188,7 +188,7 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
      * @param {Event} [event]
      * @param {HTMLElement} [target]
      */
-    _onCloseConfig(event, target) {
+    _onCloseConfig(event: any, target: any) {
         event?.preventDefault?.();
         this.close();
     }
