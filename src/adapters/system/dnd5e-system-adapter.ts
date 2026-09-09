@@ -1114,7 +1114,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @returns {boolean}
      */
     #isItemDocument(doc) {
-        return doc instanceof Item;
+        return doc?.documentName === 'Item';
     }
 
     /**
