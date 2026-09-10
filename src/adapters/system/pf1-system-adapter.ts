@@ -739,7 +739,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a right-side action type (parent tab) in PF1e.
      */
-    override getActionTypeLabel(parentId: any) {
+    override getActionTypeLabel(parentId: string): string {
         const labels: Record<string, string> = {
             'economy': localize('BAD.common.actionEconomy', 'Action Economy')
         };
@@ -749,14 +749,14 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the CSS icon class for a right-side action type (parent tab) in PF1e.
      */
-    override getActionTypeIcon(parentId: any) {
+    override getActionTypeIcon(parentId: string): string {
         return (ICONS.action_type as Record<string, string>)[parentId] ?? super.getActionTypeIcon(parentId);
     }
 
     /**
      * Get the localized label for a right-side action sub-tab in PF1e.
      */
-    override getActionSubTabLabel(subId: any) {
+    override getActionSubTabLabel(subId: string): string {
         const abilityLabels: Record<string, string> = {
             str: localize('PF1.AbilityStr', 'Strength'),
             dex: localize('PF1.AbilityDex', 'Dexterity'),
@@ -793,7 +793,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item type (parent tab) in PF1e.
      */
-    override getItemTypeLabel(parentId: any) {
+    override getItemTypeLabel(parentId: string): string {
         switch (parentId) {
             case 'weapon': return localize('PF1.InventoryWeapons', 'Weapons');
             case 'equipment': return localize('PF1.InventoryEquipment', localize('PF1.Equipment', 'Equipment'));
@@ -808,7 +808,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item sub-tab (spell level/spellbook) in PF1e.
      */
-    override getItemSubTabLabel(parentId: any, subId: any) {
+    override getItemSubTabLabel(parentId: string, subId: string): string {
         if (parentId !== 'spell') return super.getItemSubTabLabel(parentId, subId);
 
         switch (subId) {
@@ -826,17 +826,17 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the CSS icon class for a left-side item type (parent tab) in PF1e.
      */
-    override getItemTypeIcon(parentId: any) {
+    override getItemTypeIcon(parentId: string): string {
         if (parentId === 'buff') return 'fas fa-sparkles';
         if (parentId === 'equipment') return 'fas fa-shield';
         return super.getItemTypeIcon(parentId);
     }
 
-    override getItemTypeSortOrder(parentId: any) {
+    override getItemTypeSortOrder(parentId: string): number {
         return (SORT_ORDERS.item_type as Record<string, number>)[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
-    override getActionSubTabSortOrder(parentId: any, subId: any) {
+    override getActionSubTabSortOrder(parentId: string, subId: string): number {
         return (SORT_ORDERS.tabs as Record<string, any>)[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 

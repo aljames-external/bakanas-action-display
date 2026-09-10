@@ -337,7 +337,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item type (parent tab) in PF2e.
      */
-    override getItemTypeLabel(parentId: any) {
+    override getItemTypeLabel(parentId: string): string {
         switch (parentId) {
             case 'feat': return localize('PF2E.Item.Feat.Plural', 'Feats');
             case 'spell': return localize('PF2E.Item.Spell.Plural', 'Spells');
@@ -351,7 +351,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item sub-tab (spell rank) in PF2e.
      */
-    override getItemSubTabLabel(parentId: any, subId: any) {
+    override getItemSubTabLabel(parentId: string, subId: string): string {
         if (parentId === 'spell') {
             switch (subId) {
                 case 'focus': return localize('PF2E.Focus.Spells', 'Focus Spells');
@@ -367,31 +367,31 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a right-side action type (parent tab) in PF2e.
      */
-    override getActionTypeLabel(parentId: any) {
+    override getActionTypeLabel(parentId: string): string {
         return parentId === 'economy'
             ? localize('BAD.common.actionEconomy', 'Action Economy')
             : super.getActionTypeLabel(parentId);
     }
 
-    override getItemTypeSortOrder(parentId: any) {
+    override getItemTypeSortOrder(parentId: string): number {
         return (SORT_ORDERS.item_type as Record<string, number>)[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
-    override getActionSubTabSortOrder(parentId: any, subId: any) {
+    override getActionSubTabSortOrder(parentId: string, subId: string): number {
         return (SORT_ORDERS.tabs as Record<string, any>)[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 
     /**
      * Get the CSS icon class for a right-side action type (parent tab) in PF2e.
      */
-    override getActionTypeIcon(parentId: any) {
+    override getActionTypeIcon(parentId: string): string {
         return (ICONS.action_type as Record<string, string>)[parentId] ?? super.getActionTypeIcon(parentId);
     }
 
     /**
      * Get the localized label for a right-side action sub-tab in PF2e.
      */
-    override getActionSubTabLabel(subId: any) {
+    override getActionSubTabLabel(subId: string): string {
         const abilityLabels: Record<string, string> = {
             str: localize('PF2E.AbilityStr', 'Strength'),
             dex: localize('PF2E.AbilityDex', 'Dexterity'),
