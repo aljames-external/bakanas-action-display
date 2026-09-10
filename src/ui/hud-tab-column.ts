@@ -2,6 +2,12 @@ import { log } from '../lib/logger.js';
 import { adapter } from '../adapters/index.js';
 import { hasIntersection } from '../lib/utils.js';
 
+export interface SerializedTabColumn {
+    parents: string[];
+    focusedParent: string;
+    subTypes: string[];
+}
+
 export interface HUDTabColumnOptions {
     side: 'left' | 'right';
     cached?: {
@@ -391,7 +397,7 @@ export class HUDTabColumn {
      * Serialize tab state for caching per actor.
      * @returns {{ parents: string[]; focusedParent: string; subTypes: string[] }}
      */
-    serialize(): { parents: string[]; focusedParent: string; subTypes: string[] } {
+    serialize(): SerializedTabColumn {
         return {
             parents: Array.from(this.activeParents),
             focusedParent: this.focusedParent,

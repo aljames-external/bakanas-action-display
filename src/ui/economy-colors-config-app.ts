@@ -99,7 +99,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
      * @param {boolean} isEnabled
      * @private
      */
-    _setTypeEnabled(typeId: any, isEnabled: any) {
+    _setTypeEnabled(typeId: string | null | undefined, isEnabled: boolean) {
         if (!typeId) return;
         if (isEnabled) {
             delete this.disabled[typeId];
@@ -117,19 +117,19 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
      * @param {string} value
      * @private
      */
-    _syncRowColor(row: any, typeId: any, value: any) {
+    _syncRowColor(row: HTMLElement | null, typeId: string, value: string) {
         this.colors[typeId] = value;
         this._setTypeEnabled(typeId, true);
 
         if (row) {
             row.classList.remove('bad-row-inactive');
-            const toggle = row.querySelector('.bad-economy-type-toggle');
+            const toggle = row.querySelector('.bad-economy-type-toggle') as HTMLInputElement | null;
             if (toggle) toggle.checked = true;
-            const textInput = row.querySelector('.bad-economy-color-input');
+            const textInput = row.querySelector('.bad-economy-color-input') as HTMLInputElement | null;
             if (textInput && textInput.value !== value) textInput.value = value;
-            const colorPicker = row.querySelector('.bad-economy-color-picker');
+            const colorPicker = row.querySelector('.bad-economy-color-picker') as HTMLInputElement | null;
             if (colorPicker && colorPicker.value !== value) colorPicker.value = value;
-            const preview = row.querySelector('.bad-economy-preview');
+            const preview = row.querySelector('.bad-economy-preview') as HTMLElement | null;
             if (preview) preview.style.backgroundColor = value;
         }
     }
@@ -198,14 +198,14 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     /**
      * Handle master enable checkbox toggling.
      */
-    async _onToggleEnabled(event: any, target: any) {
+    async _onToggleEnabled(event: Event, target: HTMLInputElement) {
         this.enabled = target.checked;
     }
 
     /**
      * Handle individual category enable checkbox toggling.
      */
-    async _onToggleTypeEnabled(event: any, target: any) {
+    async _onToggleTypeEnabled(event: Event, target: HTMLInputElement) {
         this._setTypeEnabled(target.dataset.typeId, Boolean(target.checked));
     }
 
@@ -213,7 +213,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
      * Apply a color palette preset to current colors and re-render.
      * @param {string} presetId
      */
-    applyPreset(presetId: any) {
+    applyPreset(presetId: string) {
         this.selectedPreset = presetId;
         const preset = (ECONOMY_COLOR_PRESETS as Record<string, any>)[presetId];
         if (preset?.colors) {
@@ -230,7 +230,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     /**
      * Reset all colors to default system values.
      */
-    async _onResetDefaults(event: any, target: any) {
+    async _onResetDefaults(event: Event, target: HTMLElement) {
         event.preventDefault();
         this.colors = {};
         this.disabled = {};
@@ -242,22 +242,22 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     /**
      * Save configuration and notify user.
      */
-    async _onSaveConfig(event: any, target: any) {
+    async _onSaveConfig(event: Event, target: HTMLElement) {
         event.preventDefault();
 
         // Sync directly from DOM inputs if element exists
         if (this.element) {
-            const enableToggle = this.element.querySelector('.bad-economy-enable-toggle');
+            const enableToggle = this.element.querySelector('.bad-economy-enable-toggle') as HTMLInputElement | null;
             if (enableToggle) {
                 this.enabled = Boolean(enableToggle.checked);
             }
 
-            const typeToggles = this.element.querySelectorAll('.bad-economy-type-toggle');
+            const typeToggles = this.element.querySelectorAll('.bad-economy-type-toggle') as NodeListOf<HTMLInputElement>;
             for (const toggle of typeToggles) {
                 this._setTypeEnabled(toggle.dataset.typeId, Boolean(toggle.checked));
             }
 
-            const colorInputs = this.element.querySelectorAll('.bad-economy-color-input');
+            const colorInputs = this.element.querySelectorAll('.bad-economy-color-input') as NodeListOf<HTMLInputElement>;
             for (const input of colorInputs) {
                 const typeId = input.dataset.typeId;
                 const val = input.value?.trim();
@@ -284,7 +284,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     /**
      * Close the modal without saving changes.
      */
-    async _onCloseConfig(event: any, target: any) {
+    async _onCloseConfig(event: Event, target: HTMLElement) {
         event.preventDefault();
         await this.close();
     }
