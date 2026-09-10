@@ -39,8 +39,11 @@ function itemHasComponent(item: Item5e, component: string): boolean {
     // 1. Check system.properties (Set or array of spell property names: 'vocal', 'somatic', 'material')
     const props = item.system?.properties;
     if (props) {
-        const propSet = props instanceof Set ? props : new Set(props);
-        if (names.some(name => propSet.has(name))) return true;
+        if ('has' in props) {
+            if (names.some(name => props.has(name))) return true;
+        } else if (names.some(name => props.includes(name))) {
+            return true;
+        }
     }
 
     // 2. Check system.components (Boolean map: { vocal: true, v: true, material: true, m: true })
