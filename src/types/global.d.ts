@@ -150,10 +150,15 @@ declare global {
   type Pf1Config = import('./systems.js').Pf1Config;
   type Pf1Skill = import('./systems.js').Pf1Skill;
   type Pf1TraitData = import('./systems.js').Pf1TraitData;
+  type Pf1ItemAction = import('./systems.js').Pf1ItemAction;
+  type Pf1WeaponLink = import('./systems.js').Pf1WeaponLink;
+  type Pf1Spellbook = import('./systems.js').Pf1Spellbook;
   type ActorPF = import('./systems.js').ActorPF;
   type ItemPF = import('./systems.js').ItemPF;
   type Pf2eConfig = import('./systems.js').Pf2eConfig;
   type Pf2eStatistic = import('./systems.js').Pf2eStatistic;
+  type Pf2eStrike = import('./systems.js').Pf2eStrike;
+  type Pf2eSpellcastingEntry = import('./systems.js').Pf2eSpellcastingEntry;
   type ActorPF2e = import('./systems.js').ActorPF2e;
   type ItemPF2e = import('./systems.js').ItemPF2e;
 

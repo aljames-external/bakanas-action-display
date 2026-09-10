@@ -44,28 +44,6 @@ const ICONS = deepFreeze({
     default_strike: 'systems/pf2e/icons/default-icons/melee.svg'
 });
 
-interface Pf2eSpellcastingEntry {
-    name?: string;
-    isFocusPool?: boolean;
-    isInnate?: boolean;
-    isRitual?: boolean;
-    isSpontaneous?: boolean;
-    actor?: { system?: { resources?: { focus?: { value?: number; max?: number } } } } | null;
-    system?: { slots?: Record<string, { value?: number; max?: number }> };
-    spells?: Array<{ id: string; [key: string]: unknown }>;
-    cast?: (spell: Item, options?: unknown) => unknown;
-    [key: string]: unknown;
-}
-
-interface Pf2eStrike {
-    slug?: string;
-    label: string;
-    item?: { img?: string; type?: string; system?: { ammo?: { baseType?: string } } } | null;
-    variants?: Array<{ roll?: (options?: unknown) => unknown }>;
-    roll?: (options?: unknown) => unknown;
-    [key: string]: unknown;
-}
-
 const PF2E_ACTION_TYPE_MAP = deepFreeze({
     'reaction': 'reaction',
     'free': 'other',
@@ -830,7 +808,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      */
     #getSpellcastingEntries(actor: Actor): Pf2eSpellcastingEntry[] {
         const act = actor as ActorPF2e;
-        return (act as unknown as { spellcasting?: Pf2eSpellcastingEntry[] }).spellcasting ?? [];
+        return act.spellcasting ?? [];
     }
 
     /**
@@ -840,7 +818,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      */
     #getActorStrikes(actor: Actor): Pf2eStrike[] {
         const act = actor as ActorPF2e;
-        return (act.system as unknown as { actions?: Pf2eStrike[] })?.actions ?? [];
+        return act.system?.actions ?? [];
     }
 
     #getSpellSubTab(entry: Pf2eSpellcastingEntry, spellLevel: number | string): string {
@@ -852,7 +830,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
     #executeFeatRoll(item: Item, event: unknown) {
         const proxiedEvent = this._createRollEvent(event);
-        const actItem = item as unknown as { toMessage?: () => unknown; use?: (options?: unknown) => unknown };
+        const actItem = item as ItemPF2e;
         if (actItem.toMessage) {
             return actItem.toMessage();
         }
@@ -864,7 +842,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         if (entry?.cast) {
             return entry.cast(item, { event: proxiedEvent });
         }
-        return (item as unknown as { toMessage?: () => unknown }).toMessage?.();
+        return (item as ItemPF2e).toMessage?.();
     }
 
     #executeStrikeRoll(strike: Pf2eStrike, event: unknown) {
@@ -874,7 +852,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
     #executeConsumableRoll(item: Item, event: unknown) {
         const proxiedEvent = this._createRollEvent(event);
-        const consItem = item as unknown as { consume?: () => unknown; toMessage?: () => unknown; use?: (options?: unknown) => unknown };
+        const consItem = item as ItemPF2e;
         if (consItem.consume) {
             return consItem.consume();
         }
@@ -886,7 +864,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
     #executeEquipmentRoll(item: Item, event: unknown) {
         const proxiedEvent = this._createRollEvent(event);
-        const equipItem = item as unknown as { toMessage?: () => unknown; use?: (options?: unknown) => unknown };
+        const equipItem = item as ItemPF2e;
         if (equipItem.toMessage) {
             return equipItem.toMessage();
         }
@@ -906,7 +884,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             available: true,
             uses: this.#getStrikeAmmoUses(strike, ammoQuantities),
             roll: (event: unknown) => this.#executeStrikeRoll(strike, event),
-            originalItem: (strike.item as unknown as Item) ?? null,
+            originalItem: strike.item ?? null,
             extra: { pf2eStrike: strike }
         });
     }
@@ -952,7 +930,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             return false;
         }
 
-        const spellLevel = (item as unknown as { rank?: number }).rank ?? 0;
+        const spellLevel = (item as ItemPF2e).rank ?? 0;
         action.right = [TabRef.from('economy', 'action')];
         action.activationType = 'action';
         action.left = ['spell', this.#getSpellSubTab(entry, spellLevel)];
@@ -1022,7 +1000,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             return { available: focus?.value ?? 0, max: focus?.max ?? 0 };
         }
 
-        const level = (spell as unknown as { rank?: number }).rank ?? 0;
+        const level = (spell as ItemPF2e).rank ?? 0;
         if (entry.isSpontaneous && level > 0) {
             const slot = entry.system?.slots?.[`slot${level}`];
             return { available: slot?.value ?? 0, max: slot?.max ?? 0 };
