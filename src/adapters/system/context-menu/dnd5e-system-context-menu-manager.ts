@@ -1,6 +1,5 @@
 import { BaseSystemContextMenuManager } from './base-system-context-menu-manager.js';
 import type { Dnd5eSystemAdapter } from '../dnd5e-system-adapter.js';
-import type { Item5e } from '../../../types/systems.js';
 import { log } from '../../../lib/logger.js';
 import { MODULE_ID } from '../../../constants.js';
 import { deepFreeze } from '../../../lib/utils.js';

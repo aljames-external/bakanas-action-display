@@ -4,7 +4,6 @@ import { Action } from '../../../ui/action.js';
 import { log } from '../../../lib/logger.js';
 import { deepFreeze } from '../../../lib/utils.js';
 import type { Dnd5eSystemAdapter } from '../dnd5e-system-adapter.js';
-import type { Item5e, Dnd5eActivity } from '../../../types/systems.js';
 
 const COMPONENT_NAMES = deepFreeze({
     'vocal': ['vocal', 'verbal'],

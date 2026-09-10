@@ -6,7 +6,6 @@ import { Action } from '../../ui/action.js';
 import { MODULE_ID } from '../../constants.js';
 import { Pf1SystemContextMenuManager } from './context-menu/pf1-system-context-menu-manager.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
-import type { ActorPF, ItemPF, Pf1Skill, Pf1TraitData } from '../../types/systems.js';
 import type { BaseFoundryAdapter } from '../foundry/base-foundry-adapter.js';
 import type { ItemSummary, ItemSummaryProperty } from './base-system-adapter.js';
 

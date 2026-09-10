@@ -1,6 +1,5 @@
 import { BaseSystemContextMenuManager } from './base-system-context-menu-manager.js';
 import type { Pf1SystemAdapter } from '../pf1-system-adapter.js';
-import type { ItemPF } from '../../../types/systems.js';
 import { MODULE_ID } from '../../../constants.js';
 import { deepFreeze } from '../../../lib/utils.js';
 
