@@ -219,7 +219,7 @@ export class BaseFoundryAdapter {
      * @param {Token} token Target Token placeable
      * @returns {Combatant[]}
      */
-    getCombatantsByToken(combat: any, token: any): any[] {
+    getCombatantsByToken(combat: any, token: Token): any[] {
         throw new Error('BaseFoundryAdapter.getCombatantsByToken must be implemented by version subclass');
     }
 
@@ -229,7 +229,7 @@ export class BaseFoundryAdapter {
      * @param {Token} token Target Token placeable
      * @returns {Combatant|null}
      */
-    getCombatantByToken(combat: any, token: any): any {
+    getCombatantByToken(combat: any, token: Token): any {
         return this.getCombatantsByToken(combat, token)[0] ?? null;
     }
 
@@ -238,7 +238,7 @@ export class BaseFoundryAdapter {
      * @param {Combatant} combatant
      * @returns {Token|null}
      */
-    getTokenFromCombatant(combatant: any): any {
+    getTokenFromCombatant(combatant: any): Token | null {
         if (!combatant) return null;
         if (combatant.token?.object) {
             return combatant.token.object;
@@ -334,7 +334,7 @@ export class BaseFoundryAdapter {
      * @param {User} [user=game.user] Target user to evaluate (defaults to active client user)
      * @returns {boolean} True if the user is in-charge of the token
      */
-    isUserInCharge(token: any, user = game.user) {
+    isUserInCharge(token: Token, user = game.user): boolean {
         if (!token || !user) return false;
 
         const tokenDoc = token.document;
@@ -391,7 +391,7 @@ export class BaseFoundryAdapter {
      * @param {User} [user=game.user] Target user to evaluate (defaults to active client user)
      * @returns {boolean} True if the token is visible to the user
      */
-    isTokenVisible(token: any, user = game.user) {
+    isTokenVisible(token: Token, user = game.user): boolean {
         if (!token || !user) return false;
         if (user.isGM) return true;
         if (token.visible !== undefined) return Boolean(token.visible);
@@ -404,7 +404,7 @@ export class BaseFoundryAdapter {
      * @param {Token} token Target token placeable to select
      * @returns {void}
      */
-    selectToken(token: any) {
+    selectToken(token: Token): void {
         if (!token) return;
         token.control?.({ releaseOthers: true });
     }
@@ -414,7 +414,7 @@ export class BaseFoundryAdapter {
      * @param {Token} token Target token to center on
      * @returns {Promise<void>}
      */
-    async centerCanvasOnToken(token: any): Promise<void> {
+    async centerCanvasOnToken(token: Token): Promise<void> {
         if (!token) return;
         const center = token.center ?? {
             x: token.x + (token.w / 2),

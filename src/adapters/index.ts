@@ -375,7 +375,7 @@ class Adapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor: any, token = null) {
+    async getTokenInfo(actor: any, token: Token | null = null) {
         return (await this.system?.getTokenInfo?.(actor, token)) ?? null;
     }
 

@@ -10,22 +10,22 @@ let lastSelectedTokenId: string | null = null;
 
 /**
  * Determine if the user owns a valid token document or actor.
- * @param {Token|null} token
+ * @param {Token} token
  * @returns {boolean}
  */
-export function isTokenOwned(token: Token | null | undefined): boolean {
-    if (!token || token.destroyed) return false;
-    return Boolean(token.document?.isOwner || token.actor?.isOwner);
+export function isTokenOwned(token: Token): boolean {
+    if (token.destroyed) return false;
+    return Boolean(token.document.isOwner || token.actor?.isOwner);
 }
 
 /**
  * Record a token as the last selected / interacted token.
- * @param {Token|null} token
+ * @param {Token} token
  */
-export function setLastSelectedToken(token: Token | null | undefined) {
+export function setLastSelectedToken(token: Token): void {
     if (isTokenOwned(token)) {
-        lastSelectedTokenRef = token!;
-        lastSelectedTokenId = token!.id;
+        lastSelectedTokenRef = token;
+        lastSelectedTokenId = token.id;
     }
 }
 
@@ -45,7 +45,7 @@ export function getLastSelectedToken(): Token | null {
         if (isPresent) token = lastSelectedTokenRef;
     }
 
-    return isTokenOwned(token) ? token : null;
+    return (token && isTokenOwned(token)) ? token : null;
 }
 
 /**

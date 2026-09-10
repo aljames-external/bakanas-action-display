@@ -123,7 +123,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         ActionDisplayApp.defaultPage = 1;
     }
 
-    token: any;
+    token: Token;
     actor: any;
     actions: any[];
     totalPages: number;
@@ -153,7 +153,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     private _boundOnMiddleClickCapture: any;
     private _boundOnAuxClickCapture: any;
 
-    constructor(token: any, options: Record<string, any> = {}) {
+    constructor(token: Token, options: Record<string, any> = {}) {
         super(options);
         ActionDisplayApp.instances.add(this);
         this.token = token;
@@ -987,7 +987,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             const combatant = this._getCombatant(combat);
 
             if (combatant) {
-                const canInteract = Boolean(this.actor?.isOwner || this.token?.document?.isOwner || game.user?.isGM);
+                const canInteract = Boolean(this.actor?.isOwner || this.token.document.isOwner || game.user?.isGM);
                 if (canInteract) {
                     const needsInitiative = combatant.initiative == null;
                     showRollInitiativeButton = needsInitiative;
@@ -995,7 +995,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
                     if (!needsInitiative && combat?.started) {
                         const currentCombatant = combat?.combatant;
                         if (currentCombatant) {
-                            const isTokenMatch = Boolean(this.token && (currentCombatant.token === this.token || (currentCombatant.token?.id ?? currentCombatant.tokenId) === this.token.id));
+                            const isTokenMatch = Boolean(currentCombatant.token?.object === this.token || (currentCombatant.token?.id ?? currentCombatant.tokenId) === this.token.id);
                             const isActorMatch = Boolean(this.actor && (currentCombatant.actor === this.actor || (currentCombatant.actor?.id ?? currentCombatant.actorId) === this.actor.id));
                             isCurrentCombatant = isTokenMatch || isActorMatch;
                         }

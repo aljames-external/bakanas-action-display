@@ -77,7 +77,7 @@ function wrapTokenHUD() {
     const originalBind = hudClass.prototype.bind;
     hudClass.prototype.bind = function (object: any, ...args: any[]) {
         const result = originalBind.apply(this, [object, ...args]);
-        handleHUDBind(object);
+        if (object) handleHUDBind(object);
         return result;
     };
 
@@ -189,8 +189,8 @@ Hooks.on('canvasReady', () => {
  * Handle initial binding of TokenHUD to a token (opening TokenHUD).
  * @param {Token} token
  */
-export function handleHUDBind(token: any): void {
-    if (!token || !token.document?.isOwner) return;
+export function handleHUDBind(token: Token): void {
+    if (!token.document.isOwner) return;
 
     explicitlyClosedTokenId = null;
     setLastSelectedToken(token);
@@ -226,8 +226,8 @@ export function handleHUDBind(token: any): void {
 }
 
 // Hook into Token selection to track the last selected token for hotkey toggle
-Hooks.on('controlToken', ((token: any, controlled: any) => {
-    if (controlled) {
+Hooks.on('controlToken', ((token: Token, controlled: boolean) => {
+    if (controlled && token) {
         setLastSelectedToken(token);
     }
 }) as any);
@@ -382,7 +382,7 @@ export function handleCombatTurnChange(combat: any): void {
     const token = adapter.foundry.getTokenFromCombatant(combatant);
 
     if (token) {
-        const isMyTurn = Boolean(token && adapter.foundry.isUserInCharge(token));
+        const isMyTurn = adapter.foundry.isUserInCharge(token);
 
         // Auto-center canvas on token if center on token feature and auto-center are active and user is in charge
         const isCenterEnabled = Boolean((game?.settings as any)?.get(MODULE_ID, 'enableCenterOnToken'));

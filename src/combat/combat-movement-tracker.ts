@@ -164,7 +164,7 @@ export class CombatMovementTracker {
      * @param {Actor|null} [actor=null] Associated actor document
      * @returns {{ inCombat: boolean, distance: number, units: string }}
      */
-    static getMovementThisTurn(token: any = null, actor: any = null) {
+    static getMovementThisTurn(token: Token | null = null, actor: any = null) {
         const combat = game.combat;
         const fallbackUnits = actor?.system?.attributes?.movement?.units ?? 'ft';
         const units = canvas?.scene?.grid?.units ?? fallbackUnits;
@@ -196,7 +196,7 @@ export class CombatMovementTracker {
      * @param {string} tokenId
      * @param {number} distance
      */
-    static setMovedDistance(tokenId: any, distance: any) {
+    static setMovedDistance(tokenId: string, distance: number) {
         if (!tokenId) return;
         this.#movedDistances.set(tokenId, distance);
     }

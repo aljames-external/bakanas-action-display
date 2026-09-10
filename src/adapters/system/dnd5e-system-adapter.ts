@@ -604,7 +604,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} [actor]
      * @param {Token} [token]
      */
-    async formatTokenInfoLayout(context: any, actor = null, token = null) {
+    async formatTokenInfoLayout(context: any, actor = null, token: Token | null = null) {
         context.layout = 'tokenInfo';
         context.isCategorized = false;
         context.itemTypes = [];
@@ -623,7 +623,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor: any, token: any = null): Promise<any> {
+    async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
         if (!actor) return null;
 
         const system = actor.system ?? {};
@@ -631,7 +631,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
         // 1. Name and Image
         const name = token?.name ?? actor.name ?? '';
-        const img = token?.texture?.src ?? actor.img ?? 'icons/svg/mystery-man.svg';
+        const img = token?.document?.texture?.src ?? (token as any)?.texture?.src ?? actor.img ?? 'icons/svg/mystery-man.svg';
 
         // 1b. Inspiration
         const inspirationInfo = this.getInspiration(actor);
@@ -854,7 +854,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractMovement(actor: any, token: any = null) {
+    #extractMovement(actor: any, token: Token | null = null) {
         const mov = actor?.system?.attributes?.movement ?? {};
         const units = mov.units ?? 'ft';
         const walk = mov.walk ?? 0;

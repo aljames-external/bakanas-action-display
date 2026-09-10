@@ -238,7 +238,7 @@ export class BaseSystemAdapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor: any, token: any = null): Promise<any> {
+    async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
         return null;
     }
 
@@ -348,7 +348,7 @@ export class BaseSystemAdapter {
      * @param {Actor} [actor]
      * @param {Token} [token]
      */
-    async formatTokenInfoLayout(context: any, actor = null, token = null) {
+    async formatTokenInfoLayout(context: any, actor = null, token: Token | null = null) {
         context.layout = 'tokenInfo';
         context.isCategorized = false;
         context.itemTypes = [];

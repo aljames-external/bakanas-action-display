@@ -435,7 +435,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor: any, token: any = null): Promise<any> {
+    async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
         if (!actor) return null;
 
         const system = actor.system ?? {};
@@ -443,7 +443,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 
         // 1. Name and Image
         const name = token?.name ?? actor.name ?? '';
-        const img = token?.texture?.src ?? actor.img ?? 'icons/svg/mystery-man.svg';
+        const img = token?.document?.texture?.src ?? (token as any)?.texture?.src ?? actor.img ?? 'icons/svg/mystery-man.svg';
 
         // 2. Creature Type, Race, Size, Alignment, CR / Level
         const typeInfo = this.#extractCreatureType(actor, cfg);
@@ -603,7 +603,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractMovement(actor: any, cfg: any = (CONFIG as any)?.PF1, token: any = null) {
+    #extractMovement(actor: any, cfg: any = (CONFIG as any)?.PF1, token: Token | null = null) {
         const speed = actor?.system?.attributes?.speed ?? {};
         const land = speed.land?.total ?? speed.land?.value ?? 30;
         const primary = `${land} ft`;
