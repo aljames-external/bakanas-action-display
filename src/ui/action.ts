@@ -21,6 +21,9 @@ export interface ActionOptions {
     collapseDropdownIfSingle?: boolean;
     extra?: Record<string, any>;
     economyIndicators?: any[];
+    isActive?: boolean;
+    activationType?: string;
+    excludeFromAll?: boolean;
 }
 
 /**
@@ -47,6 +50,9 @@ export class Action {
     collapseDropdownIfSingle: boolean;
     extra: Record<string, any>;
     economyIndicators?: any[];
+    isActive: boolean;
+    activationType?: string;
+    excludeFromAll: boolean;
 
     /**
      * @param {Object} options
@@ -68,6 +74,9 @@ export class Action {
      * @param {Object|null} [options.linkedAction=null] Linked document/item data (e.g. compendium spell)
      * @param {boolean} [options.collapseDropdownIfSingle=false] Collapse dropdown if only one subaction qualifies
      * @param {Object} [options.extra={}] Additional metadata
+     * @param {boolean} [options.isActive=false] Primary active state
+     * @param {string} [options.activationType] Normalized activation type
+     * @param {boolean} [options.excludeFromAll=false] Exclude from 'All' tab
      */
     constructor({
         id,
@@ -88,7 +97,10 @@ export class Action {
         originalActivity = null,
         linkedAction = null,
         collapseDropdownIfSingle = false,
-        extra = {}
+        extra = {},
+        isActive = false,
+        activationType,
+        excludeFromAll = false
     }: ActionOptions) {
         this.id = id;
         this.name = name;
@@ -110,6 +122,9 @@ export class Action {
         this.linkedAction = linkedAction;
         this.collapseDropdownIfSingle = collapseDropdownIfSingle;
         this.extra = extra;
+        this.isActive = isActive;
+        this.activationType = activationType;
+        this.excludeFromAll = excludeFromAll;
     }
 
     /**

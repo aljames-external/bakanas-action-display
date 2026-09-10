@@ -1,3 +1,5 @@
+import type { Action } from '../../ui/action.js';
+
 /**
  * Base class for all module-specific adapters.
  * Module adapters can modify the actions list after the system adapter has processed it,
@@ -12,10 +14,10 @@ export class BaseModuleAdapter {
 
     /**
      * Modify the actions list.
-     * @param {Object[]} actions The current list of actions
-     * @returns {Object[]} The modified list of actions
+     * @param {Action[]} actions The current list of actions
+     * @returns {Promise<Action[]>} The modified list of actions
      */
-    async modifyActions(actions: any) {
+    async modifyActions(actions: Action[]): Promise<Action[]> {
         return actions;
     }
 }

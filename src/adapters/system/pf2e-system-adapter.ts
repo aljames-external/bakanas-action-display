@@ -139,12 +139,12 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Filter, map, inject, and sort actions for PF2e.
-     * @param {Object[]} actions Base action list from the core
+     * @param {Action[]} actions Base action list from the core
      * @param {Actor} actor 
-     * @returns {Object[]} The modified actions list
+     * @returns {Promise<Action[]>} The modified actions list
      */
-    async modifyActions(actions: any[], actor: any) {
-        const modified: any[] = [];
+    override async modifyActions(actions: Action[], actor: Actor): Promise<Action[]> {
+        const modified: Action[] = [];
 
         const ammoQuantities = this.#buildAmmoQuantitiesMap(actor);
         const spellToEntryMap = this.#buildSpellToEntryMap(actor);
@@ -174,7 +174,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             consumable: Boolean(actor?.getFlag?.(MODULE_ID, 'showUnequipped_consumable'))
         };
 
-        const finalActions: any[] = [];
+        const finalActions: Action[] = [];
         for (const action of modified) {
             action.available = true;
             const item = action.originalItem;
@@ -207,12 +207,13 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * Extract Page 2 ability checks, saving throws, and skill checks for PF2e.
      * In PF2e, saving throws are Fortitude, Reflex, and Will, and perception is a core check.
      * Raw ability checks do not exist in PF2e (skills are rolled instead).
-     * @param {Actor} actor
+     * @param {Actor} [actor]
      * @returns {Action[]}
      */
-    extractCheckActions(actor: any): any[] {
+    override extractCheckActions(actor?: Actor): Action[] {
         if (!actor) return [];
-        const checkActions: any[] = [];
+        const act = actor as any;
+        const checkActions: Action[] = [];
 
         // 1. Core Saves (Fortitude, Reflex, Will) and Perception
         const fortitude = new Action({
@@ -227,7 +228,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             uses: { available: null, max: null },
             roll: async (event) => {
                 const rollEvent = this._createRollEvent(event);
-                return (actor.saves?.fortitude ?? actor.system?.saves?.fortitude)?.roll?.({ event: rollEvent });
+                return (act.saves?.fortitude ?? act.system?.saves?.fortitude)?.roll?.({ event: rollEvent });
             },
             extra: { ability: 'con' }
         });
@@ -245,7 +246,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             uses: { available: null, max: null },
             roll: async (event) => {
                 const rollEvent = this._createRollEvent(event);
-                return (actor.saves?.reflex ?? actor.system?.saves?.reflex)?.roll?.({ event: rollEvent });
+                return (act.saves?.reflex ?? act.system?.saves?.reflex)?.roll?.({ event: rollEvent });
             },
             extra: { ability: 'dex' }
         });
@@ -263,7 +264,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             uses: { available: null, max: null },
             roll: async (event) => {
                 const rollEvent = this._createRollEvent(event);
-                return (actor.saves?.will ?? actor.system?.saves?.will)?.roll?.({ event: rollEvent });
+                return (act.saves?.will ?? act.system?.saves?.will)?.roll?.({ event: rollEvent });
             },
             extra: { ability: 'wis' }
         });
@@ -281,14 +282,14 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             uses: { available: null, max: null },
             roll: async (event) => {
                 const rollEvent = this._createRollEvent(event);
-                return (actor.perception ?? actor.system?.attributes?.perception)?.roll?.({ event: rollEvent });
+                return (act.perception ?? act.system?.attributes?.perception)?.roll?.({ event: rollEvent });
             },
             extra: { ability: 'wis' }
         });
         checkActions.push(perception);
 
         // 2. Skills
-        const actorSkills = actor.skills ?? actor.system?.skills ?? {};
+        const actorSkills = act.skills ?? act.system?.skills ?? {};
         const skillEntries = actorSkills instanceof Map ? Array.from(actorSkills.entries()) : Object.entries(actorSkills);
 
         for (const [key, skill] of skillEntries) {
@@ -311,11 +312,11 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
                     if (skill.roll) {
                         return skill.roll({ event: rollEvent });
                     }
-                    if (actor.rollSkill) {
+                    if (act.rollSkill) {
                         try {
-                            return await actor.rollSkill({ skill: slug, event: rollEvent });
+                            return await act.rollSkill({ skill: slug, event: rollEvent });
                         } catch {
-                            return actor.rollSkill(slug, { event: rollEvent });
+                            return act.rollSkill(slug, { event: rollEvent });
                         }
                     }
                 },
@@ -849,8 +850,8 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return item.use?.({ event: proxiedEvent });
     }
 
-    #createStrikeAction(strike: any, ammoQuantities: any) {
-        return {
+    #createStrikeAction(strike: any, ammoQuantities: any): Action {
+        return new Action({
             id: `strike-${strike.slug ?? strike.label}`,
             name: strike.label,
             type: 'weapon',
@@ -864,7 +865,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             roll: (event: any) => this.#executeStrikeRoll(strike, event),
             originalItem: strike.item,
             extra: { pf2eStrike: strike }
-        };
+        });
     }
 
     #formatActionRow(action: any, spellToEntryMap: any) {

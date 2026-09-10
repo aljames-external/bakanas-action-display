@@ -80,13 +80,13 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     }
 
     /**
-     * Filter, map, and sort actions for PF1e.
-     * @param {Object[]} actions Base action list from the core
+     * Filter, map, and sort the base actions list for PF1e.
+     * @param {Action[]} actions Base action list from the core
      * @param {Actor} actor 
-     * @returns {Object[]} The modified actions list
+     * @returns {Promise<Action[]>} The modified actions list
      */
-    async modifyActions(actions: any[], actor: any) {
-        const modified: any[] = [];
+    override async modifyActions(actions: Action[], actor: Actor): Promise<Action[]> {
+        const modified: Action[] = [];
         const showAll = Boolean(actor?.getFlag?.(MODULE_ID, 'showAll'));
 
         const { attackToWeaponMap, weaponLinkedAttacks } = this.#buildWeaponAttackLinks(actor);
@@ -245,9 +245,10 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @returns {Action[]}
      */
-    extractCheckActions(actor: any): any[] {
+    override extractCheckActions(actor?: Actor): Action[] {
         if (!actor) return [];
-        const checkActions: any[] = [];
+        const act = actor as any;
+        const checkActions: Action[] = [];
         const abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
         const abilityNames: Record<string, string[]> = {
             str: ['PF1.AbilityStr', 'Strength'],
@@ -286,8 +287,8 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                     available: true,
                     roll: async (event: any) => {
                         const rollEvent = this._createRollEvent(event);
-                        return actor.rollSavingThrow?.(saveKey, { event: rollEvent }) ??
-                            actor.rollSave?.(saveKey, { event: rollEvent });
+                        return act.rollSavingThrow?.(saveKey, { event: rollEvent }) ??
+                            act.rollSave?.(saveKey, { event: rollEvent });
                     }
                 });
                 subactions.push(saveSub);
@@ -303,9 +304,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                 available: true,
                 roll: async (event: any) => {
                     const rollEvent = this._createRollEvent(event);
-                    return actor.rollAbilityTest?.(abl, { event: rollEvent }) ??
-                        actor.rollAbilityCheck?.(abl, { event: rollEvent }) ??
-                        actor.rollAbility?.(abl, { event: rollEvent });
+                    return act.rollAbilityTest?.(abl, { event: rollEvent }) ??
+                        act.rollAbilityCheck?.(abl, { event: rollEvent }) ??
+                        act.rollAbility?.(abl, { event: rollEvent });
                 }
             });
             subactions.push(checkSub);
@@ -329,7 +330,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         }
 
         // Skills
-        const skills = actor.system?.skills ?? {};
+        const skills = act.system?.skills ?? {};
         const pf1Config = (CONFIG as any)?.PF1;
         for (const [skillId, rawSkill] of Object.entries(skills)) {
             const skill = rawSkill as any;
@@ -348,7 +349,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                 uses: { available: null, max: null },
                 roll: async (event: any) => {
                     const rollEvent = this._createRollEvent(event);
-                    return actor.rollSkill?.(skillId, { event: rollEvent });
+                    return act.rollSkill?.(skillId, { event: rollEvent });
                 },
                 extra: { ability: abl }
             });
@@ -371,7 +372,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                         uses: { available: null, max: null },
                         roll: async (event: any) => {
                             const rollEvent = this._createRollEvent(event);
-                            return actor.rollSkill?.(`${skillId}.subSkills.${subId}`, { event: rollEvent });
+                            return act.rollSkill?.(`${skillId}.subSkills.${subId}`, { event: rollEvent });
                         },
                         extra: { ability: subAbl }
                     });

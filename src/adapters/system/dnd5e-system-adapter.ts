@@ -110,13 +110,13 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Filter, map, and sort the base actions list for DnD5e.
-     * @param {Object[]} actions Base action list from the core
+     * @param {Action[]} actions Base action list from the core
      * @param {Actor} actor 
-     * @returns {Object[]} The modified actions list
+     * @returns {Promise<Action[]>} The modified actions list
      */
-    async modifyActions(actions: any[], actor: any) {
+    override async modifyActions(actions: Action[], actor: Actor): Promise<Action[]> {
         this.init(actor);
-        const modified: any[] = [];
+        const modified: Action[] = [];
         const showDepleted = Boolean(game.settings.get(MODULE_ID, 'showDepleted'));
 
         const showAll = Boolean(actor?.getFlag?.(MODULE_ID, 'showAll'));
@@ -287,9 +287,10 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         return modified;
     }
 
-    extractCheckActions(actor: any): any[] {
+    override extractCheckActions(actor?: Actor): Action[] {
         if (!actor) return [];
-        const checkActions: any[] = [];
+        const act = actor as any;
+        const checkActions: Action[] = [];
         const abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
         const abilityNames: Record<string, string[]> = {
             str: ['DND5E.AbilityStr', 'Strength'],
@@ -323,8 +324,8 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 available: true,
                 roll: async (event: any) => {
                     const rollEvent = this._createRollEvent(event);
-                    return actor.rollSavingThrow?.({ ability: abl, event: rollEvent })
-                        ?? actor.rollAbilitySave?.({ ability: abl, event: rollEvent });
+                    return act.rollSavingThrow?.({ ability: abl, event: rollEvent })
+                        ?? act.rollAbilitySave?.({ ability: abl, event: rollEvent });
                 }
             });
 
@@ -338,8 +339,8 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 available: true,
                 roll: async (event: any) => {
                     const rollEvent = this._createRollEvent(event);
-                    return actor.rollAbilityTest?.({ ability: abl, event: rollEvent })
-                        ?? actor.rollAbilityCheck?.({ ability: abl, event: rollEvent });
+                    return act.rollAbilityTest?.({ ability: abl, event: rollEvent })
+                        ?? act.rollAbilityCheck?.({ ability: abl, event: rollEvent });
                 }
             });
 
@@ -363,7 +364,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
         // 3. Skill Checks
         const cfg = CONFIG?.DND5E;
-        const skills = actor.system?.skills ?? {};
+        const skills = act.system?.skills ?? {};
         for (const [skillId, rawSkill] of Object.entries(skills)) {
             const skill = rawSkill as any;
             const abl = skill.ability ?? 'dex';
@@ -381,7 +382,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 uses: { available: null, max: null },
                 roll: async (event: any) => {
                     const rollEvent = this._createRollEvent(event);
-                    return actor.rollSkill?.({ skill: skillId, event: rollEvent });
+                    return act.rollSkill?.({ skill: skillId, event: rollEvent });
                 },
                 extra: { ability: abl }
             });
@@ -389,7 +390,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         // 4. Tool Checks
-        const tools = actor.system?.tools ?? {};
+        const tools = act.system?.tools ?? {};
         for (const [toolId, rawTool] of Object.entries(tools)) {
             const tool = rawTool as any;
             const toolConfig = cfg?.tools?.[toolId];
@@ -408,8 +409,8 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 uses: { available: null, max: null },
                 roll: async (event: any) => {
                     const rollEvent = this._createRollEvent(event);
-                    return actor.rollToolCheck?.({ tool: toolId, event: rollEvent })
-                        ?? actor.rollTool?.({ tool: toolId, event: rollEvent });
+                    return act.rollToolCheck?.({ tool: toolId, event: rollEvent })
+                        ?? act.rollTool?.({ tool: toolId, event: rollEvent });
                 },
                 extra: { ability: abl, toolId }
             });

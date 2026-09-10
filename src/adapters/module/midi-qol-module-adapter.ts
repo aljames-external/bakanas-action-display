@@ -1,6 +1,7 @@
 import { BaseModuleAdapter } from './base-module-adapter.js';
 import { toSet } from '../../lib/utils.js';
 import { MODULE_ID } from '../../constants.js';
+import type { Action } from '../../ui/action.js';
 
 /**
  * Module adapter for 'midi-qol' (D&D5e automation).
@@ -13,16 +14,16 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
 
     /**
      * Process actions and check for D&D 5e Midi-QOL automation flags on activities.
-     * @param {Object[]} actions The current list of actions
-     * @returns {Object[]} The modified actions
+     * @param {Action[]} actions The current list of actions
+     * @returns {Promise<Action[]>} The modified actions
      */
-    async modifyActions(actions: any) {
+    override async modifyActions(actions: Action[]): Promise<Action[]> {
         const filterAutomationOnly = Boolean(game.settings?.get?.(MODULE_ID, 'midiQolFilterAutomationOnly') ?? true);
         if (!filterAutomationOnly) {
             return actions;
         }
 
-        const modified: any[] = [];
+        const modified: Action[] = [];
 
         for (const item of actions) {
             // Check if the 5e item has mapped activities
