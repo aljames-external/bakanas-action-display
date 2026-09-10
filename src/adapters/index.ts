@@ -176,7 +176,7 @@ class Adapter {
      * @param {unknown} app Active HUD application
      * @returns {Object[]}
      */
-    getContextMenuItems(app: unknown): any[] {
+    getContextMenuItems(app: unknown): unknown[] {
         return this.system?.getContextMenuItems?.(app) ?? [];
     }
 

@@ -164,10 +164,10 @@ export class BaseSystemAdapter {
      * @returns {unknown} A proxy event or empty object
      * @protected
      */
-    _createRollEvent(event?: unknown): any {
+    _createRollEvent(event?: unknown): Event | Record<string, unknown> {
         if (!event) return {};
 
-        return new Proxy(event, {
+        return new Proxy(event as object, {
             get: (target, prop) => {
                 const propStr = String(prop);
                 if (propStr in MODIFIER_KEY_MAP) {

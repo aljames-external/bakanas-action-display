@@ -58,7 +58,7 @@ export class ContextMenuManager {
      * @returns {ContextMenu} The created ContextMenu instance
      */
     createActionContextMenu() {
-        const menuItems = [
+        const menuItems: ContextMenuItemConfig[] = [
             {
                 name: "SIDEBAR.Edit",
                 icon: '<i class="fas fa-edit"></i>',
@@ -134,7 +134,7 @@ export class ContextMenuManager {
             }
         ];
 
-        const systemItems = adapter.getContextMenuItems(this.app);
+        const systemItems = adapter.getContextMenuItems(this.app) as ContextMenuItemConfig[];
         if (systemItems.length > 0) {
             menuItems.push(...systemItems);
         }
