@@ -13,6 +13,13 @@ export const USER_PERMISSION_TIERS = deepFreeze({
     GM: 3
 });
 
+export interface FromUuidOptions {
+    relative?: foundry.abstract.Document.Any;
+    strict?: boolean;
+    invalid?: boolean;
+    [key: string]: unknown;
+}
+
 /**
  * Base abstract class for all Foundry platform adapters.
  * Encapsulates version-agnostic Foundry Application, ContextMenu, interaction, and utility operations.
@@ -109,17 +116,17 @@ export class BaseFoundryAdapter {
      * @param {Record<string, unknown>} [options={}] Resolution options
      * @returns {Document|null}
      */
-    fromUuidSync(uuid: string, options: Record<string, unknown> = {}): any {
+    fromUuidSync(uuid: string, options: FromUuidOptions = {}): any {
         throw new Error('BaseFoundryAdapter.fromUuidSync must be implemented by version subclass');
     }
 
     /**
      * Safely resolve a document from UUID asynchronously.
      * @param {string} uuid Document UUID
-     * @param {Record<string, unknown>} [options={}] Resolution options
+     * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    async fromUuid(uuid: string, options: Record<string, unknown> = {}): Promise<any> {
+    async fromUuid(uuid: string, options: FromUuidOptions = {}): Promise<any> {
         throw new Error('BaseFoundryAdapter.fromUuid must be implemented by version subclass');
     }
 
@@ -141,7 +148,7 @@ export class BaseFoundryAdapter {
      * @returns {Object}
      */
     mergeObject<T extends object, U extends object>(original: T, other: U = {} as U, options: Record<string, unknown> = {}): T & U {
-        return foundry.utils.mergeObject(original, other, options as any) as unknown as T & U;
+        return foundry.utils.mergeObject(original, other, options as any) as T & U;
     }
 
     /**
@@ -150,7 +157,7 @@ export class BaseFoundryAdapter {
      * @returns {*}
      */
     duplicate<T>(obj: T): T {
-        return foundry.utils.duplicate(obj) as unknown as T;
+        return foundry.utils.duplicate(obj) as T;
     }
 
     /**

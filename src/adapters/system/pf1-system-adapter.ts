@@ -957,7 +957,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 
                 let childItem: Item | null = null;
                 try {
-                    childItem = this.fromUuidSync(child.uuid, { relative: actor as unknown as Record<string, unknown> }) as Item | null;
+                    childItem = this.fromUuidSync(child.uuid, { relative: actor }) as Item | null;
                 } catch (e) {
                     log.error(`Pf1SystemAdapter.modifyActions | Failed to resolve child UUID ${child.uuid}:`, e);
                 }

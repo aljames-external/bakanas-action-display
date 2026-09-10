@@ -2,7 +2,7 @@ import { MODULE_ID } from '../../constants.js';
 import { log } from '../../lib/logger.js';
 import { localize, deepFreeze } from '../../lib/utils.js';
 import { Action } from '../../ui/action.js';
-import { BaseFoundryAdapter } from '../foundry/base-foundry-adapter.js';
+import { BaseFoundryAdapter, type FromUuidOptions } from '../foundry/base-foundry-adapter.js';
 import { BaseSystemContextMenuManager } from './context-menu/base-system-context-menu-manager.js';
 import { BaseSystemTabFilterManager, type FilterContext } from './filter/base-system-tab-filter-manager.js';
 import { BaseSystemContextModifier } from './context-modifier/base-system-context-modifier.js';
@@ -87,21 +87,21 @@ export class BaseSystemAdapter {
     /**
      * Safely resolve a document from UUID synchronously using the Foundry platform adapter.
      * @param {string} uuid Document UUID
-     * @param {Record<string, unknown>} [options={}] Resolution options
-     * @returns {Document|null}
+     * @param {FromUuidOptions} [options={}] Resolution options
+     * @returns {foundry.abstract.Document.Any|null}
      */
-    fromUuidSync(uuid: string, options: Record<string, unknown> = {}): Document | null {
-        return this.foundry.fromUuidSync(uuid, options) as Document | null;
+    fromUuidSync(uuid: string, options: FromUuidOptions = {}): foundry.abstract.Document.Any | null {
+        return this.foundry.fromUuidSync(uuid, options);
     }
 
     /**
      * Safely resolve a document from UUID asynchronously using the Foundry platform adapter.
      * @param {string} uuid Document UUID
-     * @param {Record<string, unknown>} [options={}] Resolution options
-     * @returns {Promise<Document|null>}
+     * @param {FromUuidOptions} [options={}] Resolution options
+     * @returns {Promise<foundry.abstract.Document.Any|null>}
      */
-    async fromUuid(uuid: string, options: Record<string, unknown> = {}): Promise<Document | null> {
-        return this.foundry.fromUuid(uuid, options) as Promise<Document | null>;
+    async fromUuid(uuid: string, options: FromUuidOptions = {}): Promise<foundry.abstract.Document.Any | null> {
+        return this.foundry.fromUuid(uuid, options);
     }
 
     /**
@@ -162,7 +162,7 @@ export class BaseSystemAdapter {
      * @returns {unknown} A proxy event or empty object
      * @protected
      */
-    _createRollEvent(event?: any): any {
+    _createRollEvent(event?: unknown): any {
         if (!event) return {};
 
         return new Proxy(event, {
@@ -170,7 +170,9 @@ export class BaseSystemAdapter {
                 const propStr = String(prop);
                 if (propStr in MODIFIER_KEY_MAP) {
                     const keyProp = propStr as keyof typeof MODIFIER_KEY_MAP;
-                    return Boolean((event as unknown as Record<string, unknown>)[keyProp] || game.keyboard?.isModifierActive(MODIFIER_KEY_MAP[keyProp] as unknown as Parameters<NonNullable<typeof game.keyboard>['isModifierActive']>[0]));
+                    const eventVal = (target as Record<string, unknown>)[keyProp];
+                    const isDown = game.keyboard?.isModifierActive(MODIFIER_KEY_MAP[keyProp]);
+                    return Boolean(eventVal || isDown);
                 }
                 const val = Reflect.get(target, prop);
                 return typeof val === 'function' ? val.bind(target) : val;

@@ -1,5 +1,5 @@
 import { BaseSystemContextModifier } from './base-system-context-modifier.js';
-import type { BaseSystemAdapter } from '../base-system-adapter.js';
+import type { Dnd5eSystemAdapter } from '../dnd5e-system-adapter.js';
 import { localize, deepFreeze } from '../../../lib/utils.js';
 import { MODULE_ID } from '../../../constants.js';
 
@@ -144,7 +144,9 @@ interface ModifierContext {
 }
 
 export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
-    constructor(adapter: BaseSystemAdapter) {
+    declare adapter: Dnd5eSystemAdapter;
+
+    constructor(adapter: Dnd5eSystemAdapter) {
         super(adapter);
     }
 
@@ -316,7 +318,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
             }
             const prefix = parentId.charAt(0).toUpperCase() + parentId.slice(1);
             const subTitle = subId.charAt(0).toUpperCase() + subId.slice(1);
-            const dndConfig = (CONFIG as unknown as { DND5E?: { weaponTypes?: Record<string, string>; equipmentTypes?: Record<string, string> } })?.DND5E;
+            const dndConfig = CONFIG.DND5E;
             const configMap = parentId === 'weapon' ? dndConfig?.weaponTypes : dndConfig?.equipmentTypes;
             return localize(`DND5E.${prefix}${subTitle}`, configMap?.[subId] ?? subId);
         }
@@ -351,12 +353,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
         const config = (LABEL_KEYS.action_subtab as Record<string, { key: string; fallback: string; altKey?: string }>)[subId];
         const fallback = config?.fallback ?? subId;
 
-        const cfg = (CONFIG as unknown as {
-            DND5E?: {
-                activityActivationCategories?: Record<string, { label?: string; name?: string } | string>;
-                activityActivationTypes?: Record<string, { label?: string; name?: string } | string>;
-            };
-        })?.DND5E;
+        const cfg = CONFIG.DND5E;
         const configLabel = cfg?.activityActivationCategories?.[subId]
             ?? cfg?.activityActivationTypes?.[subId];
         if (configLabel) {

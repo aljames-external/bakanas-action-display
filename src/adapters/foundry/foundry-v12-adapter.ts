@@ -1,4 +1,4 @@
-import { BaseFoundryAdapter } from './base-foundry-adapter.js';
+import { BaseFoundryAdapter, type FromUuidOptions } from './base-foundry-adapter.js';
 
 /**
  * Foundry VTT V12 platform baseline adapter.
@@ -42,20 +42,20 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
     /**
      * Safely resolve a document from UUID synchronously in Foundry V12.
      * @param {string} uuid Document UUID
-     * @param {Record<string, unknown>} [options={}] Resolution options
+     * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Document|null}
      */
-    override fromUuidSync(uuid: string, options: Record<string, unknown> = {}): any {
+    override fromUuidSync(uuid: string, options: FromUuidOptions = {}): any {
         return fromUuidSync(uuid, options);
     }
 
     /**
      * Safely resolve a document from UUID asynchronously in Foundry V12.
      * @param {string} uuid Document UUID
-     * @param {Record<string, unknown>} [options={}] Resolution options
+     * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    override async fromUuid(uuid: string, options: Record<string, unknown> = {}): Promise<any> {
+    override async fromUuid(uuid: string, options: FromUuidOptions = {}): Promise<any> {
         return fromUuid(uuid, options);
     }
 

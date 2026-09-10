@@ -152,8 +152,8 @@ export class HUDTab {
      * @param {Object|HUDTab} subTabConfig Sub-tab configuration or instance
      * @returns {HUDTab} The created or added child HUDTab instance
      */
-    addSubTab(subTabConfig: any) {
-        const subTab = subTabConfig instanceof HUDTab 
+    addSubTab(subTabConfig: any): HUDTab {
+        const subTab: HUDTab = Boolean(subTabConfig?.subTabs)
             ? subTabConfig 
             : new HUDTab(subTabConfig);
         subTab.parent = this;

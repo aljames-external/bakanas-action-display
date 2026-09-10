@@ -30,11 +30,7 @@ export class BaseSystemContextMenuManager {
      * @returns {Promise<Actor>|undefined} Persistence promise
      */
     setActorFlagOptimistic(actor: Actor, scope: string, key: string, value: unknown): Promise<unknown> | undefined {
-        if (!actor) return;
-        const actorFlags = (actor.flags ?? {}) as Record<string, Record<string, unknown>>;
-        actorFlags[scope] ??= {};
-        actorFlags[scope][key] = value;
-        return (actor.setFlag as unknown as ((scope: string, key: string, value: unknown, options?: object) => Promise<unknown>) | undefined)?.(scope, key, value, { badInternal: true });
+        return this.updateActorFlagsOptimistic(actor, scope, { [key]: value });
     }
 
     /**
@@ -56,15 +52,16 @@ export class BaseSystemContextMenuManager {
             for (const [key, value] of Object.entries(flags)) {
                 updates[`flags.${scope}.${key}`] = value;
             }
-            return (actor.update as unknown as ((data: Record<string, unknown>, options?: object) => Promise<unknown>))(updates, { badInternal: true });
+            return actor.update(updates as never, { badInternal: true } as never);
         }
-        const promises: Promise<unknown>[] = [];
-        const setFlagFn = actor.setFlag as unknown as ((scope: string, key: string, value: unknown, options?: object) => Promise<unknown>) | undefined;
-        for (const [key, value] of Object.entries(flags)) {
-            const p = setFlagFn?.(scope, key, value, { badInternal: true });
-            if (p) promises.push(p);
+        if (actor.setFlag) {
+            const promises: Promise<unknown>[] = [];
+            for (const [key, value] of Object.entries(flags)) {
+                promises.push(actor.setFlag(scope as never, key as never, value as never));
+            }
+            return Promise.all(promises);
         }
-        return Promise.all(promises);
+        return undefined;
     }
 
     /**

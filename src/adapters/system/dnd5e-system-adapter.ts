@@ -1016,7 +1016,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         // Special Communication (semicolon-separated)
         const specialData = (langData as any)?.special;
         if (specialData) {
-            const list = Array.isArray(specialData) || (specialData as any) instanceof Set ? specialData : [specialData];
+            const list = Array.isArray(specialData) || (typeof specialData === 'object' && 'has' in specialData) ? specialData : [specialData];
             for (const item of list) {
                 const parts = typeof item === 'string' ? item.split(';').map((s: string) => s.trim()).filter(Boolean) : [];
                 for (const part of parts) {
@@ -1443,8 +1443,8 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
     #resolveTargetItem(targetId: string | null | undefined, item: Item, actor: Actor | null): Item | null {
         if (!targetId) return null;
         if (targetId.includes('.')) {
-            const doc = this.fromUuidSync(targetId, { relative: item as unknown as Record<string, unknown> })
-                ?? (actor ? this.fromUuidSync(targetId, { relative: actor as unknown as Record<string, unknown> }) : null)
+            const doc = this.fromUuidSync(targetId, { relative: item })
+                ?? (actor ? this.fromUuidSync(targetId, { relative: actor }) : null)
                 ?? this.fromUuidSync(targetId)
                 ?? actor?.items.get(targetId);
             return (doc as Item) ?? null;

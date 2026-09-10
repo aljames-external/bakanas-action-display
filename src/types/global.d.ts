@@ -42,9 +42,27 @@ declare global {
   }
 
   interface CONFIG {
-    DND5E?: any;
+    DND5E?: {
+      weaponTypes?: Record<string, string>;
+      equipmentTypes?: Record<string, string>;
+      activityActivationCategories?: Record<string, { label?: string; name?: string } | string>;
+      activityActivationTypes?: Record<string, { label?: string; name?: string } | string>;
+      [key: string]: any;
+    };
     PF1?: any;
     PF2E?: any;
+    Item?: {
+      typeLabels?: Record<string, string>;
+      [key: string]: any;
+    };
+  }
+
+  namespace foundry.helpers.interaction.KeyboardManager {
+    interface ModifierKeys {
+      Alt: any;
+      Control: any;
+      Shift: any;
+    }
   }
 
   var Sequencer: any;
@@ -52,6 +70,7 @@ declare global {
   var Tagger: any;
   var socketlib: any;
   var dnd5e: any;
+  var KeyboardManager: any;
 
   namespace Hooks {
     interface HookConfig {
