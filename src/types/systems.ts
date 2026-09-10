@@ -31,6 +31,7 @@ export interface Dnd5eActivity {
     img?: string;
     item?: Item5e;
     parent?: Item5e;
+    spell?: Item5e | string | { uuid?: string; [key: string]: unknown } | null;
     use?(usage?: unknown, dialog?: unknown): Promise<unknown>;
     [key: string]: unknown;
 }
@@ -95,7 +96,8 @@ export interface Actor5e extends Omit<Actor, "system"> {
     rollTool?(options: { tool: string; event?: unknown }): Promise<unknown>;
 }
 
-export interface Item5e extends Omit<Item, "system"> {
+export interface Item5e extends Omit<Item, "system" | "type"> {
+    type: string;
     system: {
         activities?: {
             get?(id: string): Dnd5eActivity | undefined;
@@ -110,6 +112,7 @@ export interface Item5e extends Omit<Item, "system"> {
         method?: string;
         quantity?: number;
         properties?: Set<string> | string[];
+        components?: Record<string, boolean>;
         type?: { value?: string; [key: string]: unknown };
         ammunition?: { type?: string; [key: string]: unknown };
         activation?: { type?: string; [key: string]: unknown };
