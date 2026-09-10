@@ -11,9 +11,9 @@ import { CombatMovementTracker } from './combat/combat-movement-tracker.js';
 
 let closePersistentHUD = false;
 let explicitlyClosedTokenId: string | null = null;
-let renderDebounceTimer: any = null;
-const wrappedHUDClasses = new WeakSet();
-const closingTokens = new WeakMap();
+let renderDebounceTimer: ReturnType<typeof setTimeout> | number | null = null;
+const wrappedHUDClasses = new WeakSet<object>();
+const closingTokens = new WeakMap<object, Token>();
 
 export function setExplicitlyClosedTokenId(tokenId: string | null): void {
     explicitlyClosedTokenId = tokenId;
@@ -33,7 +33,7 @@ Hooks.once('init', async () => {
     const TokenClass = adapter.foundry.Token as any;
     const originalRightClick = TokenClass?.prototype?._onClickRight;
     if (originalRightClick) {
-        TokenClass.prototype._onClickRight = function (event: any) {
+        TokenClass.prototype._onClickRight = function (event: Event) {
             const tokenHUD = (canvas as any)?.hud?.token;
             const isTokenHUDOpen = Boolean(tokenHUD?.rendered && (tokenHUD.object === this || tokenHUD.object?.id === this.id));
             const currentApp = actionDisplay.activeApp;
@@ -75,14 +75,14 @@ function wrapTokenHUD() {
     log.info(`Wrapping ${hudClass.name}.prototype.bind, clear, and close`);
 
     const originalBind = hudClass.prototype.bind;
-    hudClass.prototype.bind = function (object: any, ...args: any[]) {
+    hudClass.prototype.bind = function (object: Token | null, ...args: unknown[]) {
         const result = originalBind.apply(this, [object, ...args]);
         if (object) handleHUDBind(object);
         return result;
     };
 
     const originalClear = hudClass.prototype.clear;
-    hudClass.prototype.clear = function (...args: any[]) {
+    hudClass.prototype.clear = function (...args: unknown[]) {
         const closingToken = this.object;
         if (closingToken) closingTokens.set(this, closingToken);
         handleHUDClose(closingToken);
@@ -90,7 +90,7 @@ function wrapTokenHUD() {
     };
 
     const originalClose = hudClass.prototype.close;
-    hudClass.prototype.close = function (...args: any[]) {
+    hudClass.prototype.close = function (...args: unknown[]) {
         const closingToken = this.object;
         if (closingToken) closingTokens.set(this, closingToken);
         handleHUDClose(closingToken);
@@ -104,7 +104,7 @@ function wrapTokenHUD() {
  * If closingToken is provided, only closes if it matches the current activeApp token.
  * @param {Token|null} [closingToken=null]
  */
-function handleHUDClose(closingToken: any = null): void {
+function handleHUDClose(closingToken: Token | null = null): void {
     const currentApp = actionDisplay.activeApp;
     if (currentApp) {
         if (closingToken) {
@@ -130,13 +130,15 @@ function handleHUDClose(closingToken: any = null): void {
 }
 
 /**
- * Check if an updated or modified document belongs to the active HUD's actor.
- * Handles both standard linked actors and synthetic unlinked token actors.
+ * Check if an updated document belongs to the active HUD's token actor.
  * @param {Actor} [docActor]
  * @param {Document} [docParent]
  * @returns {boolean}
  */
-function isMatchingActor(docActor: any, docParent: any): boolean {
+function isMatchingActor(
+    docActor: { id?: string | null; uuid?: string | null } | null | undefined,
+    docParent: { id?: string | null; uuid?: string | null; token?: { id?: string | null; uuid?: string | null } | null } | null | undefined
+): boolean {
     const currentApp = actionDisplay.activeApp;
     if (!currentApp?.rendered || !currentApp.actor) return false;
     const activeActor = currentApp.actor;
@@ -310,12 +312,12 @@ const DELTA_FLAG_PREFIX = `delta.flags.${MODULE_ID}`;
  * @param {Object} [changes]
  * @returns {boolean}
  */
-function isOnlyModuleFlagChanges(changes: any): boolean {
+function isOnlyModuleFlagChanges(changes: Record<string, unknown> | null | undefined): boolean {
     const nonMetaKeys = Object.keys(changes ?? {}).filter(k => !METADATA_KEYS.has(k) && !k.startsWith('_stats.'));
     return nonMetaKeys.length > 0 && nonMetaKeys.every(key => {
         if (key.startsWith(MODULE_FLAG_PREFIX) || key.startsWith(ACTOR_DATA_FLAG_PREFIX) || key.startsWith(DELTA_FLAG_PREFIX)) return true;
         if (key === 'flags') {
-            const flagKeys = Object.keys(changes.flags ?? {});
+            const flagKeys = Object.keys((changes as any)?.flags ?? {});
             return flagKeys.length === 1 && flagKeys[0] === MODULE_ID;
         }
         return false;
@@ -342,9 +344,9 @@ Hooks.on('updateActor', ((actor: any, changes: any, options: any, userId: any) =
 }) as any);
 
 // Hook into ActiveEffect updates (status conditions gained/lost) on actors
-function handleActiveEffectChange(effect: any): void {
+function handleActiveEffectChange(effect: { parent?: { documentName?: string; actor?: Actor | null; [key: string]: unknown } } | null | undefined): void {
     const parent = effect?.parent;
-    const actor = parent?.documentName === 'Actor' ? parent : (parent?.actor ?? null);
+    const actor = parent?.documentName === 'Actor' ? (parent as unknown as Actor) : (parent?.actor ?? null);
     if (!actor) return;
     const currentApp = actionDisplay.activeApp;
     const isCurrent = isMatchingActor(actor, null);
@@ -481,17 +483,17 @@ Hooks.on('combatRound', (combat, updateData, updateOptions) => {
 });
 
 // Hook into Combatant changes (token added/removed from combat, initiative rolled)
-Hooks.on('createCombatant', ((combatant: any, options: any, userId: any) => {
+Hooks.on('createCombatant', () => {
     requestHUDRender();
-}) as any);
+});
 
-Hooks.on('deleteCombatant', ((combatant: any, options: any, userId: any) => {
+Hooks.on('deleteCombatant', () => {
     requestHUDRender();
-}) as any);
+});
 
-Hooks.on('updateCombatant', ((combatant: any, changes: any, options: any, userId: any) => {
+Hooks.on('updateCombatant', () => {
     requestHUDRender();
-}) as any);
+});
 
 // Hook into token position changes before database persistence to record movement
 Hooks.on('preUpdateToken', ((tokenDoc: any, changes: any, options: any, userId: any) => {

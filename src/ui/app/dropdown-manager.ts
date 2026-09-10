@@ -10,18 +10,18 @@ const sortByName = (a: { name?: string | null }, b: { name?: string | null }) =>
 
 /**
  * Open a context submenu for an individual subaction/activity item (e.g. right-clicking an activity in the dropdown).
- * @param {ApplicationV2} app Active HUD application
+ * @param {ActionDisplayApp} app Active HUD application
  * @param {HTMLElement} targetLi Target activity list item element
- * @param {Object} subaction The subaction or activity data object
+ * @param {Action} subaction The subaction or activity data object
  */
-export function openActivitySubContextMenu(app: any, targetLi: HTMLElement, subaction: Action) {
+export function openActivitySubContextMenu(app: ActionDisplayApp, targetLi: HTMLElement, subaction: Action) {
     const menuItems = [
         {
             name: "SIDEBAR.Edit",
             icon: '<i class="fas fa-edit"></i>',
             condition: () => {
                 if (!app.actor?.isOwner) return false;
-                const entity = (subaction as any)?.originalActivity ?? (subaction as any)?.originalItem;
+                const entity = ((subaction as unknown as Record<string, unknown>)?.originalActivity ?? (subaction as unknown as Record<string, unknown>)?.originalItem) as { sheet?: { render: (force: boolean) => void }; edit?: () => void } | null;
                 return Boolean(entity?.sheet?.render || entity?.edit);
             },
             callback: () => {
@@ -42,10 +42,10 @@ export function openActivitySubContextMenu(app: any, targetLi: HTMLElement, suba
  * Construct a menu item definition for an individual subaction inside the dropdown.
  * @param {Object} sub The subaction data object
  * @param {Event} event The triggering click event
- * @param {ApplicationV2} [app=null] Active HUD application
+ * @param {ActionDisplayApp|null} [app=null] Active HUD application
  * @returns {Object} Menu item configuration
  */
-export function buildSubactionMenuItem(sub: Action, event: Event, app: any = null) {
+export function buildSubactionMenuItem(sub: Action, event: Event, app: ActionDisplayApp | null = null) {
     const uses = sub?.uses;
     const iconHtml = sub?.img
         ? `<img class="bad-menu-icon bad-action-icon" src="${sub.img}" alt="${sub.name ?? ''}" />`
@@ -92,7 +92,7 @@ export function buildSubactionMenuItem(sub: Action, event: Event, app: any = nul
             }
             app?._hideItemSummaryTooltip?.();
             await app?._activeLeftClickMenu?.close?.({ force: true });
-            const item = (sub as any)?.originalItem ?? sub;
+            const item = sub?.originalItem ?? sub;
             const actor = app?.actor ?? null;
             const token = app?.token ?? null;
             const user = game.user;
@@ -104,14 +104,14 @@ export function buildSubactionMenuItem(sub: Action, event: Event, app: any = nul
 
 /**
  * Display the subaction / activity selection dropdown menu anchored to the action card.
- * @param {ApplicationV2} app Active HUD application
+ * @param {ActionDisplayApp} app Active HUD application
  * @param {HTMLElement} target Action card target element
- * @param {Object[]} subactions Array of qualifying subaction objects
+ * @param {Action[]} subactions Array of qualifying subaction objects
  * @param {Event} event Triggering click event
- * @param {Object} [parentAction=null] Optional parent action card object
+ * @param {Action|null} [parentAction=null] Optional parent action card object
  */
 export function showActivityDropdown(
-    app: any,
+    app: ActionDisplayApp,
     target: HTMLElement,
     subactions: Action[],
     event: Event,
@@ -263,7 +263,7 @@ export function showActivityDropdown(
 
     const menu = new ContextMenuClass(targetBody, ".bad-action-item", menuItems, options);
     menu._setPosition = (html: HTMLElement | JQuery | unknown) => {
-        const menuEl = (html instanceof HTMLElement ? html : (html as any)?.[0]) ?? document.querySelector<HTMLElement>('#context-menu, .context-menu');
+        const menuEl = (html instanceof HTMLElement ? html : (html as ArrayLike<HTMLElement>)?.[0]) ?? document.querySelector<HTMLElement>('#context-menu, .context-menu');
         if (menuEl) applyPositioning(menuEl);
     };
     menu.setPosition = menu._setPosition;

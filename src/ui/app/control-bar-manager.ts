@@ -147,12 +147,16 @@ export class ControlBarManager {
      * Declarative dispatch for right-click contextmenu events.
      * Intercepts elements with [data-context-action], blurs the element to prevent
      * focus styling retention, stops event propagation, and invokes the registered handler.
-     * @param {Object} app The ActionDisplayApp instance
+     * @param {ActionDisplayApp} app The ActionDisplayApp instance
      * @param {Event} event The triggering contextmenu event
      * @returns {Promise<boolean>} True if event was handled
      */
-    static async dispatchContextAction(app: any, event: any) {
-        const contextTarget = event?.target?.closest?.('[data-context-action]');
+    static async dispatchContextAction(
+        app: ActionDisplayApp | (Record<string, unknown> & { constructor?: unknown }),
+        event: MouseEvent | PointerEvent | Event
+    ): Promise<boolean> {
+        const target = event?.target as HTMLElement | null;
+        const contextTarget = target?.closest?.<HTMLElement>('[data-context-action]');
         if (contextTarget) {
             event.preventDefault?.();
             event.stopPropagation?.();
@@ -160,8 +164,10 @@ export class ControlBarManager {
             contextTarget.blur?.();
 
             const actionName = contextTarget.dataset.contextAction;
-            const handler = app.constructor?.DEFAULT_OPTIONS?.contextActions?.[actionName]
-                ?? app[actionName];
+            if (!actionName) return true;
+            const appConstructor = app.constructor as { DEFAULT_OPTIONS?: { contextActions?: Record<string, (event: Event, target: HTMLElement) => Promise<unknown> | unknown> } } | undefined;
+            const appMethods = app as unknown as Record<string, ((event: Event, target: HTMLElement) => Promise<unknown> | unknown) | undefined>;
+            const handler = appConstructor?.DEFAULT_OPTIONS?.contextActions?.[actionName] ?? appMethods[actionName];
 
             if (handler) {
                 try {
@@ -177,13 +183,15 @@ export class ControlBarManager {
 
         // Fallback for elements/tests querying legacy class selectors without data-context-action
         for (const { selector, method } of LEGACY_FALLBACKS) {
-            const btn = event?.target?.closest?.(selector);
-            if (btn && app[method]) {
+            const btn = target?.closest?.<HTMLElement>(selector);
+            const appMethods = app as unknown as Record<string, ((event: Event, target: HTMLElement) => Promise<unknown> | unknown) | undefined>;
+            const fallbackHandler = appMethods[method];
+            if (btn && fallbackHandler) {
                 event.preventDefault?.();
                 event.stopPropagation?.();
                 event.stopImmediatePropagation?.();
                 btn.blur?.();
-                await app[method](event, btn);
+                await fallbackHandler.call(app, event, btn);
                 return true;
             }
         }
