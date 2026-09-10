@@ -293,7 +293,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             const combatantFromActor = combat.combatants?.find?.(c => c.actorId === actorId);
             if (combatantFromActor) return combatantFromActor;
         }
-        return (this.actor as unknown as { combatant?: Combatant | null })?.combatant ?? null;
+        return this.actor?.combatant ?? null;
     }
 
     /**

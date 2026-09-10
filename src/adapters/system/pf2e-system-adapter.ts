@@ -66,17 +66,6 @@ interface Pf2eStrike {
     [key: string]: unknown;
 }
 
-interface Pf2eConfig {
-    actorSizes?: Record<string, string>;
-    creatureTraits?: Record<string, string>;
-    damageTypes?: Record<string, string>;
-    immunityTypes?: Record<string, string>;
-    weaknessTypes?: Record<string, string>;
-    languages?: Record<string, string>;
-    senses?: Record<string, string>;
-    [key: string]: unknown;
-}
-
 const PF2E_ACTION_TYPE_MAP = deepFreeze({
     'reaction': 'reaction',
     'free': 'other',
@@ -329,7 +318,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             const skill = rawSkill as Pf2eStatistic;
             const slug = skill.slug ?? key;
             const abl = (PF2E_SKILL_ABILITY_MAP as Record<string, string>)[slug] ?? skill.ability ?? 'dex';
-            const label = skill.label ?? skill.name ?? (CONFIG as any)?.PF2E?.skills?.[slug] ?? slug;
+            const label = skill.label ?? skill.name ?? CONFIG?.PF2E?.skills?.[slug] ?? slug;
             const skillImg = (PF2E_ABILITY_ICONS as Record<string, string>)[abl] ?? 'icons/svg/d20.svg';
             const skillAction = new Action({
                 id: `skill-${slug}`,
@@ -507,11 +496,11 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
         const act = actor as ActorPF2e;
         const system = act.system ?? {};
-        const cfg = (CONFIG as any)?.PF2E;
+        const cfg = CONFIG?.PF2E;
 
         // 1. Name and Image
         const name = token?.name ?? actor.name ?? '';
-        const img = token?.document?.texture?.src ?? (token as any)?.texture?.src ?? actor.img ?? 'icons/svg/mystery-man.svg';
+        const img = token?.document?.texture?.src ?? (token as { texture?: { src?: string } } | null)?.texture?.src ?? actor.img ?? 'icons/svg/mystery-man.svg';
 
         // 2. Creature Type, Traits, Size, Alignment, Level / Creature
         const typeInfo = this.#extractCreatureType(actor, cfg);
@@ -588,7 +577,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return CombatMovementTracker.getMovementThisTurn(token, actor);
     }
 
-    #extractCreatureType(actor: Actor, cfg: Pf2eConfig = (CONFIG as unknown as { PF2E?: Pf2eConfig })?.PF2E ?? {}) {
+    #extractCreatureType(actor: Actor, cfg: Pf2eConfig = CONFIG?.PF2E ?? {}) {
         const act = actor as ActorPF2e;
         const system = act?.system ?? {};
         const details = (system as any).details ?? {};
@@ -679,7 +668,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractResistances(actor: Actor, cfg: Pf2eConfig = (CONFIG as unknown as { PF2E?: Pf2eConfig })?.PF2E ?? {}): string[] {
+    #extractResistances(actor: Actor, cfg: Pf2eConfig = CONFIG?.PF2E ?? {}): string[] {
         const act = actor as ActorPF2e;
         const resistances = (act as any)?.system?.attributes?.resistances ?? [];
         const results: string[] = [];
@@ -699,7 +688,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return results;
     }
 
-    #extractImmunities(actor: Actor, cfg: Pf2eConfig = (CONFIG as unknown as { PF2E?: Pf2eConfig })?.PF2E ?? {}): string[] {
+    #extractImmunities(actor: Actor, cfg: Pf2eConfig = CONFIG?.PF2E ?? {}): string[] {
         const act = actor as ActorPF2e;
         const immunities = (act as any)?.system?.attributes?.immunities ?? [];
         const results: string[] = [];
@@ -718,7 +707,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return results;
     }
 
-    #extractWeaknesses(actor: Actor, cfg: Pf2eConfig = (CONFIG as unknown as { PF2E?: Pf2eConfig })?.PF2E ?? {}): string[] {
+    #extractWeaknesses(actor: Actor, cfg: Pf2eConfig = CONFIG?.PF2E ?? {}): string[] {
         const act = actor as ActorPF2e;
         const weaknesses = (act as any)?.system?.attributes?.weaknesses ?? [];
         const results: string[] = [];
@@ -738,7 +727,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return results;
     }
 
-    #extractLanguages(actor: Actor, cfg: Pf2eConfig = (CONFIG as unknown as { PF2E?: Pf2eConfig })?.PF2E ?? {}): string[] {
+    #extractLanguages(actor: Actor, cfg: Pf2eConfig = CONFIG?.PF2E ?? {}): string[] {
         const act = actor as ActorPF2e;
         const langData = (act as any)?.system?.details?.languages;
         if (!langData) return [];
@@ -764,7 +753,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return Array.from(new Set(results));
     }
 
-    #extractSenses(actor: Actor, cfg: Pf2eConfig = (CONFIG as unknown as { PF2E?: Pf2eConfig })?.PF2E ?? {}): string[] {
+    #extractSenses(actor: Actor, cfg: Pf2eConfig = CONFIG?.PF2E ?? {}): string[] {
         const act = actor as ActorPF2e;
         const sensesData = (act as any)?.system?.traits?.senses ?? (act as any)?.perception?.senses;
         if (!sensesData) return [];

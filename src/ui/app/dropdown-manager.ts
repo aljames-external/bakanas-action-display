@@ -21,8 +21,8 @@ export function openActivitySubContextMenu(app: ActionDisplayApp, targetLi: HTML
             icon: '<i class="fas fa-edit"></i>',
             condition: () => {
                 if (!app.actor?.isOwner) return false;
-                const entity = ((subaction as unknown as Record<string, unknown>)?.originalActivity ?? (subaction as unknown as Record<string, unknown>)?.originalItem) as { sheet?: { render: (force: boolean) => void }; edit?: () => void } | null;
-                return Boolean(entity?.sheet?.render || entity?.edit);
+                const entity = subaction.originalActivity ?? subaction.originalItem;
+                return Boolean(entity?.sheet?.render || (entity as { edit?: () => void } | null)?.edit);
             },
             callback: () => {
                 adapter.openEditSheet(subaction);

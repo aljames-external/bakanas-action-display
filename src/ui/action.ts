@@ -24,6 +24,8 @@ export interface ActionOptions {
     isActive?: boolean;
     activationType?: string;
     excludeFromAll?: boolean;
+    actor?: Actor | null;
+    token?: Token | null;
 }
 
 /**
@@ -53,6 +55,8 @@ export class Action {
     isActive: boolean;
     activationType?: string;
     excludeFromAll: boolean;
+    actor?: Actor | null;
+    token?: Token | null;
 
     /**
      * @param {Object} options
@@ -100,7 +104,9 @@ export class Action {
         extra = {},
         isActive = false,
         activationType,
-        excludeFromAll = false
+        excludeFromAll = false,
+        actor = null,
+        token = null
     }: ActionOptions) {
         this.id = id;
         this.name = name;
@@ -125,6 +131,8 @@ export class Action {
         this.isActive = isActive;
         this.activationType = activationType;
         this.excludeFromAll = excludeFromAll;
+        this.actor = actor;
+        this.token = token;
     }
 
     /**

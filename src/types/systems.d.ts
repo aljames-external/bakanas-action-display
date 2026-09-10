@@ -207,9 +207,26 @@ export interface Item5e extends Omit<Item, "system" | "type"> {
 /*  Pathfinder 1e (pf1)                        */
 /* -------------------------------------------- */
 
+export interface Pf1Config {
+    actorSizes?: Record<string, string>;
+    alignments?: Record<string, string>;
+    creatureTypes?: Record<string, string>;
+    subTypes?: Record<string, string>;
+    flyManeuverabilities?: Record<string, string>;
+    damageReductionTypes?: Record<string, string>;
+    damageTypes?: Record<string, string>;
+    conditionTypes?: Record<string, string>;
+    conditions?: Record<string, string>;
+    languages?: Record<string, string>;
+    senses?: Record<string, string>;
+    skills?: Record<string, { ability?: string; label?: string }>;
+    [key: string]: unknown;
+}
+
 export interface Pf1Skill {
     ability?: string;
     name?: string;
+    label?: string;
     subSkills?: Record<string, Pf1Skill>;
     [key: string]: unknown;
 }
@@ -281,6 +298,18 @@ export interface ItemPF extends Omit<Item, "system"> {
 /* -------------------------------------------- */
 /*  Pathfinder 2e (pf2e)                       */
 /* -------------------------------------------- */
+
+export interface Pf2eConfig {
+    actorSizes?: Record<string, string>;
+    creatureTraits?: Record<string, string>;
+    damageTypes?: Record<string, string>;
+    immunityTypes?: Record<string, string>;
+    weaknessTypes?: Record<string, string>;
+    languages?: Record<string, string>;
+    senses?: Record<string, string>;
+    skills?: Record<string, string>;
+    [key: string]: unknown;
+}
 
 export interface Pf2eStatistic {
     roll?(options?: { event?: unknown }): Promise<unknown>;

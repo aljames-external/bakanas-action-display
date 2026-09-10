@@ -69,7 +69,7 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
      */
     override getCombatantsByToken(combat: Combat, token: Token): Combatant[] {
         if (!combat || !token) return [];
-        return (combat as unknown as { getCombatantsByToken?: (t: Token) => Combatant[] }).getCombatantsByToken?.(token) ?? [];
+        return (combat as { getCombatantsByToken?: (t: unknown) => Combatant[] }).getCombatantsByToken?.(token) ?? [];
     }
 
     /**

@@ -7,22 +7,6 @@ import { MODULE_ID } from '../../constants.js';
 import { Pf1SystemContextMenuManager } from './context-menu/pf1-system-context-menu-manager.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
 
-interface Pf1Config {
-    actorSizes?: Record<string, string>;
-    alignments?: Record<string, string>;
-    creatureTypes?: Record<string, string>;
-    subTypes?: Record<string, string>;
-    flyManeuverabilities?: Record<string, string>;
-    damageReductionTypes?: Record<string, string>;
-    damageTypes?: Record<string, string>;
-    conditionTypes?: Record<string, string>;
-    conditions?: Record<string, string>;
-    languages?: Record<string, string>;
-    senses?: Record<string, string>;
-    skills?: Record<string, { ability?: string; label?: string }>;
-    [key: string]: unknown;
-}
-
 interface Pf1Spellbook {
     kind?: string;
     spellPreparationMode?: string;
@@ -381,11 +365,13 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 
         // Skills
         const skills = act.system?.skills ?? {};
-        const pf1Config = (CONFIG as unknown as { PF1?: Pf1Config })?.PF1;
+        const pf1Config = CONFIG?.PF1;
         for (const [skillId, rawSkill] of Object.entries(skills)) {
             const skill = rawSkill as Pf1Skill;
             const abl = skill.ability ?? pf1Config?.skills?.[skillId]?.ability ?? 'dex';
-            const label = skill.name ?? pf1Config?.skills?.[skillId]?.label ?? (pf1Config?.skills?.[skillId] as unknown as string) ?? skill.label ?? skillId;
+            const rawConfigSkill = pf1Config?.skills?.[skillId];
+            const configLabel = typeof rawConfigSkill === 'string' ? rawConfigSkill : rawConfigSkill?.label;
+            const label = skill.name ?? configLabel ?? skill.label ?? skillId;
             const skillImg = abilityIcons[abl] ?? 'icons/svg/d20.svg';
             const skillAction = new Action({
                 id: `skill-${skillId}`,
@@ -494,11 +480,11 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 
         const act = actor as ActorPF;
         const system = (act.system as Record<string, unknown>) ?? {};
-        const cfg: Pf1Config = (CONFIG as unknown as { PF1?: Pf1Config })?.PF1 ?? {};
+        const cfg: Pf1Config = CONFIG?.PF1 ?? {};
 
         // 1. Name and Image
         const name = token?.name ?? actor.name ?? '';
-        const img = token?.document?.texture?.src ?? (token as unknown as { texture?: { src?: string } })?.texture?.src ?? actor.img ?? 'icons/svg/mystery-man.svg';
+        const img = token?.document?.texture?.src ?? (token as { texture?: { src?: string } } | null)?.texture?.src ?? actor.img ?? 'icons/svg/mystery-man.svg';
 
         // 2. Creature Type, Race, Size, Alignment, CR / Level
         const typeInfo = this.#extractCreatureType(actor, cfg);
@@ -578,7 +564,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         return CombatMovementTracker.getMovementThisTurn(token, actor);
     }
 
-    #extractCreatureType(actor: Actor, cfg: Pf1Config = (CONFIG as unknown as { PF1?: Pf1Config })?.PF1 ?? {}) {
+    #extractCreatureType(actor: Actor, cfg: Pf1Config = CONFIG?.PF1 ?? {}) {
         const act = actor as ActorPF;
         const system = (act?.system as Record<string, unknown>) ?? {};
         const details = (system.details as Record<string, unknown>) ?? {};
@@ -668,7 +654,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractMovement(actor: Actor, cfg: Pf1Config = (CONFIG as unknown as { PF1?: Pf1Config })?.PF1 ?? {}, token: Token | null = null) {
+    #extractMovement(actor: Actor, cfg: Pf1Config = CONFIG?.PF1 ?? {}, token: Token | null = null) {
         const act = actor as ActorPF;
         const speed = (((act?.system as Record<string, unknown>)?.attributes as Record<string, unknown>)?.speed as {
             land?: { total?: number; value?: number };
@@ -733,7 +719,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         return Array.from(new Set(results));
     }
 
-    #extractResistances(actor: Actor, cfg: Pf1Config = (CONFIG as unknown as { PF1?: Pf1Config })?.PF1 ?? {}): string[] {
+    #extractResistances(actor: Actor, cfg: Pf1Config = CONFIG?.PF1 ?? {}): string[] {
         const act = actor as ActorPF;
         const traits = ((act?.system as Record<string, unknown>)?.traits as { dr?: Pf1TraitData; eres?: Pf1TraitData }) ?? {};
         const results: string[] = [];
@@ -753,27 +739,27 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         return Array.from(new Set(results));
     }
 
-    #extractDamageImmunities(actor: Actor, cfg: Pf1Config = (CONFIG as unknown as { PF1?: Pf1Config })?.PF1 ?? {}): string[] {
+    #extractDamageImmunities(actor: Actor, cfg: Pf1Config = CONFIG?.PF1 ?? {}): string[] {
         const act = actor as ActorPF;
         return this.extractTraitEntries(((act?.system as Record<string, unknown>)?.traits as { di?: Pf1TraitData })?.di, cfg?.damageTypes ?? null);
     }
 
-    #extractConditionImmunities(actor: Actor, cfg: Pf1Config = (CONFIG as unknown as { PF1?: Pf1Config })?.PF1 ?? {}): string[] {
+    #extractConditionImmunities(actor: Actor, cfg: Pf1Config = CONFIG?.PF1 ?? {}): string[] {
         const act = actor as ActorPF;
         return this.extractTraitEntries(((act?.system as Record<string, unknown>)?.traits as { ci?: Pf1TraitData })?.ci, cfg?.conditionTypes ?? cfg?.conditions ?? null);
     }
 
-    #extractVulnerabilities(actor: Actor, cfg: Pf1Config = (CONFIG as unknown as { PF1?: Pf1Config })?.PF1 ?? {}): string[] {
+    #extractVulnerabilities(actor: Actor, cfg: Pf1Config = CONFIG?.PF1 ?? {}): string[] {
         const act = actor as ActorPF;
         return this.extractTraitEntries(((act?.system as Record<string, unknown>)?.traits as { dv?: Pf1TraitData })?.dv, cfg?.damageTypes ?? null);
     }
 
-    #extractLanguages(actor: Actor, cfg: Pf1Config = (CONFIG as unknown as { PF1?: Pf1Config })?.PF1 ?? {}): string[] {
+    #extractLanguages(actor: Actor, cfg: Pf1Config = CONFIG?.PF1 ?? {}): string[] {
         const act = actor as ActorPF;
         return this.extractTraitEntries(((act?.system as Record<string, unknown>)?.traits as { languages?: Pf1TraitData })?.languages, cfg?.languages ?? null);
     }
 
-    #extractSenses(actor: Actor, _cfg: Pf1Config = (CONFIG as unknown as { PF1?: Pf1Config })?.PF1 ?? {}): string[] {
+    #extractSenses(actor: Actor, _cfg: Pf1Config = CONFIG?.PF1 ?? {}): string[] {
         const act = actor as ActorPF;
         const sensesData = ((act?.system as Record<string, unknown>)?.traits as { senses?: unknown })?.senses as {
             custom?: string;

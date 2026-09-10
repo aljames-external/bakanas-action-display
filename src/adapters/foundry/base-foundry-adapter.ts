@@ -88,7 +88,7 @@ export class BaseFoundryAdapter {
      * The active TokenHUD constructor / class.
      */
     get TokenHUD(): typeof TokenHUD {
-        return (CONFIG as unknown as { Token?: { hudClass?: typeof TokenHUD } })?.Token?.hudClass ?? (TokenHUD as unknown as typeof TokenHUD);
+        return (CONFIG?.Token?.hudClass ?? TokenHUD) as typeof TokenHUD;
     }
 
     /**

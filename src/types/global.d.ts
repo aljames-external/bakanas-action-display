@@ -47,8 +47,8 @@ declare global {
 
   interface CONFIG {
     DND5E?: import('./systems.js').Dnd5eConfig;
-    PF1?: Record<string, unknown>;
-    PF2E?: Record<string, unknown>;
+    PF1?: import('./systems.js').Pf1Config;
+    PF2E?: import('./systems.js').Pf2eConfig;
     Item?: {
       typeLabels?: Record<string, string>;
       [key: string]: unknown;
@@ -98,6 +98,10 @@ declare global {
     [key: string]: unknown;
   }
 
+  interface Actor {
+    combatant?: Combatant | null;
+  }
+
   type Dnd5eSkill = import('./systems.js').Dnd5eSkill;
   type Dnd5eTool = import('./systems.js').Dnd5eTool;
   type Dnd5eAbility = import('./systems.js').Dnd5eAbility;
@@ -106,10 +110,12 @@ declare global {
   type Dnd5eSensesData = import('./systems.js').Dnd5eSensesData;
   type Actor5e = import('./systems.js').Actor5e;
   type Item5e = import('./systems.js').Item5e;
+  type Pf1Config = import('./systems.js').Pf1Config;
   type Pf1Skill = import('./systems.js').Pf1Skill;
   type Pf1TraitData = import('./systems.js').Pf1TraitData;
   type ActorPF = import('./systems.js').ActorPF;
   type ItemPF = import('./systems.js').ItemPF;
+  type Pf2eConfig = import('./systems.js').Pf2eConfig;
   type Pf2eStatistic = import('./systems.js').Pf2eStatistic;
   type ActorPF2e = import('./systems.js').ActorPF2e;
   type ItemPF2e = import('./systems.js').ItemPF2e;

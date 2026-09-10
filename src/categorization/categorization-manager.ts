@@ -129,8 +129,8 @@ export function evaluateBooleanExpression(expression: string, action: Action, co
 
     try {
         const item = action?.originalItem ?? action;
-        const actor = context?.actor ?? (action as unknown as { actor?: Actor })?.actor ?? null;
-        const token = context?.token ?? (action as unknown as { token?: Token })?.token ?? null;
+        const actor = (context?.actor as Actor | undefined) ?? action?.actor ?? null;
+        const token = (context?.token as Token | undefined) ?? action?.token ?? null;
         const user = context?.user ?? game.user ?? null;
 
         const evaluator = getCompiledExpression(expr);

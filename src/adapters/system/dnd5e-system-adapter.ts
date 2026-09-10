@@ -461,7 +461,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [cfg=CONFIG?.DND5E] System config object
      * @returns {string} Human-readable tool label
      */
-    #getToolLabel(toolId: string, tool: Dnd5eTool = {}, cfg: Dnd5eConfig = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E ?? {}) {
+    #getToolLabel(toolId: string, tool: Dnd5eTool = {}, cfg: Dnd5eConfig = CONFIG?.DND5E ?? {}) {
         if (tool.label) return localize(tool.label, tool.label);
 
         // 1. Try D&D 5e Trait.keyLabel API
@@ -661,11 +661,11 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         if (!actor) return null;
 
         const system = (actor as Actor5e).system ?? {};
-        const cfg = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E;
+        const cfg = CONFIG?.DND5E;
 
         // 1. Name and Image
         const name = token?.name ?? actor.name ?? '';
-        const img = token?.document?.texture?.src ?? (token as unknown as { texture?: { src?: string } })?.texture?.src ?? actor.img ?? 'icons/svg/mystery-man.svg';
+        const img = token?.document?.texture?.src ?? (token as { texture?: { src?: string } } | null)?.texture?.src ?? actor.img ?? 'icons/svg/mystery-man.svg';
 
         // 1b. Inspiration
         const inspirationInfo = this.getInspiration(actor);
@@ -793,7 +793,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         return key.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     }
 
-    #extractCreatureType(actor: Actor, cfg: Dnd5eConfig = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E ?? {}) {
+    #extractCreatureType(actor: Actor, cfg: Dnd5eConfig = CONFIG?.DND5E ?? {}) {
         const act5e = actor as Actor5e;
         const system = act5e?.system ?? {};
         const details = system.details ?? {};
@@ -858,7 +858,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractArmorClass(actor: Actor, cfg: Dnd5eConfig = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E ?? {}) {
+    #extractArmorClass(actor: Actor, cfg: Dnd5eConfig = CONFIG?.DND5E ?? {}) {
         const act5e = actor as Actor5e;
         const acData = (act5e?.system?.attributes?.ac as { value?: number; calc?: string; formula?: string; shield?: number } | undefined) ?? {};
         const value = acData.value ?? 10;
@@ -957,7 +957,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractTraitList(traitData: Dnd5eTraitData | null | undefined, typeMap: Record<string, unknown> = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E?.damageTypes ?? {}, bypassMap: Record<string, unknown> = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E?.physicalWeaponBypasses ?? {}) {
+    #extractTraitList(traitData: Dnd5eTraitData | null | undefined, typeMap: Record<string, unknown> = CONFIG?.DND5E?.damageTypes ?? {}, bypassMap: Record<string, unknown> = CONFIG?.DND5E?.physicalWeaponBypasses ?? {}) {
         if (!traitData) return [];
         const result: string[] = [];
         const values = toSet(traitData.value);
@@ -988,7 +988,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         return result;
     }
 
-    #extractConditionImmunities(ciData: Dnd5eTraitData | null | undefined, cfg: Dnd5eConfig = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E ?? {}) {
+    #extractConditionImmunities(ciData: Dnd5eTraitData | null | undefined, cfg: Dnd5eConfig = CONFIG?.DND5E ?? {}) {
         if (!ciData) return [];
         const result: string[] = [];
         const values = toSet(ciData.value);
@@ -1011,7 +1011,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         return result;
     }
 
-    #extractLanguages(langData: (Dnd5eTraitData & { ranges?: Record<string, unknown>; units?: string; special?: unknown; communication?: unknown }) | null | undefined, cfg: Dnd5eConfig = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E ?? {}, extraComm: unknown = null) {
+    #extractLanguages(langData: (Dnd5eTraitData & { ranges?: Record<string, unknown>; units?: string; special?: unknown; communication?: unknown }) | null | undefined, cfg: Dnd5eConfig = CONFIG?.DND5E ?? {}, extraComm: unknown = null) {
         if (!langData && !extraComm) return [];
         const result: string[] = [];
         const units = langData?.units ?? (extraComm as { units?: string })?.units ?? 'ft';
@@ -1110,7 +1110,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [cfg]
      * @returns {string[]}
      */
-    extractSenses(sensesData: Dnd5eSensesData | null | undefined, cfg: Dnd5eConfig = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E ?? {}): string[] {
+    extractSenses(sensesData: Dnd5eSensesData | null | undefined, cfg: Dnd5eConfig = CONFIG?.DND5E ?? {}): string[] {
         if (!sensesData) return [];
         const result: string[] = [];
         const units = sensesData.units ?? 'ft';
@@ -1138,7 +1138,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [sensesMap]
      * @returns {string}
      */
-    formatSenseLabel(key: string, sensesMap: Record<string, string> = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E?.senses ?? {}): string {
+    formatSenseLabel(key: string, sensesMap: Record<string, string> = CONFIG?.DND5E?.senses ?? {}): string {
         const formatted = this.#formatLabel(key, sensesMap);
         return (formatted && formatted.length > 0 ? formatted : null) ?? (key.charAt(0).toUpperCase() + key.slice(1));
     }
@@ -2350,7 +2350,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @private
      */
     #getConditionLabel(condId: string): string {
-        const condConfig = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E?.conditionTypes?.[condId];
+        const condConfig = CONFIG?.DND5E?.conditionTypes?.[condId];
         const condName = typeof condConfig === 'object' && condConfig !== null
             ? (condConfig.label ?? condConfig.name)
             : condConfig;
@@ -2452,7 +2452,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @returns {Promise<string>} Enriched HTML content-link string
      */
     override async enrichCondition(condId: string, customLabel: string | null = null): Promise<string> {
-        const condConfig = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E?.conditionTypes?.[condId];
+        const condConfig = CONFIG?.DND5E?.conditionTypes?.[condId];
         const fallbackStatus = CONFIG?.statusEffects?.find?.(e => e.id === condId);
         const ref = (typeof condConfig === 'object' && condConfig !== null ? condConfig.reference : null)
             ?? (fallbackStatus as unknown as { reference?: string })?.reference
@@ -2548,7 +2548,7 @@ export class Dnd5eSystemAdapter_5_3 extends BaseDnd5eSystemAdapter {
      * @param {Dnd5eConfig} [cfg]
      * @returns {string[]}
      */
-    override extractSenses(sensesData: Dnd5eSensesData | null | undefined, cfg: Dnd5eConfig = (CONFIG as unknown as { DND5E?: Dnd5eConfig })?.DND5E ?? {}): string[] {
+    override extractSenses(sensesData: Dnd5eSensesData | null | undefined, cfg: Dnd5eConfig = CONFIG?.DND5E ?? {}): string[] {
         if (!sensesData) return [];
         const result: string[] = [];
         const units = sensesData.units ?? 'ft';
