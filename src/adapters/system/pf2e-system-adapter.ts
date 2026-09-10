@@ -133,7 +133,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * Determine if a specific item should be extracted as a base action for PF2e.
      * Prevents allocating objects for unhandled item types (like equipment/consumables).
      */
-    shouldExtractItem(item: any) {
+    override shouldExtractItem(item: any) {
         return EXTRACTABLE_TYPES.has(item.type);
     }
 
@@ -335,7 +335,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item type (parent tab) in PF2e.
      */
-    getItemTypeLabel(parentId: any) {
+    override getItemTypeLabel(parentId: any) {
         switch (parentId) {
             case 'feat': return localize('PF2E.Item.Feat.Plural', 'Feats');
             case 'spell': return localize('PF2E.Item.Spell.Plural', 'Spells');
@@ -349,7 +349,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item sub-tab (spell rank) in PF2e.
      */
-    getItemSubTabLabel(parentId: any, subId: any) {
+    override getItemSubTabLabel(parentId: any, subId: any) {
         if (parentId === 'spell') {
             switch (subId) {
                 case 'focus': return localize('PF2E.Focus.Spells', 'Focus Spells');
@@ -365,31 +365,31 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a right-side action type (parent tab) in PF2e.
      */
-    getActionTypeLabel(parentId: any) {
+    override getActionTypeLabel(parentId: any) {
         return parentId === 'economy'
             ? localize('BAD.common.actionEconomy', 'Action Economy')
             : super.getActionTypeLabel(parentId);
     }
 
-    getItemTypeSortOrder(parentId: any) {
+    override getItemTypeSortOrder(parentId: any) {
         return (SORT_ORDERS.item_type as Record<string, number>)[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
-    getActionSubTabSortOrder(parentId: any, subId: any) {
+    override getActionSubTabSortOrder(parentId: any, subId: any) {
         return (SORT_ORDERS.tabs as Record<string, any>)[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 
     /**
      * Get the CSS icon class for a right-side action type (parent tab) in PF2e.
      */
-    getActionTypeIcon(parentId: any) {
+    override getActionTypeIcon(parentId: any) {
         return (ICONS.action_type as Record<string, string>)[parentId] ?? super.getActionTypeIcon(parentId);
     }
 
     /**
      * Get the localized label for a right-side action sub-tab in PF2e.
      */
-    getActionSubTabLabel(subId: any) {
+    override getActionSubTabLabel(subId: any) {
         const abilityLabels: Record<string, string> = {
             str: localize('PF2E.AbilityStr', 'Strength'),
             dex: localize('PF2E.AbilityDex', 'Dexterity'),
@@ -413,7 +413,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * Get the list of configurable action economy types and default colors for PF2e.
      * @returns {{ id: string, label: string, defaultColor: string }[]}
      */
-    getEconomyTypes() {
+    override getEconomyTypes() {
         return [
             { id: 'action', label: this.getActionSubTabLabel('action') ?? 'Actions', defaultColor: '#3b82f6', defaultEnabled: true },
             { id: 'reaction', label: this.getActionSubTabLabel('reaction') ?? 'Reactions', defaultColor: '#ef4444', defaultEnabled: true },
@@ -425,7 +425,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * Modify the rendering context before it is sent to the template.
      * Used here to sort the spell sub-tabs (Cantrips, Ranks 1-10, Focus, Innate, Rituals), format Page 2 categorized checks, Page 3 token info, and display showUnprepared tab indicators.
      */
-    modifyContext(context: any, app: any) {
+    override modifyContext(context: any, app: any) {
         const result = super.modifyContext?.(context, app);
 
         const showAll = Boolean(app?.actor?.getFlag?.(MODULE_ID, 'showAll'));
@@ -465,7 +465,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
+    override async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
         if (!actor) return null;
 
         const system = actor.system ?? {};
@@ -546,7 +546,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor|null} [actor=null]
      * @returns {{ inCombat: boolean, distance: number, units: string }}
      */
-    getTurnMovement(token = null, actor = null) {
+    override getTurnMovement(token = null, actor = null) {
         return CombatMovementTracker.getMovementThisTurn(token, actor);
     }
 
@@ -1003,7 +1003,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [overrides={}] Generic category overrides
      * @returns {Object[]} Array of category definition objects
      */
-    getDefaultCategories(overrides: Record<string, any> = {}) {
+    override getDefaultCategories(overrides: Record<string, any> = {}) {
         const categories = super.getDefaultCategories(this.mergeObject({
             weapon: {
                 name: 'Weapons & Strikes',
@@ -1095,7 +1095,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [actor] The owning actor document
      * @returns {{title: string, subtitle?: string, img?: string, properties?: Array<string|{label?: string, value: string}>, description?: string}|null}
      */
-    async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null): Promise<any> {
+    override async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null): Promise<any> {
         if (!action && !item) return null;
         const targetItem = item ?? action?.originalItem ?? action;
         const title = action?.name ?? targetItem?.name ?? '';

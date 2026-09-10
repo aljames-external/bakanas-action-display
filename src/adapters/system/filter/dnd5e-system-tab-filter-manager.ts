@@ -149,7 +149,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @param {Object} filterContext Active filter state
      * @returns {boolean}
      */
-    matchesEconomyTabs(action: any, filterContext: any) {
+    override matchesEconomyTabs(action: any, filterContext: any) {
         if (!action) return false;
         const activeCompSubs = this.getActiveExclusionSubs(filterContext);
 
@@ -181,7 +181,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @param {Object} filterContext Active filter state
      * @returns {Object[]} Qualifying subactions
      */
-    filterSubactions(subactions: any, filterContext: any) {
+    override filterSubactions(subactions: any, filterContext: any) {
         const baseFiltered = super.filterSubactions(subactions, { ...filterContext, _inFilterSubactions: true });
         const activeCompSubs = this.getActiveExclusionSubs(filterContext);
 

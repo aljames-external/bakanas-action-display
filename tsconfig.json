@@ -7,6 +7,7 @@
     "types": ["fvtt-types"],
     "strict": true,
     "noImplicitAny": true,
+    "noImplicitOverride": true,
     "noEmit": true,
     "allowJs": true,
     "checkJs": false,

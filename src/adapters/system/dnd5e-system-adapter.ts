@@ -94,7 +94,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * Determine if a specific item should be extracted as a base action for DnD5e.
      * Prevents allocating objects for unallowed types, cached helper items, and unequipped gear.
      */
-    shouldExtractItem(item: any) {
+    override shouldExtractItem(item: any) {
         const type = item.type;
         if (!ALLOWED_TYPES.has(type)) {
             log.debug(`Dnd5eSystemAdapter.shouldExtractItem | Skipping "${item.name}" (${type}, ID: ${item.id}) — type not in ALLOWED_TYPES`);
@@ -567,7 +567,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * Get the list of configurable action economy types and default colors for D&D 5e.
      * @returns {{ id: string, label: string, defaultColor: string }[]}
      */
-    getEconomyTypes() {
+    override getEconomyTypes() {
         return [
             { id: 'action', label: this.getActionSubTabLabel('action') ?? 'Action', defaultColor: '#3b82f6', defaultEnabled: true },
             { id: 'bonus', label: this.getActionSubTabLabel('bonus') ?? 'Bonus Action', defaultColor: '#14b8a6', defaultEnabled: true },
@@ -595,7 +595,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {ApplicationV2} app Active HUD application
      * @returns {Promise<Object>|Object}
      */
-    modifyContext(context: any, app: any) {
+    override modifyContext(context: any, app: any) {
         return super.modifyContext(context, app);
     }
 
@@ -605,7 +605,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} [actor]
      * @param {Token} [token]
      */
-    async formatTokenInfoLayout(context: any, actor = null, token: Token | null = null) {
+    override async formatTokenInfoLayout(context: any, actor = null, token: Token | null = null) {
         context.layout = 'tokenInfo';
         context.isCategorized = false;
         context.itemTypes = [];
@@ -624,7 +624,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
+    override async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
         if (!actor) return null;
 
         const system = actor.system ?? {};
@@ -711,7 +711,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor Target actor document
      * @returns {{ supported: boolean, value: boolean }}
      */
-    getInspiration(actor: any) {
+    override getInspiration(actor: any) {
         if (!actor) return { supported: false, value: false };
         const system = actor.system ?? {};
         const supported = actor.type === 'character' || system.attributes?.inspiration !== undefined;
@@ -725,7 +725,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {boolean} [force] Optional explicit state to set
      * @returns {Promise<boolean>} Resulting inspiration state
      */
-    async toggleInspiration(actor: any, force: any) {
+    override async toggleInspiration(actor: any, force: any) {
         if (!actor) return false;
         const current = Boolean(actor.system?.attributes?.inspiration);
         const next = force ?? !current;
@@ -739,7 +739,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor|null} [actor=null]
      * @returns {{ inCombat: boolean, distance: number, units: string }}
      */
-    getTurnMovement(token = null, actor = null) {
+    override getTurnMovement(token = null, actor = null) {
         return CombatMovementTracker.getMovementThisTurn(token, actor);
     }
 
@@ -1694,7 +1694,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * Whether this system adapter supports native favoriting.
      * @returns {boolean}
      */
-    hasFavorites() {
+    override hasFavorites() {
         return true;
     }
 
@@ -1705,7 +1705,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item Item document
      * @returns {boolean} True if favorited in dnd5e
      */
-    isFavorite(actor: Actor, item: Item): boolean {
+    override isFavorite(actor: Actor, item: Item): boolean {
         if (!item) return false;
 
         // 1. Direct system.favorite property (dnd5e 3.x+)
@@ -1735,7 +1735,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {boolean} favorite True to favorite, false to unfavorite
      * @returns {Promise<any>|null} Result of update
      */
-    async setFavorite(actor: Actor, item: Item, favorite: boolean): Promise<any> {
+    override async setFavorite(actor: Actor, item: Item, favorite: boolean): Promise<any> {
         if (!item) return null;
         const isFav = Boolean(favorite);
 
@@ -1765,7 +1765,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [overrides={}] Generic category overrides
      * @returns {Object[]} Array of category definition objects
      */
-    getDefaultCategories(overrides: Record<string, any> = {}) {
+    override getDefaultCategories(overrides: Record<string, any> = {}) {
         const categories = super.getDefaultCategories(overrides);
         const dnd5eCategories = [
             {
@@ -1870,7 +1870,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [actor] The owning actor document
      * @returns {{title: string, subtitle?: string, img?: string, properties?: Array<string|{label?: string, value: string}>, description?: string}|null}
      */
-    async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null) {
+    override async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null) {
         if (!action && !item) return null;
 
         const isPage2Check = action?.page === 2;
@@ -2145,7 +2145,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @param {HUDTabColumn} [tabColumn]
      */
-    updateTabs(actor: Actor, tabColumn = null) {
+    override updateTabs(actor: Actor, tabColumn = null) {
         this.syncActorAutoBans(actor, tabColumn);
     }
 
@@ -2156,7 +2156,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {string} subId
      * @param {boolean} isActive
      */
-    recordManualTabToggle(actor: Actor, parentId: string, subId: string, isActive: boolean) {
+    override recordManualTabToggle(actor: Actor, parentId: string, subId: string, isActive: boolean) {
         if (!actor || parentId !== 'components' || !SPELL_COMPONENT_KEYS.has(subId)) return;
         const autoBanState = actor.getFlag?.(MODULE_ID, 'autoBanState') ?? {};
         const conditions = autoBanState.conditions ?? {};
@@ -2284,7 +2284,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor The actor document to inspect
      * @returns {Record<'vocal'|'somatic', Array<{ name: string, statuses: string[], isDirectStatus: boolean }>>}
      */
-    getAutoBanEffectReasons(actor: any) {
+    override getAutoBanEffectReasons(actor: any) {
         const result: Record<'vocal'|'somatic', any[]> = { vocal: [], somatic: [] };
         if (!actor || game.system?.id !== 'dnd5e') return result;
 
@@ -2370,7 +2370,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {string} [customLabel] Optional custom label override
      * @returns {Promise<string>} Enriched HTML content-link string
      */
-    async enrichCondition(condId: string, customLabel: string | null = null) {
+    override async enrichCondition(condId: string, customLabel: string | null = null) {
         const condConfig = CONFIG?.DND5E?.conditionTypes?.[condId];
         const fallbackStatus = CONFIG?.statusEffects?.find?.(e => e.id === condId);
         const ref = condConfig?.reference ?? (fallbackStatus as any)?.reference ?? null;
@@ -2397,7 +2397,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Array<Object|string>|Record<string, Array<Object|string>>} reasons List of effect reasons or map of component to reasons
      * @returns {Promise<string>} HTML tooltip string
      */
-    async formatAutoBanTooltip(comp: string, reasons: any) {
+    override async formatAutoBanTooltip(comp: string, reasons: any) {
         if (!reasons) return '';
 
         const autoBannedStr = localize('BAD.dnd5eAutoBan.autoBanned', 'Auto-Banned');
@@ -2460,7 +2460,7 @@ export class Dnd5eSystemAdapter_5_3 extends BaseDnd5eSystemAdapter {
      * @param {Object} [cfg]
      * @returns {string[]}
      */
-    extractSenses(sensesData: any, cfg: any = CONFIG?.DND5E) {
+    override extractSenses(sensesData: any, cfg: any = CONFIG?.DND5E) {
         if (!sensesData) return [];
         const result: string[] = [];
         const units = sensesData.units ?? 'ft';

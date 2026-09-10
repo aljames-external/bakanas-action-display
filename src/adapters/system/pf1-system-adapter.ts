@@ -75,7 +75,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * Determine if a specific item should be extracted as a base action for PF1e.
      * Prevents allocating objects for unhandled item types (like containers).
      */
-    shouldExtractItem(item: any) {
+    override shouldExtractItem(item: any) {
         return EXTRACTABLE_TYPES.has(item.type);
     }
 
@@ -390,7 +390,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * Modify the rendering context before it is sent to the template.
      * Used here to sort the spell sub-tabs (Cantrips, Orisons, Levels, SLAs), format Page 2 categorized checks, Page 3 token info, and display showUnprepared indicators.
      */
-    modifyContext(context: any, app: any) {
+    override modifyContext(context: any, app: any) {
         const result = super.modifyContext?.(context, app);
 
         const showAll = Boolean(app?.actor?.getFlag?.(MODULE_ID, 'showAll'));
@@ -436,7 +436,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
+    override async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
         if (!actor) return null;
 
         const system = actor.system ?? {};
@@ -519,7 +519,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Actor|null} [actor=null]
      * @returns {{ inCombat: boolean, distance: number, units: string }}
      */
-    getTurnMovement(token = null, actor = null) {
+    override getTurnMovement(token = null, actor = null) {
         return CombatMovementTracker.getMovementThisTurn(token, actor);
     }
 
@@ -738,7 +738,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a right-side action type (parent tab) in PF1e.
      */
-    getActionTypeLabel(parentId: any) {
+    override getActionTypeLabel(parentId: any) {
         const labels: Record<string, string> = {
             'economy': localize('BAD.common.actionEconomy', 'Action Economy')
         };
@@ -748,14 +748,14 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the CSS icon class for a right-side action type (parent tab) in PF1e.
      */
-    getActionTypeIcon(parentId: any) {
+    override getActionTypeIcon(parentId: any) {
         return (ICONS.action_type as Record<string, string>)[parentId] ?? super.getActionTypeIcon(parentId);
     }
 
     /**
      * Get the localized label for a right-side action sub-tab in PF1e.
      */
-    getActionSubTabLabel(subId: any) {
+    override getActionSubTabLabel(subId: any) {
         const abilityLabels: Record<string, string> = {
             str: localize('PF1.AbilityStr', 'Strength'),
             dex: localize('PF1.AbilityDex', 'Dexterity'),
@@ -780,7 +780,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * Get the list of configurable action economy types and default colors for PF1.
      * @returns {{ id: string, label: string, defaultColor: string }[]}
      */
-    getEconomyTypes() {
+    override getEconomyTypes() {
         return [
             { id: 'action', label: this.getActionSubTabLabel('action') ?? 'Actions', defaultColor: '#3b82f6', defaultEnabled: true },
             { id: 'bonus', label: this.getActionSubTabLabel('bonus') ?? 'Swift', defaultColor: '#14b8a6', defaultEnabled: true },
@@ -792,7 +792,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item type (parent tab) in PF1e.
      */
-    getItemTypeLabel(parentId: any) {
+    override getItemTypeLabel(parentId: any) {
         switch (parentId) {
             case 'weapon': return localize('PF1.InventoryWeapons', 'Weapons');
             case 'equipment': return localize('PF1.InventoryEquipment', localize('PF1.Equipment', 'Equipment'));
@@ -807,7 +807,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the localized label for a left-side item sub-tab (spell level/spellbook) in PF1e.
      */
-    getItemSubTabLabel(parentId: any, subId: any) {
+    override getItemSubTabLabel(parentId: any, subId: any) {
         if (parentId !== 'spell') return super.getItemSubTabLabel(parentId, subId);
 
         switch (subId) {
@@ -825,17 +825,17 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Get the CSS icon class for a left-side item type (parent tab) in PF1e.
      */
-    getItemTypeIcon(parentId: any) {
+    override getItemTypeIcon(parentId: any) {
         if (parentId === 'buff') return 'fas fa-sparkles';
         if (parentId === 'equipment') return 'fas fa-shield';
         return super.getItemTypeIcon(parentId);
     }
 
-    getItemTypeSortOrder(parentId: any) {
+    override getItemTypeSortOrder(parentId: any) {
         return (SORT_ORDERS.item_type as Record<string, number>)[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
-    getActionSubTabSortOrder(parentId: any, subId: any) {
+    override getActionSubTabSortOrder(parentId: any, subId: any) {
         return (SORT_ORDERS.tabs as Record<string, any>)[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 
@@ -1078,7 +1078,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Object} [overrides={}] Generic category overrides
      * @returns {Object[]} Array of category definition objects
      */
-    getDefaultCategories(overrides: Record<string, any> = {}) {
+    override getDefaultCategories(overrides: Record<string, any> = {}) {
         const categories = super.getDefaultCategories(this.mergeObject({
             weapon: {
                 expression: `item.type === 'weapon' || item.type === 'attack' || item.type === 'equipment'`
@@ -1154,7 +1154,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Object} [actor] The owning actor document
      * @returns {{title: string, subtitle?: string, img?: string, properties?: Array<string|{label?: string, value: string}>, description?: string}|null}
      */
-    async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null): Promise<any> {
+    override async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null): Promise<any> {
         if (!action && !item) return null;
         const targetItem = item ?? action?.originalItem ?? action;
         const title = action?.name ?? targetItem?.name ?? '';
@@ -1214,7 +1214,7 @@ export class Pf1SystemAdapter_11_0 extends BasePf1SystemAdapter {
      * @param {Record<string, string>} [configMap]
      * @returns {string[]}
      */
-    extractTraitEntries(traitData: any, configMap: any = null): string[] {
+    override extractTraitEntries(traitData: any, configMap: any = null): string[] {
         if (!traitData) return [];
         const results: string[] = [];
 
