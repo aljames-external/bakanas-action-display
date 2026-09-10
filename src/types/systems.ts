@@ -31,6 +31,24 @@ export interface Dnd5eActivity {
     img?: string;
     item?: Item5e;
     parent?: Item5e;
+    use?(usage?: unknown, dialog?: unknown): Promise<unknown>;
+    [key: string]: unknown;
+}
+
+export interface Dnd5eTraitData {
+    value?: Set<string> | string[];
+    bypasses?: Set<string> | string[];
+    custom?: string;
+    [key: string]: unknown;
+}
+
+export interface Dnd5eSensesData {
+    darkvision?: number | string | null;
+    blindsight?: number | string | null;
+    tremorsense?: number | string | null;
+    truesight?: number | string | null;
+    special?: string;
+    units?: string;
     [key: string]: unknown;
 }
 
@@ -42,19 +60,31 @@ export interface Actor5e extends Omit<Actor, "system"> {
             type?: string | { value?: string };
             level?: number;
             cr?: number;
+            biography?: { value?: string; public?: string; [key: string]: unknown };
             [key: string]: unknown;
         };
         attributes?: {
             hp?: { value?: number; max?: number; temp?: number };
             movement?: { walk?: number; fly?: number; swim?: number; burrow?: number; climb?: number };
             ac?: { value?: number };
+            senses?: Dnd5eSensesData;
+            inspiration?: boolean;
+            [key: string]: unknown;
+        };
+        traits?: {
+            size?: string;
+            dr?: Dnd5eTraitData;
+            di?: Dnd5eTraitData;
+            ci?: Dnd5eTraitData;
+            dv?: Dnd5eTraitData;
+            languages?: Dnd5eTraitData & { ranges?: Record<string, unknown> };
+            communication?: unknown;
             [key: string]: unknown;
         };
         spells?: Record<string, { value?: number; max?: number; [key: string]: unknown }>;
         favorites?: Array<{ id?: string; type?: string; sort?: number; [key: string]: unknown }>;
         addFavorite?(data: { id: string; type: string }): Promise<unknown>;
         removeFavorite?(id: string): Promise<unknown>;
-        [key: string]: unknown;
     };
     rollSavingThrow?(options: { ability: string; event?: unknown }): Promise<unknown>;
     rollAbilitySave?(options: { ability: string; event?: unknown }): Promise<unknown>;
@@ -78,13 +108,17 @@ export interface Item5e extends Omit<Item, "system"> {
         equipped?: boolean;
         level?: number;
         method?: string;
+        quantity?: number;
+        properties?: Set<string> | string[];
+        type?: { value?: string; [key: string]: unknown };
+        ammunition?: { type?: string; [key: string]: unknown };
+        activation?: { type?: string; [key: string]: unknown };
         uses?: {
             available?: number | null;
             max?: number | null;
             value?: number | null;
             [key: string]: unknown;
         };
-        [key: string]: unknown;
     };
 }
 
@@ -96,6 +130,13 @@ export interface Pf1Skill {
     ability?: string;
     name?: string;
     subSkills?: Record<string, Pf1Skill>;
+    [key: string]: unknown;
+}
+
+export interface Pf1TraitData {
+    value?: string[] | string;
+    values?: string[] | Set<string>;
+    custom?: string;
     [key: string]: unknown;
 }
 
@@ -114,10 +155,16 @@ export interface ActorPF extends Omit<Actor, "system"> {
             [key: string]: unknown;
         };
         traits?: {
-            size?: any;
+            size?: { value?: string; [key: string]: unknown } | string;
+            dr?: Pf1TraitData;
+            eres?: Pf1TraitData;
+            di?: Pf1TraitData;
+            ci?: Pf1TraitData;
+            dv?: Pf1TraitData;
+            languages?: Pf1TraitData;
+            senses?: unknown;
             [key: string]: unknown;
         };
-        [key: string]: unknown;
     };
     level?: number;
     rollSavingThrow?(save: string, options?: { event?: unknown }): Promise<unknown>;
@@ -132,7 +179,21 @@ export interface ItemPF extends Omit<Item, "system"> {
     system: {
         equipped?: boolean;
         quantity?: number;
-        [key: string]: unknown;
+        spellbook?: string;
+        level?: number;
+        actions?: unknown[];
+        active?: boolean;
+        weaponSubtype?: string;
+        ammo?: {
+            type?: string;
+            default?: string;
+            [key: string]: unknown;
+        };
+        uses?: {
+            max?: number;
+            value?: number;
+            [key: string]: unknown;
+        };
     };
 }
 
@@ -182,9 +243,10 @@ export interface ActorPF2e extends Omit<Actor, "system"> {
         };
         traits?: {
             value?: string[];
+            size?: { value?: string; label?: string; id?: string; [key: string]: unknown } | string;
+            senses?: unknown;
             [key: string]: unknown;
         };
-        [key: string]: unknown;
     };
     rollSkill?(skill: string | { skill: string; event?: unknown }, options?: { event?: unknown }): Promise<unknown>;
 }
@@ -209,7 +271,27 @@ export interface ItemPF2e extends Omit<Item, "system"> {
             value?: number;
             [key: string]: unknown;
         } | number;
-        [key: string]: unknown;
+        baseItem?: string;
+        quantity?: number;
+        actionType?: {
+            value?: string;
+            [key: string]: unknown;
+        };
+        uses?: {
+            value?: number;
+            max?: number;
+            [key: string]: unknown;
+        };
+        frequency?: {
+            value?: number;
+            max?: number;
+            per?: string;
+            [key: string]: unknown;
+        };
+        ammo?: {
+            baseType?: string;
+            [key: string]: unknown;
+        };
     };
     traits?: Set<string>;
     category?: string;
