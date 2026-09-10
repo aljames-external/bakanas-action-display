@@ -4,6 +4,24 @@ import { adapter } from '../../adapters/index.js';
 import { isActorItemFavorite, setActorItemFavorite } from '../../favorites/favorites-manager.js';
 import { positionFloatingMenu } from './menu-utils.js';
 
+export interface ContextSubmenuItem {
+    name: string;
+    icon?: string;
+    active?: (item: Item | null) => boolean;
+    condition?: (item: Item | null) => boolean;
+    callback?: (item: Item | null) => void | Promise<void>;
+    [key: string]: unknown;
+}
+
+export interface ContextMenuItemConfig {
+    name: string;
+    icon?: string;
+    condition?: (el: HTMLElement) => boolean;
+    callback?: (el: HTMLElement) => void | Promise<void>;
+    submenu?: ContextSubmenuItem[];
+    [key: string]: unknown;
+}
+
 /**
  * Manages UI context menus for action items inside ActionDisplayApp.
  */
@@ -28,10 +46,10 @@ export class ContextMenuManager {
      * @returns {{ action: Action|null, item: Item|null }}
      * @private
      */
-    _resolveActionAndItem(el: any): { action: Action | null; item: any } {
+    _resolveActionAndItem(el: HTMLElement | null | undefined): { action: Action | null; item: Item | null } {
         const actionId = el?.dataset?.actionId;
         const action = this.app.actions?.find((a: Action) => a.id === actionId) ?? null;
-        const item = action?.originalItem ?? this.app.actor?.items?.get(actionId) ?? null;
+        const item = (action?.originalItem as Item | undefined) ?? (this.app.actor?.items?.get(actionId ?? '') as Item | undefined) ?? null;
         return { action, item };
     }
 
@@ -125,12 +143,12 @@ export class ContextMenuManager {
 
         const options = {
             jQuery: false,
-            onOpen: (target: any) => {
+            onOpen: (target: HTMLElement) => {
                 if (this.app._activeLeftClickMenu) {
                     const prevLeftMenu = this.app._activeLeftClickMenu;
                     this.app._activeLeftClickMenu = null;
                     try {
-                        prevLeftMenu.close()?.catch?.((err: any) => {
+                        prevLeftMenu.close()?.catch?.((err: unknown) => {
                             log.debug("LeftClickMenu.close promise rejected:", err);
                         });
                     } catch (err) {
@@ -145,7 +163,7 @@ export class ContextMenuManager {
                 this.closeSubmenu();
 
                 this.app._activeContextMenuTarget = target;
-                this.element.querySelectorAll('.bad-action-item').forEach((el: any) => {
+                this.element.querySelectorAll<HTMLElement>('.bad-action-item').forEach((el: HTMLElement) => {
                     if (el !== target) el.classList.remove('bad-menu-active');
                 });
                 target.classList.add('bad-menu-active');
@@ -178,7 +196,7 @@ export class ContextMenuManager {
      * @param {number} itemCount Number of items in context menu
      * @private
      */
-    _positionContextMenu(target: any, itemCount: any) {
+    _positionContextMenu(target: HTMLElement, itemCount: number) {
         const targetBody = this.app?.element?.ownerDocument?.body ?? document.body;
         const menuEl = document.querySelector<HTMLElement>('#context-menu, .context-menu:not(.bad-sub-context-menu)');
         if (!menuEl) return;
@@ -205,7 +223,7 @@ export class ContextMenuManager {
      * @param {Object[]} menuItems List of menu item configurations
      * @private
      */
-    _bindSubmenus(target: any, menuItems: any) {
+    _bindSubmenus(target: HTMLElement, menuItems: ContextMenuItemConfig[]) {
         const contextMenuEl = document.querySelector('#context-menu, .context-menu');
         if (!contextMenuEl) return;
 
@@ -216,8 +234,8 @@ export class ContextMenuManager {
             if (li.dataset.badSubmenuBound === 'true') continue;
             li.dataset.badSubmenuBound = 'true';
 
-            const text = li.textContent.trim();
-            const matchedItem = menuItems.find((m: any) => {
+            const text = li.textContent?.trim() ?? '';
+            const matchedItem = menuItems.find((m: ContextMenuItemConfig) => {
                 const localized = localize(m.name);
                 return localized && text.includes(localized);
             });
@@ -229,13 +247,13 @@ export class ContextMenuManager {
                     li.appendChild(arrow);
                 }
 
-                const openThisSubmenu = (event: any) => {
+                const openThisSubmenu = (event?: Event) => {
                     event?.stopPropagation?.();
                     if (this._submenuCloseTimeout) {
                         clearTimeout(this._submenuCloseTimeout);
                         this._submenuCloseTimeout = null;
                     }
-                    this._openSubmenu(li, target, item, matchedItem.submenu);
+                    this._openSubmenu(li, target, item, matchedItem.submenu!);
                 };
 
                 const scheduleClose = () => {
@@ -262,12 +280,13 @@ export class ContextMenuManager {
      * @param {HTMLElement} target Target action item element
      * @param {Item} item Resolved Foundry Item document
      * @param {Object[]} submenuItems Submenu item specifications
+     * @param {ContextSubmenuItem[]} submenuItems Submenu item specifications
      * @private
      */
-    _openSubmenu(parentLi: HTMLElement, target: HTMLElement, item: any, submenuItems: any[]) {
+    _openSubmenu(parentLi: HTMLElement, target: HTMLElement, item: Item | null, submenuItems: ContextSubmenuItem[]) {
         this.closeSubmenu();
 
-        const qualifying = submenuItems.filter((sub: any) => {
+        const qualifying = submenuItems.filter((sub: ContextSubmenuItem) => {
             return sub.condition ? Boolean(sub.condition(item)) : true;
         });
 
