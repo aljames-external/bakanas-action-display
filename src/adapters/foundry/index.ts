@@ -3,7 +3,7 @@ import { FoundryV12Adapter } from './foundry-v12-adapter.js';
 import { FoundryV13Adapter } from './foundry-v13-adapter.js';
 import { log } from '../../lib/logger.js';
 
-export { BaseFoundryAdapter, type FromUuidOptions } from './base-foundry-adapter.js';
+export { BaseFoundryAdapter };
 
 let _activeFoundryAdapter: BaseFoundryAdapter | null = null;
 

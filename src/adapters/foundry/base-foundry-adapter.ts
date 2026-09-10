@@ -13,13 +13,6 @@ export const USER_PERMISSION_TIERS = deepFreeze({
     GM: 3
 });
 
-export interface FromUuidOptions {
-    relative?: foundry.abstract.Document.Any;
-    strict?: boolean;
-    invalid?: boolean;
-    [key: string]: unknown;
-}
-
 /**
  * Base abstract class for all Foundry platform adapters.
  * Encapsulates version-agnostic Foundry Application, ContextMenu, interaction, and utility operations.

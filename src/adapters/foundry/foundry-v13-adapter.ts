@@ -1,5 +1,4 @@
 import { FoundryV12Adapter } from './foundry-v12-adapter.js';
-import type { FromUuidOptions } from './base-foundry-adapter.js';
 
 /**
  * Foundry VTT V13 platform adapter.

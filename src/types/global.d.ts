@@ -79,6 +79,13 @@ declare global {
     }
   }
 
+  interface FromUuidOptions {
+    relative?: foundry.abstract.Document.Any;
+    strict?: boolean;
+    invalid?: boolean;
+    [key: string]: unknown;
+  }
+
   type Actor5e = import('./systems.js').Actor5e;
   type Item5e = import('./systems.js').Item5e;
   type ActorPF = import('./systems.js').ActorPF;

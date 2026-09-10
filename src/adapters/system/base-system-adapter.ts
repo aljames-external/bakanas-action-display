@@ -2,7 +2,7 @@ import { MODULE_ID } from '../../constants.js';
 import { log } from '../../lib/logger.js';
 import { localize, deepFreeze } from '../../lib/utils.js';
 import { Action } from '../../ui/action.js';
-import { BaseFoundryAdapter, type FromUuidOptions } from '../foundry/base-foundry-adapter.js';
+import { BaseFoundryAdapter } from '../foundry/base-foundry-adapter.js';
 import { BaseSystemContextMenuManager } from './context-menu/base-system-context-menu-manager.js';
 import { BaseSystemTabFilterManager, type FilterContext } from './filter/base-system-tab-filter-manager.js';
 import { BaseSystemContextModifier } from './context-modifier/base-system-context-modifier.js';

@@ -1,4 +1,4 @@
-import { initializeFoundryAdapter, BaseFoundryAdapter, type FromUuidOptions } from './foundry/index.js';
+import { initializeFoundryAdapter, BaseFoundryAdapter } from './foundry/index.js';
 import { FoundryV13Adapter } from './foundry/foundry-v13-adapter.js';
 import { initializeSystemAdapter, BaseSystemAdapter } from './system/index.js';
 import type { ItemSummary, ItemSummaryProperty } from './system/index.js';

@@ -1,4 +1,4 @@
-import { BaseFoundryAdapter, type FromUuidOptions } from './base-foundry-adapter.js';
+import { BaseFoundryAdapter } from './base-foundry-adapter.js';
 
 /**
  * Foundry VTT V12 platform baseline adapter.
