@@ -1945,11 +1945,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
         const targetItem = (item ?? action?.originalItem ?? null) as Item5e | null;
         const activity = action?.originalActivity;
-        const rawLinked = action?.linkedAction;
-        const linkedFromAction = rawLinked instanceof Action
-            ? ((rawLinked.originalItem as Item5e | null) ?? null)
-            : ((rawLinked as Item5e | null) ?? null);
-        const linkedItem = linkedFromAction
+        const linkedItem = (action?.linkedAction as Item5e | null)
             ?? (this.resolveRootSpellDocument(action, targetItem) as Item5e | null)
             ?? (activity?.cachedSpell as Item5e | null)
             ?? null;
@@ -2483,11 +2479,13 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
         const autoBannedStr = localize('BAD.dnd5eAutoBan.autoBanned', 'Auto-Banned');
         const causingStr = localize('BAD.dnd5eAutoBan.causingEffects', 'Causing Effect(s):');
-        const formatEffectHtml = async (r: AutoBanEffectReason | string | null | undefined): Promise<string> => {
-            if (!r) return '';
-            const reason: AutoBanEffectReason = typeof r === 'string'
+        const normalizeReason = (r: AutoBanEffectReason | string): AutoBanEffectReason => {
+            return typeof r === 'string'
                 ? { name: r, statuses: [r], isDirectStatus: true }
                 : r;
+        };
+
+        const formatEffectHtml = async (reason: AutoBanEffectReason): Promise<string> => {
             const effectName = reason.name ?? '';
             const rawStatuses = (Array.isArray(reason.statuses) && reason.statuses.length > 0)
                 ? reason.statuses
@@ -2512,7 +2510,8 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
             const listItems = await Promise.all(entries.map(async ([c, list]) => {
                 const cLabel = this.getActionSubTabLabel(c);
-                const subReasons = await Promise.all(list.map(formatEffectHtml));
+                const normalizedList = list.map(normalizeReason);
+                const subReasons = await Promise.all(normalizedList.map(formatEffectHtml));
                 return `<li><strong class="bad-autoban-comp-label">${cLabel}</strong><ul class="bad-autoban-sub-list bad-autoban-effects-list">${subReasons.join('')}</ul></li>`;
             }));
 
@@ -2525,7 +2524,8 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
         const compLabel = this.getActionSubTabLabel(comp);
         const title = `${autoBannedStr}: ${compLabel}`;
-        const listItems = await Promise.all(reasonList.map(formatEffectHtml));
+        const normalizedList = reasonList.map(normalizeReason);
+        const listItems = await Promise.all(normalizedList.map(formatEffectHtml));
 
         return `<div class="bad-autoban-tooltip"><div class="bad-autoban-header"><i class="fas fa-ban bad-autoban-icon"></i><span class="bad-autoban-title">${title}</span></div><div class="bad-autoban-body"><span class="bad-autoban-reason-label">${causingStr}</span><ul class="bad-autoban-list bad-autoban-single-comp-list">${listItems.join('')}</ul></div></div>`;
     }

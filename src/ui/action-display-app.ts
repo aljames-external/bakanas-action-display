@@ -62,9 +62,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {number} targetPage Target page number
      * @param {ActionDisplayApp|null} [callerInstance=null] The instance initiating the change
      */
-    static setAllCachedHUDsPage(targetPage: number | string, callerInstance: ActionDisplayApp | null = null) {
-        const parsed = Number(targetPage);
-        const page = (Number.isFinite(parsed) && parsed > 0) ? parsed : 1;
+    static setAllCachedHUDsPage(targetPage: number, callerInstance: ActionDisplayApp | null = null) {
+        const page = (Number.isFinite(targetPage) && targetPage > 0) ? targetPage : 1;
 
         // 0. Update internal defaultPage module setting for newly opened HUDs
         ActionDisplayApp.defaultPage = page;
@@ -364,14 +363,13 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Object} [options={}]
      * @param {boolean} [options.shiftKey=false] Whether shift was held to update all cached HUDs
      */
-    changePage(targetPage: number | string, { shiftKey = false } = {}): void {
-        const parsed = Number(targetPage);
-        if (Number.isFinite(parsed) && parsed >= 1 && parsed <= this.totalPages) {
-            const pageChanged = parsed !== this.activePage;
-            this.activePage = parsed;
+    changePage(targetPage: number, { shiftKey = false } = {}): void {
+        if (Number.isFinite(targetPage) && targetPage >= 1 && targetPage <= this.totalPages) {
+            const pageChanged = targetPage !== this.activePage;
+            this.activePage = targetPage;
             this._saveTabState();
             if (shiftKey) {
-                ActionDisplayApp.setAllCachedHUDsPage(parsed, this);
+                ActionDisplayApp.setAllCachedHUDsPage(targetPage, this);
             }
             if (pageChanged) {
                 this.render();
@@ -1553,7 +1551,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {HTMLElement} target Target button element
      * @protected
      */
-    async _onRollInitiative(event: PointerEvent | MouseEvent | Event, target: HTMLElement) {
+    async _onRollInitiative(event: Event, target: HTMLElement) {
         event?.preventDefault?.();
         event?.stopPropagation?.();
         const combat = game.combat;
@@ -1571,11 +1569,11 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
 
     /**
      * Advance the combat tracker to the next turn when the End Turn button is clicked.
-     * @param {PointerEvent} event Triggering click event
+     * @param {Event} event Triggering click event
      * @param {HTMLElement} target Target button element
      * @protected
      */
-    async _onEndCombatTurn(event: PointerEvent | MouseEvent | Event, target: HTMLElement) {
+    async _onEndCombatTurn(event: Event, target: HTMLElement) {
         event?.preventDefault?.();
         event?.stopPropagation?.();
         const combat = game.combat;
@@ -1590,11 +1588,11 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
 
     /**
      * Toggle inspiration on the currently active actor when the inspiration element is clicked.
-     * @param {PointerEvent} event Triggering click event
+     * @param {Event} event Triggering click event
      * @param {HTMLElement} target Target button element
      * @protected
      */
-    async _onToggleInspiration(event: PointerEvent | MouseEvent | Event, target: HTMLElement) {
+    async _onToggleInspiration(event: Event, target: HTMLElement) {
         event?.preventDefault?.();
         event?.stopPropagation?.();
         if (!this.actor) return;
@@ -2156,7 +2154,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
 
         let html = `<div class="bad-item-summary-tooltip${tableClass}"${widthStyle}>`;
         html += '<div class="bad-summary-header">';
-        const headerTags = Array.isArray(summary.headerTags) ? summary.headerTags : (summary.headerTag ? [summary.headerTag] : []);
+        const headerTags = summary.headerTags ?? [];
         let headerTagsHtml = '';
         for (const tag of headerTags) {
             const text = formatSummaryTag(tag);

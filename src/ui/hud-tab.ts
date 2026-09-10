@@ -5,7 +5,7 @@ export type HUDTabClickCallback = (
     app: ActionDisplayApp,
     tabColumn: HUDTabColumn,
     groups: Record<string, HUDTab>,
-    event?: MouseEvent | PointerEvent | Event
+    event?: MouseEvent
 ) => boolean | void;
 
 export interface HUDTabOptions {
@@ -221,13 +221,13 @@ export class HUDTab {
         app: ActionDisplayApp,
         tabColumn: HUDTabColumn,
         groups: Record<string, HUDTab>,
-        event?: MouseEvent | PointerEvent | Event
+        event?: MouseEvent
     ): void {
         if (this.customOnLeftClick) {
             const handled = this.customOnLeftClick(app, tabColumn, groups, event);
             if (handled) return;
         }
-        if ((event as MouseEvent | undefined)?.shiftKey || game.settings.get(MODULE_ID, 'toggleTabSelection')) {
+        if (event?.shiftKey || game.settings.get(MODULE_ID, 'toggleTabSelection')) {
             if (this.isTopLevel) {
                 tabColumn.toggleParent(this.id, groups);
             } else {
@@ -249,13 +249,13 @@ export class HUDTab {
      * @param {ActionDisplayApp} app 
      * @param {HUDTabColumn} tabColumn 
      * @param {Record<string, HUDTab>} groups Tab groups dictionary
-     * @param {MouseEvent|PointerEvent|Event} [event] 
+     * @param {MouseEvent} [event] 
      */
     onRightClick(
         app: ActionDisplayApp,
         tabColumn: HUDTabColumn,
         groups: Record<string, HUDTab>,
-        event?: MouseEvent | PointerEvent | Event
+        event?: MouseEvent
     ): void {
         if (this.customOnRightClick) {
             const handled = this.customOnRightClick(app, tabColumn, groups, event);

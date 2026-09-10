@@ -32,7 +32,6 @@ export interface ItemSummary {
     img?: string;
     properties?: Array<ItemSummaryPropertyItem | ItemSummaryPropertyRow>;
     headerTags?: Array<ItemSummaryPropertyItem>;
-    headerTag?: ItemSummaryPropertyItem;
     description?: string;
     [key: string]: unknown;
 }
