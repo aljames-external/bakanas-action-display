@@ -10,10 +10,19 @@ export const DEFAULT_DND5E_AUTOBAN_CONFIG = deepFreeze({
     somatic: ['restrained', 'incapacitated', 'paralyzed', 'petrified', 'stunned', 'unconscious', 'grappled']
 });
 
+export interface Dnd5eAutoBanConfig {
+    enabled: boolean;
+    vocal: string[];
+    somatic: string[];
+    [key: string]: any;
+}
+
 /**
  * Modern ApplicationV2 configuration menu for D&D 5e automatic spell component banning.
  */
 export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplicationMixin(adapter.foundry.ApplicationV2) {
+    config: Dnd5eAutoBanConfig;
+
     /** @override */
     static DEFAULT_OPTIONS = {
         id: 'bad-dnd5e-autoban-config-app',
@@ -60,20 +69,20 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
     }
 
     /** @override */
-    async _prepareContext(options: any) {
+    async _prepareContext(options: Record<string, unknown>) {
         const context = await super._prepareContext(options);
         context.config = this.config;
 
-        const availableStatuses = (CONFIG.statusEffects ?? []).map(s => ({
+        const availableStatuses = (CONFIG.statusEffects ?? []).map((s: any) => ({
             id: s.id,
             name: localize(s.name ?? s.label ?? s.id, s.id),
             img: s.img ?? s.icon ?? ''
         }));
-        availableStatuses.sort((a, b) => a.name.localeCompare(b.name));
+        availableStatuses.sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
 
-        const statusMap = new Map(availableStatuses.map(s => [s.id, s]));
+        const statusMap = new Map(availableStatuses.map((s: { id: string; name: string; img: string }) => [s.id, s]));
 
-        const formatConditions = (ids: any) => ids.map((id: any) => {
+        const formatConditions = (ids: string[]) => ids.map((id: string) => {
             const found = statusMap.get(id);
             return {
                 id,
@@ -94,7 +103,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onToggleEnabled(event: any, target: any) {
+    _onToggleEnabled(event: Event, target: HTMLInputElement) {
         this.config.enabled = Boolean(target.checked);
     }
 
@@ -103,12 +112,12 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onAddCondition(event: any, target: any) {
+    _onAddCondition(event: Event, target: HTMLElement) {
         event.preventDefault();
         const type = target?.dataset?.type;
         if (!type || !this.config[type]) return;
 
-        const select = this.element?.querySelector?.(`#bad-${type}-select`);
+        const select = this.element?.querySelector?.(`#bad-${type}-select`) as HTMLSelectElement | null;
         const statusId = select?.value;
         if (statusId && !this.config[type].includes(statusId)) {
             this.config[type].push(statusId);
@@ -121,13 +130,13 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onRemoveCondition(event: any, target: any) {
+    _onRemoveCondition(event: Event, target: HTMLElement) {
         event.preventDefault();
         const type = target.dataset.type;
         const id = target.dataset.id;
         if (!type || !id || !this.config[type]) return;
 
-        this.config[type] = this.config[type].filter((item: any) => item !== id);
+        this.config[type] = this.config[type].filter((item: string) => item !== id);
         this.render();
     }
 
@@ -136,7 +145,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onResetDefaults(event: any, target: any) {
+    _onResetDefaults(event: Event, target: HTMLElement) {
         event.preventDefault();
         this.config = {
             enabled: DEFAULT_DND5E_AUTOBAN_CONFIG.enabled,
@@ -151,7 +160,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    async _onSaveConfig(event: any, target: any) {
+    async _onSaveConfig(event: Event, target: HTMLElement) {
         event.preventDefault();
         await game.settings.set(MODULE_ID, 'dnd5eAutoBanConditions', this.config);
         log.info('Saved D&D 5e auto-ban spell components configuration:', this.config);
@@ -171,7 +180,7 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onCloseConfig(event: any, target: any) {
+    _onCloseConfig(event: Event, target: HTMLElement) {
         event.preventDefault();
         this.close();
     }
