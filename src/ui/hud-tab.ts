@@ -212,13 +212,13 @@ export class HUDTab {
         app: ActionDisplayApp,
         tabColumn: HUDTabColumn,
         groups: Record<string, HUDTab>,
-        event?: any
+        event?: MouseEvent | PointerEvent | Event
     ): void {
         if (this.customOnLeftClick) {
             const handled = this.customOnLeftClick(app, tabColumn, groups, event);
             if (handled) return;
         }
-        if (event?.shiftKey || game.settings.get(MODULE_ID, 'toggleTabSelection')) {
+        if ((event as MouseEvent | undefined)?.shiftKey || game.settings.get(MODULE_ID, 'toggleTabSelection')) {
             if (this.isTopLevel) {
                 tabColumn.toggleParent(this.id, groups);
             } else {
@@ -246,7 +246,7 @@ export class HUDTab {
         app: ActionDisplayApp,
         tabColumn: HUDTabColumn,
         groups: Record<string, HUDTab>,
-        event?: any
+        event?: MouseEvent | PointerEvent | Event
     ): void {
         if (this.customOnRightClick) {
             const handled = this.customOnRightClick(app, tabColumn, groups, event);

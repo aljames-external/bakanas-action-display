@@ -296,12 +296,12 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @returns {Promise<boolean>} The new boolean setting value
      * @protected
      */
-    async _toggleBooleanSetting(settingKey: any, event: any, target: any) {
+    async _toggleBooleanSetting(settingKey: string, event?: Event | null, target?: (HTMLElement & { checked?: boolean }) | null): Promise<boolean> {
         event?.preventDefault?.();
         target?.blur?.();
-        const current = Boolean(game.settings.get(MODULE_ID, settingKey));
+        const current = Boolean(game.settings.get(MODULE_ID, settingKey as any));
         const next = target?.checked ?? !current;
-        await game.settings.set(MODULE_ID, settingKey, next);
+        await game.settings.set(MODULE_ID, settingKey as any, next);
         await this.render();
         return next;
     }
@@ -590,8 +590,9 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     /**
      * Prepare the rendering context (equivalent to getData in AppV1).
      */
-    async _prepareContext(options: any) {
+    async _prepareContext(options: Record<string, unknown> = {}) {
         const context = await super._prepareContext(options);
+        if (!this.actor) return context;
         const allActions = await (actionDisplay.getActions ? actionDisplay.getActions(this.actor) : adapter.getActions(this.actor));
         this.actions = allActions; // Cache all processed actions for high-performance UI lookups
         this.totalPages = allActions.reduce((max, a) => Math.max(max, a.page ?? 1), 1);
@@ -1426,7 +1427,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * Toggle the "Auto-Track Combat Turn" setting.
      * When toggled on during active combat, immediately switches the HUD to the current combatant if permitted.
      */
-    async _onToggleCombatAutoTrack(event: any, target: any) {
+    async _onToggleCombatAutoTrack(event?: Event | null, target?: (HTMLElement & { checked?: boolean }) | null): Promise<void> {
         event?.preventDefault?.();
         target?.blur?.();
         const current = Boolean(game.settings.get(MODULE_ID, 'autoTrackCombat'));
@@ -1551,7 +1552,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         if (!combat) return;
 
         const combatant = this._getCombatant(combat);
-        if (!combatant) return;
+        if (!combatant || !combatant.id) return;
         log.info(`Rolling initiative for "${this.actor?.name ?? 'Token'}" (Combatant ID: ${combatant.id})`);
         try {
             await combat.rollInitiative([combatant.id]);
@@ -1612,16 +1613,17 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         const searchInput = this.element?.querySelector('.bad-search-input');
         if (!searchInput) return;
 
-        searchInput.addEventListener('input', (event: any) => {
-            const query = event.target.value ?? '';
+        searchInput.addEventListener('input', (event: Event) => {
+            const target = event.target as HTMLInputElement | null;
+            const query = target?.value ?? '';
             this.searchQuery = query;
-            this._searchSelectionStart = event.target.selectionStart;
-            this._searchSelectionEnd = event.target.selectionEnd;
+            this._searchSelectionStart = target?.selectionStart ?? null;
+            this._searchSelectionEnd = target?.selectionEnd ?? null;
             this._isSearching = true;
             this.render();
         });
 
-        searchInput.addEventListener('keydown', (event: any) => {
+        searchInput.addEventListener('keydown', (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 event.preventDefault();
                 event.stopPropagation();
@@ -1638,7 +1640,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      */
     _restoreSearchFocus() {
         if (!this._isSearching || !this.element) return;
-        const searchInput = this.element.querySelector('.bad-search-input');
+        const searchInput = this.element.querySelector('.bad-search-input') as HTMLInputElement | null;
         if (searchInput) {
             searchInput.focus();
             if (this._searchSelectionStart != null && this._searchSelectionEnd != null) {
@@ -1657,12 +1659,12 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     /**
      * Hook into the first render to set up permanent event listeners and context menus.
      */
-    _onFirstRender(context: any, options: any) {
+    _onFirstRender(context: Record<string, unknown>, options: Record<string, unknown>) {
         super._onFirstRender(context, options);
 
         // Prevent clicks inside the HUD from bubbling up to the canvas/document, and auto-blur action buttons immediately
-        this.element.addEventListener('click', (event: any) => {
-            const actionBtn = event.target?.closest?.('button[data-action], a[data-action]');
+        this.element.addEventListener('click', (event: MouseEvent) => {
+            const actionBtn = (event.target as HTMLElement | null)?.closest?.('button[data-action], a[data-action]') as HTMLElement | null;
             if (actionBtn) {
                 actionBtn.blur?.();
             }
@@ -1674,34 +1676,35 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         this.element.addEventListener('contextmenu', this._boundOnContextMenuCapture, { capture: true });
 
         // Event Delegation for Dragging: attach mousedown to the outer element and filter by the handle
-        this.element.addEventListener('mousedown', (event: any) => {
-            const handle = event.target.closest('.bad-drag-handle');
+        this.element.addEventListener('mousedown', (event: MouseEvent) => {
+            const handle = (event.target as HTMLElement | null)?.closest?.('.bad-drag-handle');
             if (handle) this._onDragStart(event);
         });
 
         // Close dropdown when dragging or clicking outside the active menu/item
-        this._boundOutsidePointerDown = (event: any) => {
+        const outsidePointerDown = (event: PointerEvent) => {
             // While the tooltip is focused/locked or the user is interacting with it (e.g. scrollbar), keep the context menu open
-            if (this.isTooltipFocused || this._isInsideTooltip(event?.target)) {
+            if (this.isTooltipFocused || this._isInsideTooltip(event.target as HTMLElement | null)) {
                 return;
             }
 
             const activeTarget = this._activeContextMenuTarget ?? this._activeMenuTarget;
-            const clickedInsideMenu = Boolean(event.target?.closest?.('#context-menu, .context-menu'));
-            const clickedActiveItem = Boolean(activeTarget && event.target?.closest?.('.bad-action-item') === activeTarget);
+            const clickedInsideMenu = Boolean((event.target as HTMLElement | null)?.closest?.('#context-menu, .context-menu'));
+            const clickedActiveItem = Boolean(activeTarget && (event.target as HTMLElement | null)?.closest?.('.bad-action-item') === activeTarget);
 
             if ((this._activeLeftClickMenu || this._activeContextMenuTarget || this._activeMenuTarget) && !clickedInsideMenu && !clickedActiveItem) {
                 this._clearMenuState();
             }
         };
-        window.addEventListener('pointerdown', this._boundOutsidePointerDown, { capture: true });
+        this._boundOutsidePointerDown = outsidePointerDown;
+        window.addEventListener('pointerdown', outsidePointerDown, { capture: true });
 
         // Window Stacking Management:
         // Ensure that whichever window (our HUD or any other Foundry sheet/dialog) was interacted with most recently is placed on top.
         this.bringToFront();
-        this._boundWindowStackPointerDown = (event: any) => {
+        const windowStackPointerDown = (event: PointerEvent) => {
             if (!this.element) return;
-            const targetWindow = event.target?.closest?.('.window-app, .application, .app, .dialog, .sidebar-popout');
+            const targetWindow = (event.target as HTMLElement | null)?.closest?.('.window-app, .application, .app, .dialog, .sidebar-popout') as HTMLElement | null;
             if (!targetWindow) return;
 
             if (targetWindow === this.element || this.element.contains(targetWindow)) {
@@ -1718,7 +1721,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
                 }
             }
         };
-        window.addEventListener('pointerdown', this._boundWindowStackPointerDown, { capture: true });
+        this._boundWindowStackPointerDown = windowStackPointerDown;
+        window.addEventListener('pointerdown', windowStackPointerDown, { capture: true });
 
         // Intercept pointerover on enriched content-links inside autoban tooltips to prevent preview popups unless focused/locked
         window.addEventListener('pointerover', this._boundOnAutobanPointerOverCapture, { capture: true });
@@ -1780,7 +1784,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     /**
      * Hook into the render lifecycle to position the element and measure its dimensions.
      */
-    _onRender(context: any, options: any) {
+    _onRender(context: Record<string, unknown>, options: Record<string, unknown>) {
         super._onRender(context, options);
 
         this._attachSearchListeners();
@@ -1792,7 +1796,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         // Adjust min-height first so container dimensions reflect the full expanded layout
         this._adjustMinHeight();
 
-        const container = this.element?.querySelector('.bakana-action-display-container');
+        const container = this.element?.querySelector('.bakana-action-display-container') as HTMLElement | null;
         this._width = container?.offsetWidth ?? this.element.offsetWidth;
         this._height = container?.offsetHeight ?? this.element.offsetHeight;
 
@@ -1861,8 +1865,9 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {PointerEvent} event
      * @protected
      */
-    _onPointerOver(event: any) {
-        const itemEl = event.target?.closest?.('.bad-action-item');
+    _onPointerOver(event: PointerEvent) {
+        const target = event.target as HTMLElement | null;
+        const itemEl = target?.closest?.('.bad-action-item') as HTMLElement | null;
         if (!itemEl) {
             if (this._hoveredActionItem) {
                 this._hoveredActionItem = null;
@@ -1884,9 +1889,11 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {PointerEvent} event
      * @protected
      */
-    _onPointerOut(event: any) {
-        const itemEl = event.target?.closest?.('.bad-action-item');
-        const relatedItemEl = event.relatedTarget?.closest?.('.bad-action-item');
+    _onPointerOut(event: PointerEvent) {
+        const target = event.target as HTMLElement | null;
+        const relatedTarget = event.relatedTarget as HTMLElement | null;
+        const itemEl = target?.closest?.('.bad-action-item') as HTMLElement | null;
+        const relatedItemEl = relatedTarget?.closest?.('.bad-action-item') as HTMLElement | null;
         if (itemEl && itemEl !== relatedItemEl) {
             if (this._hoveredActionItem === itemEl) {
                 this._hoveredActionItem = null;
@@ -1895,8 +1902,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         }
 
         // When leaving a tab (e.g. Verbal, Somatic, Components), close the tooltip immediately if not focused/locked
-        const tabEl = event.target?.closest?.('.bad-right-tab, .bad-right-sub-tab, .bad-tab');
-        const relatedTabEl = event.relatedTarget?.closest?.('.bad-right-tab, .bad-right-sub-tab, .bad-tab');
+        const tabEl = target?.closest?.('.bad-right-tab, .bad-right-sub-tab, .bad-tab');
+        const relatedTabEl = relatedTarget?.closest?.('.bad-right-tab, .bad-right-sub-tab, .bad-tab');
         if (tabEl && tabEl !== relatedTabEl) {
             if (!this.isTooltipFocused) {
                 game.tooltip?.deactivate();
@@ -1909,10 +1916,11 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {KeyboardEvent} event
      * @protected
      */
-    _onKeyDown(event: any) {
+    _onKeyDown(event: KeyboardEvent) {
         if (!event) return;
+        const target = event.target as HTMLElement | null;
         // Ignore when typing inside search inputs or textareas
-        if (event.target?.tagName === 'INPUT' || event.target?.tagName === 'TEXTAREA') {
+        if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') {
             return;
         }
 
@@ -1930,7 +1938,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {KeyboardEvent} event
      * @protected
      */
-    _onKeyUp(event: any) {
+    _onKeyUp(event: KeyboardEvent) {
         if (!event) return;
         const isRelease = event.key === '?' || event.key === 'Shift' || event.code === 'Slash' || event.key === '/' || !event.shiftKey;
         if (isRelease) {
@@ -1960,8 +1968,9 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {PointerEvent} event
      * @protected
      */
-    _onAutobanPointerOverCapture(event: any) {
-        const link = event.target?.closest?.('.bad-autoban-tooltip .content-link');
+    _onAutobanPointerOverCapture(event: PointerEvent) {
+        const target = event.target as HTMLElement | null;
+        const link = target?.closest?.('.bad-autoban-tooltip .content-link');
         if (link && !this.isTooltipFocused) {
             event.stopImmediatePropagation?.();
             event.preventDefault?.();
@@ -1976,11 +1985,12 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {MouseEvent} event
      * @protected
      */
-    _onMiddleClickCapture(event: any) {
+    _onMiddleClickCapture(event: MouseEvent) {
         if (event.button !== 1) return;
 
+        const target = event.target as HTMLElement | null;
         // Check if middle-click is on or inside an already-locked tooltip
-        const isInsideLockedTooltip = Boolean(event.target?.closest?.('.locked-tooltip, #tooltip.locked, [data-tooltip-locked="true"]'));
+        const isInsideLockedTooltip = Boolean(target?.closest?.('.locked-tooltip, #tooltip.locked, [data-tooltip-locked="true"]'));
         if (isInsideLockedTooltip) {
             this._closeLockedTooltips();
             game.tooltip?.deactivate();
@@ -1991,7 +2001,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         }
 
         // Check if middle-click is on a tab or tooltip-bearing element inside the HUD
-        const tabTarget = event.target?.closest?.('.bad-right-tab, .bad-right-sub-tab, .bad-tab, .bad-action-item, [data-tooltip]');
+        const tabTarget = target?.closest?.('.bad-right-tab, .bad-right-sub-tab, .bad-tab, .bad-action-item, [data-tooltip]') as HTMLElement | null;
         if (!tabTarget) return;
 
         // Stop browser default middle-click behaviors (auto-scroll/paste) and Foundry default handler
@@ -2015,7 +2025,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         // 5. Verify that Foundry TooltipManager is active or #tooltip has content
         const tooltipEl = document.querySelector?.('#tooltip');
         const hasTooltipContent = Boolean(tooltipEl?.textContent?.trim() || tooltipEl?.children?.length);
-        if (!(game.tooltip as any)?.active && !hasTooltipContent) {
+        if (!game.tooltip?.active && !hasTooltipContent) {
             return;
         }
 
@@ -2039,9 +2049,10 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {MouseEvent} event
      * @protected
      */
-    _onAuxClickCapture(event: any) {
+    _onAuxClickCapture(event: MouseEvent) {
         if (event.button !== 1) return;
-        const isOurTarget = Boolean(event.target?.closest?.('.bad-right-tab, .bad-right-sub-tab, .bad-tab, .bad-action-item, [data-tooltip], .locked-tooltip, #tooltip.locked'));
+        const target = event.target as HTMLElement | null;
+        const isOurTarget = Boolean(target?.closest?.('.bad-right-tab, .bad-right-sub-tab, .bad-tab, .bad-action-item, [data-tooltip], .locked-tooltip, #tooltip.locked'));
         if (isOurTarget) {
             event.stopImmediatePropagation?.();
             event.preventDefault?.();
@@ -2053,9 +2064,9 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {HTMLElement} [except] Optional tooltip element or target to exclude from closing
      * @protected
      */
-    _closeLockedTooltips(except = null) {
+    _closeLockedTooltips(except: HTMLElement | null = null) {
         if (game.tooltip) {
-            (game.tooltip as any).locked = false;
+            game.tooltip.locked = false;
         }
 
         const lockedElements = document.querySelectorAll?.('.locked-tooltip, .locked:not(#tooltip), [data-tooltip-locked="true"]:not(#tooltip)') ?? [];
@@ -2081,7 +2092,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             }
         }
 
-this._lockedTooltipTarget = null;
+        this._lockedTooltipTarget = null;
     }
 
     /**
@@ -2137,7 +2148,7 @@ this._lockedTooltipTarget = null;
 
         let html = `<div class="bad-item-summary-tooltip${tableClass}"${widthStyle}>`;
         html += '<div class="bad-summary-header">';
-        const headerTags = Array.isArray((summary as any).headerTags) ? (summary as any).headerTags : ((summary as any).headerTag ? [(summary as any).headerTag] : []);
+        const headerTags = Array.isArray(summary.headerTags) ? summary.headerTags : (summary.headerTag ? [summary.headerTag] : []);
         let headerTagsHtml = '';
         for (const tag of headerTags) {
             const text = formatSummaryTag(tag);
@@ -2195,7 +2206,7 @@ this._lockedTooltipTarget = null;
      */
     get isTooltipFocused() {
         if (Boolean(this._lockedTooltipTarget)) return true;
-        if (Boolean((game.tooltip as any)?.locked)) return true;
+        if (Boolean(game.tooltip?.locked)) return true;
         const lockedEl = document.querySelector?.('#tooltip.locked, .locked-tooltip, [data-tooltip-locked="true"]') as HTMLElement | null;
         return Boolean(lockedEl?.classList?.contains?.('locked') || lockedEl?.classList?.contains?.('locked-tooltip') || lockedEl?.dataset?.tooltipLocked === 'true');
     }
@@ -2406,11 +2417,12 @@ this._lockedTooltipTarget = null;
      * @param {WheelEvent} event
      * @protected
      */
-    _onWindowWheel(event: any) {
+    _onWindowWheel(event: WheelEvent) {
         if (!event) return;
-        const tooltipEl = event.target?.closest?.('#tooltip, .bad-item-summary-tooltip, .bad-item-summary-tooltip-wrapper');
+        const target = event.target as HTMLElement | null;
+        const tooltipEl = target?.closest?.('#tooltip, .bad-item-summary-tooltip, .bad-item-summary-tooltip-wrapper');
         if (tooltipEl) {
-            const descEl = tooltipEl.querySelector?.('.bad-summary-desc') ?? (event.target?.classList?.contains?.('bad-summary-desc') ? event.target : null);
+            const descEl = (tooltipEl.querySelector?.('.bad-summary-desc') ?? (target?.classList?.contains?.('bad-summary-desc') ? target : null)) as HTMLElement | null;
             if (descEl) {
                 this._scrollTooltipDescription(descEl, event);
             }
@@ -2422,9 +2434,9 @@ this._lockedTooltipTarget = null;
      * as tall as the tallest tab column, keeping them visually connected.
      */
     _adjustMinHeight() {
-        const container = this.element.querySelector('.bakana-action-display-container');
-        const leftTabs = this.element.querySelector('.bad-left-tabs');
-        const rightTabs = this.element.querySelector('.bad-right-tabs');
+        const container = this.element.querySelector('.bakana-action-display-container') as HTMLElement | null;
+        const leftTabs = this.element.querySelector('.bad-left-tabs') as HTMLElement | null;
+        const rightTabs = this.element.querySelector('.bad-right-tabs') as HTMLElement | null;
 
         if (!container) return;
 
@@ -2432,8 +2444,8 @@ this._lockedTooltipTarget = null;
         container.style.minHeight = '';
 
         // Measure the bottom reach of the tabs relative to the container (only if they have children)
-        const leftBottom = leftTabs?.children.length > 0 ? (leftTabs.offsetTop + leftTabs.offsetHeight) : 0;
-        const rightBottom = rightTabs?.children.length > 0 ? (rightTabs.offsetTop + rightTabs.offsetHeight) : 0;
+        const leftBottom = (leftTabs?.children.length ?? 0) > 0 ? ((leftTabs?.offsetTop ?? 0) + (leftTabs?.offsetHeight ?? 0)) : 0;
+        const rightBottom = (rightTabs?.children.length ?? 0) > 0 ? ((rightTabs?.offsetTop ?? 0) + (rightTabs?.offsetHeight ?? 0)) : 0;
         const maxTabBottom = Math.max(leftBottom, rightBottom);
 
         if (maxTabBottom > 0) {
@@ -2456,12 +2468,12 @@ this._lockedTooltipTarget = null;
     _syncTabWidths() {
         if (!this.element) return;
 
-        const leftTabs = this.element.querySelector?.('.bad-left-tabs');
+        const leftTabs = this.element.querySelector?.('.bad-left-tabs') as HTMLElement | null;
         if (leftTabs) {
             this._syncColumnTabWidths(leftTabs, '.bad-left-sub-tab');
         }
 
-        const rightTabs = this.element.querySelector?.('.bad-right-tabs');
+        const rightTabs = this.element.querySelector?.('.bad-right-tabs') as HTMLElement | null;
         if (rightTabs) {
             this._syncColumnTabWidths(rightTabs, '.bad-right-sub-tab');
         }
@@ -2514,12 +2526,13 @@ this._lockedTooltipTarget = null;
      * @param {PointerEvent} event The triggering pointerdown event
      * @private
      */
-    _onPointerDownCapture(event: any) {
+    _onPointerDownCapture(event: PointerEvent) {
         if (event.button !== 2 && event.button !== 0) return; // Only care about right-clicks (2) or left-clicks (0)
 
-        const targetItem = event.target.closest('.bad-action-item, .bad-left-sub-tab, .bad-left-tab');
+        const target = event.target as HTMLElement | null;
+        const targetItem = target?.closest?.('.bad-action-item, .bad-left-sub-tab, .bad-left-tab') as HTMLElement | null;
         const activeTarget = event.button === 2 ? this._activeContextMenuTarget : this._activeMenuTarget;
-        const activeItem = activeTarget?.closest('.bad-action-item, .bad-left-sub-tab, .bad-left-tab') ?? activeTarget;
+        const activeItem = (activeTarget?.closest?.('.bad-action-item, .bad-left-sub-tab, .bad-left-tab') as HTMLElement | null) ?? activeTarget;
 
         if (targetItem && activeItem === targetItem) {
             this._preventReopen = true;
@@ -2532,8 +2545,9 @@ this._lockedTooltipTarget = null;
      * @param {Event} event The triggering contextmenu event
      * @private
      */
-    async _onContextMenuCapture(event: any) {
-        if (event.target?.closest?.('#context-menu, .context-menu, .context-item')) return;
+    async _onContextMenuCapture(event: MouseEvent) {
+        const target = event.target as HTMLElement | null;
+        if (target?.closest?.('#context-menu, .context-menu, .context-item')) return;
 
         // Delegate control button right-clicks declaratively via ControlBarManager
         const handled = await ControlBarManager.dispatchContextAction(this, event);
@@ -2552,7 +2566,7 @@ this._lockedTooltipTarget = null;
         }
 
         // Intercept right-clicks on left/right parent/sub tabs
-        const tabTarget = event.target?.closest?.('.bad-left-tab, .bad-right-tab, .bad-left-sub-tab, .bad-right-sub-tab');
+        const tabTarget = target?.closest?.('.bad-left-tab, .bad-right-tab, .bad-left-sub-tab, .bad-right-sub-tab') as HTMLElement | null;
         if (tabTarget) {
             event.preventDefault();
             event.stopPropagation();
@@ -2566,18 +2580,16 @@ this._lockedTooltipTarget = null;
             if (handled) {
                 this.render();
             } else if (isParent) {
-                this._handleParentTabToggle(side, tabTarget.dataset.type);
+                this._handleParentTabToggle(side, tabTarget.dataset.type!);
             } else if (tabTarget.dataset.type !== 'all') {
-                this._handleSubTabToggle(side, tabTarget, tabTarget.dataset.type);
+                this._handleSubTabToggle(side, tabTarget, tabTarget.dataset.type!);
             }
             return;
         }
 
-
-
-        const targetItem = event.target.closest('.bad-action-item, .bad-left-sub-tab, .bad-left-tab');
+        const targetItem = target?.closest?.('.bad-action-item, .bad-left-sub-tab, .bad-left-tab') as HTMLElement | null;
         const activeTarget = this._activeContextMenuTarget;
-        const activeItem = activeTarget?.closest('.bad-action-item, .bad-left-sub-tab, .bad-left-tab') ?? activeTarget;
+        const activeItem = (activeTarget?.closest?.('.bad-action-item, .bad-left-sub-tab, .bad-left-tab') as HTMLElement | null) ?? activeTarget;
 
         if (targetItem && activeItem === targetItem) {
             this._clearMenuState({ force: true });
@@ -2736,8 +2748,8 @@ this._lockedTooltipTarget = null;
         if (this.isAttached && this.token) {
             // --- ATTACHED MODE (Dynamic Token Placement) ---
             const tokenTransform = this.token.worldTransform ?? { tx: this.token.x ?? 0, ty: this.token.y ?? 0 };
-            const canvasScale = (game.canvas as any)?.stage?.scale?.x ?? 1;
-            const gridSize = (game.canvas as any)?.grid?.size ?? 100;
+            const canvasScale = canvas?.stage?.scale?.x ?? 1;
+            const gridSize = canvas?.grid?.size ?? 100;
             const anchorSide = game.settings.get(MODULE_ID, 'hudAnchorSide') ?? 'vertical';
 
             const tokenWidth = (this.token.w ?? 100) * canvasScale;
@@ -2761,7 +2773,7 @@ this._lockedTooltipTarget = null;
             const positionSide = this._chooseAttachedSide(room1, room2, side1, side2, gridOffset, label1, label2);
 
             let top, left;
-            const targetPosition: Record<string, any> = { width: 'auto', height: 'auto' };
+            const targetPosition: Record<string, number | string> = { width: 'auto', height: 'auto' };
 
             if (isHorizontal) {
                 top = Math.clamp(tokenTop + (tokenHeight / 2) - (appHeight / 2), 10, window.innerHeight - appHeight - 10);

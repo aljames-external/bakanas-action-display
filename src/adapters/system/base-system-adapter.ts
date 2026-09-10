@@ -28,6 +28,8 @@ export interface ItemSummary {
     subtitle?: string;
     img?: string;
     properties?: Array<string | ItemSummaryProperty>;
+    headerTags?: Array<string | ItemSummaryProperty>;
+    headerTag?: string | ItemSummaryProperty;
     description?: string;
     [key: string]: unknown;
 }

@@ -73,7 +73,11 @@ export class CombatMovementTracker {
      * @param {Object} changes Document change delta
      * @param {Object} [options={}] Operation options
      */
-    static recordTokenMovement(tokenDoc: TokenDocument | null | undefined, changes: Record<string, any>, options: Record<string, any> = {}) {
+    static recordTokenMovement(
+        tokenDoc: TokenDocument | null | undefined,
+        changes: { x?: number; y?: number; elevation?: number; [key: string]: unknown },
+        options: Record<string, unknown> = {}
+    ) {
         if (!tokenDoc) return;
         const combat = game.combat;
         if (!combat || !combat.started) return;

@@ -4,15 +4,17 @@
  * @param {string} [fallback] The fallback string if the key is not found (defaults to key)
  * @returns {string} The localized string or fallback
  */
-export function localize(key: string, fallback?: string | null): any {
+export function localize(key: string, fallback?: string): string;
+export function localize(key: string | null | undefined, fallback?: string | null): string | null;
+export function localize(key: string | null | undefined, fallback?: string | null): string | null {
     const defaultStr = fallback !== undefined ? fallback : key;
     if (!key) return defaultStr ?? '';
-    if (!game.i18n) return defaultStr;
+    if (!game.i18n) return defaultStr ?? null;
     if (game.i18n.has(key)) {
-        return game.i18n.localize(key) ?? defaultStr;
+        return game.i18n.localize(key) ?? defaultStr ?? null;
     }
     const val = game.i18n.localize?.(key);
-    return (val && val !== key) ? val : defaultStr;
+    return (val && val !== key) ? val : (defaultStr ?? null);
 }
 
 /**
@@ -22,7 +24,7 @@ export function localize(key: string, fallback?: string | null): any {
  * @param {string} [fallback] Fallback string
  * @returns {string} The formatted localized string
  */
-export function format(key: string, data: Record<string, any> = {}, fallback?: string): string {
+export function format(key: string, data: Record<string, unknown> = {}, fallback?: string): string {
     const defaultStr = fallback !== undefined ? fallback : key;
     if (!key) return defaultStr ?? '';
     if (game.i18n?.format) {
@@ -37,7 +39,7 @@ export function format(key: string, data: Record<string, any> = {}, fallback?: s
         str = defaultStr;
     }
     if (data && typeof data === 'object' && str) {
-        return str.replace(/\{(\w+)\}/g, (match: string, p1: string) => data[p1] ?? match);
+        return str.replace(/\{(\w+)\}/g, (match: string, p1: string) => (data as Record<string, any>)[p1] ?? match);
     }
     return str;
 }
@@ -71,7 +73,10 @@ export function toSet<T = any, R = T>(input: Iterable<T> | null | undefined, map
  * @param {Set|Iterable|null|undefined} setB
  * @returns {boolean}
  */
-export function hasIntersection(setA: any, setB: any): boolean {
+export function hasIntersection(
+    setA: Iterable<unknown> | null | undefined,
+    setB: (Iterable<unknown> & { has?(elem: unknown): boolean; includes?(elem: unknown): boolean }) | null | undefined
+): boolean {
     if (!setA || !setB) return false;
     if (setA instanceof Set && setB instanceof Set) {
         const [smaller, larger] = setA.size <= setB.size ? [setA, setB] : [setB, setA];

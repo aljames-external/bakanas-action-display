@@ -57,6 +57,14 @@ declare global {
     };
   }
 
+  namespace foundry.helpers.interaction {
+    interface TooltipManager {
+      active?: boolean;
+      locked?: boolean;
+      lockTooltip?: () => void;
+    }
+  }
+
   namespace foundry.helpers.interaction.KeyboardManager {
     interface ModifierKeys {
       Alt: any;

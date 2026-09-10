@@ -83,7 +83,7 @@ export async function setActorItemFavorite(actor: Actor | null | undefined, item
  * @param {BaseSystemAdapter|null} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {Promise<void>}
  */
-export async function syncActorFavorites(actor: Actor, customAdapter: BaseSystemAdapter | null = null): Promise<void> {
+export async function syncActorFavorites(actor: Actor | null | undefined, customAdapter: BaseSystemAdapter | null = null): Promise<void> {
     const sys = customAdapter ?? adapter.system;
     if (!actor || !sys?.hasFavorites?.() || !actor.isOwner) return;
 

@@ -32,7 +32,7 @@ export class ControlBarManager {
      * @param {boolean} isAttached Whether HUD is currently attached to token
      * @returns {ControlBarModel}
      */
-    static prepareControlButtons(context: Record<string, any>, isAttached: boolean): ControlBarModel {
+    static prepareControlButtons(context: Record<string, unknown>, isAttached: boolean): ControlBarModel {
         const showTooltips = Boolean(context.showTooltips);
         const showDepleted = Boolean(context.showDepleted);
         const autoTrackCombat = Boolean(context.autoTrackCombat);
