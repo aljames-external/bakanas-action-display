@@ -4,6 +4,7 @@ import { Action } from '../../../ui/action.js';
 import { log } from '../../../lib/logger.js';
 import { deepFreeze } from '../../../lib/utils.js';
 import type { Dnd5eSystemAdapter } from '../dnd5e-system-adapter.js';
+import type { Item5e, Dnd5eActivity } from '../../../types/systems.js';
 
 const COMPONENT_NAMES = deepFreeze({
     'vocal': ['vocal', 'verbal'],
@@ -19,21 +20,6 @@ const COMPONENT_SHORT_KEYS = deepFreeze({
 
 const SPELL_COMPONENTS = deepFreeze(['vocal', 'somatic', 'material']);
 
-interface ComponentDoc {
-    system?: {
-        properties?: Set<string> | string[];
-        components?: Record<string, boolean>;
-    };
-    spell?: {
-        system?: {
-            properties?: Set<string> | string[];
-            components?: Record<string, boolean>;
-        };
-    };
-    properties?: Set<string> | string[];
-    components?: Record<string, boolean>;
-}
-
 interface ReasonObject {
     name?: string;
     isDirectStatus?: boolean;
@@ -41,25 +27,24 @@ interface ReasonObject {
 }
 
 /**
- * Check if a document or its system properties/components include a given spell component.
- * @param {ComponentDoc|null|undefined} doc Item, activity, or spell document
- * @param {string} component Component identifier
+ * Check if a spell item document requires a given spell component.
+ * @param {Item5e} item Concrete D&D 5e item document
+ * @param {string} component Component identifier ('vocal'|'somatic'|'material')
  * @returns {boolean}
  */
-function docHasComponent(doc: ComponentDoc | null | undefined, component: string): boolean {
-    if (!doc) return false;
-    const names = (COMPONENT_NAMES as Record<string, string[]>)[component] ?? [component];
+function itemHasComponent(item: Item5e, component: string): boolean {
+    const names = (COMPONENT_NAMES as Record<string, readonly string[]>)[component] ?? [component];
     const shortKey = (COMPONENT_SHORT_KEYS as Record<string, string>)[component];
 
-    // 1. Check system.properties (Set of full spell property names: 'vocal', 'somatic', 'material')
-    const props = doc.system?.properties ?? doc.spell?.system?.properties ?? doc.properties;
+    // 1. Check system.properties (Set or array of spell property names: 'vocal', 'somatic', 'material')
+    const props = item.system?.properties;
     if (props) {
         const propSet = props instanceof Set ? props : new Set(props);
         if (names.some(name => propSet.has(name))) return true;
     }
 
     // 2. Check system.components (Boolean map: { vocal: true, v: true, material: true, m: true })
-    const comps = doc.system?.components ?? doc.spell?.system?.components ?? doc.components;
+    const comps = item.system?.components;
     if (comps) {
         if (names.some(name => Boolean(comps[name])) || Boolean(shortKey && comps[shortKey])) return true;
     }
@@ -82,56 +67,80 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
     }
 
     /**
+     * Extract the underlying concrete spell item document from an action or item.
+     * @param {Action|Item5e|null|undefined} target Normalized caller input
+     * @returns {Item5e|null}
+     * @private
+     */
+    #extractSpellItem(target: Action | Item5e | null | undefined): Item5e | null {
+        if (!target) return null;
+
+        // If target is already a spell Item with system data, return directly
+        if ('system' in target && (target as Item5e).type === 'spell') {
+            return target as Item5e;
+        }
+
+        const action = target as Action;
+
+        // 1. Direct spell original item on action
+        const origItem = action.originalItem as Item5e | null;
+        if (origItem?.type === 'spell') {
+            return origItem;
+        }
+
+        // 2. Cast activity with linked spell on action
+        const activity = action.originalActivity as Dnd5eActivity | null;
+        if (activity?.type === 'cast') {
+            const spell = (activity.spell ?? activity.item) as Item5e | null;
+            if (spell?.type === 'spell' || spell?.system?.properties) {
+                return spell;
+            }
+        }
+
+        // 3. Linked spell document resolved via system adapter
+        const rootDoc = (this.adapter as Dnd5eSystemAdapter)?.resolveRootSpellDocument?.(action) as Item5e | null;
+        if (rootDoc && (rootDoc.type === 'spell' || rootDoc.system?.properties)) {
+            return rootDoc;
+        }
+
+        // 4. Linked action item or subaction
+        const linked = action.linkedAction;
+        if (linked) {
+            if ('system' in linked && (linked as Item5e).type === 'spell') {
+                return linked as Item5e;
+            }
+            const linkedOrigItem = (linked as Action).originalItem as Item5e | null;
+            if (linkedOrigItem?.type === 'spell') {
+                return linkedOrigItem;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Check if a spell, item, or activity requires a given verbal/somatic/material component.
      * Non-spell items (weapons, equipment, feats, tools, etc.) without a cast activity or linked spell do not require spell components.
-     * @param {Action} sub Subaction, activity, or item object
+     * @param {Action|Item5e} target Action, activity, or spell item document
      * @param {string} component Component identifier ('vocal'|'somatic'|'material')
      * @returns {boolean}
      */
-    requiresComponent(sub: Action, component: string): boolean {
-        if (!sub) return false;
-
-        // 1. Direct spell document check (item or subaction of type 'spell')
-        if ((sub.type as string) === 'spell') {
-            return docHasComponent(sub as unknown as ComponentDoc, component);
-        }
-
-        const origItem = sub.originalItem;
-        if ((origItem?.type as string) === 'spell') {
-            return docHasComponent(origItem as unknown as ComponentDoc, component);
-        }
-
-        // 2. Cast activity check (activities that cast a spell)
-        const activity = sub.originalActivity as { type?: string; spell?: ComponentDoc } | null;
-        if (activity?.type === 'cast') {
-            if (docHasComponent(activity as unknown as ComponentDoc, component)) return true;
-            if (activity.spell && docHasComponent(activity.spell, component)) return true;
-        }
-
-        // 3. Linked spell document check (compendium spell or cached spell)
-        const rootDoc = (this.adapter as Dnd5eSystemAdapter).resolveRootSpellDocument?.(sub) as { type?: string; spell?: ComponentDoc } | null;
-        if (rootDoc && ((rootDoc.type as string) === 'spell' || rootDoc.type === 'cast' || rootDoc.spell)) {
-            if (docHasComponent(rootDoc as unknown as ComponentDoc, component)) return true;
-        }
-
-        const linked = sub.linkedAction as { type?: string; spell?: ComponentDoc } | null;
-        if (linked && (linked.type === 'spell' || linked.type === 'cast' || linked.spell)) {
-            if (docHasComponent(linked as unknown as ComponentDoc, component)) return true;
-        }
-
-        return false;
+    requiresComponent(target: Action | Item5e, component: string): boolean {
+        const item = this.#extractSpellItem(target);
+        if (!item) return false;
+        return itemHasComponent(item, component);
     }
 
     /**
      * Build TabRef objects for each spell component required by a document.
-     * @param {Action|Item} target Document or activity
+     * @param {Action|Item5e} target Document, action, or activity
      * @returns {TabRef[]}
      */
-    getComponentTabs(target: Action | Item): TabRef[] {
-        if (!target) return [];
-        const isAction = target instanceof Action || 'subactions' in target || 'originalItem' in target;
+    getComponentTabs(target: Action | Item5e): TabRef[] {
+        const item = this.#extractSpellItem(target);
+        if (!item) return [];
         return SPELL_COMPONENTS
-            .filter(comp => isAction ? this.requiresComponent(target as Action, comp) : docHasComponent(target as unknown as ComponentDoc, comp))
+            .filter(comp => itemHasComponent(item, comp))
             .map(comp => TabRef.from('components', comp));
     }
 
@@ -186,7 +195,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
         const activeCompSubs = this.getActiveExclusionSubs(filterContext);
 
         if (!filterContext?._inFilterSubactions && activeCompSubs.length > 0) {
-            const actor = (filterContext?.actor ?? this.adapter?.actor ?? (action as unknown as { actor?: Actor }).actor ?? action.originalItem?.actor ?? null) as Actor | null;
+            const actor = filterContext?.actor ?? this.adapter?.actor ?? action.originalItem?.actor ?? null;
             const effectReasons = (this.adapter as Dnd5eSystemAdapter)?.getAutoBanEffectReasons?.(actor) ?? {};
 
             log.debug(`Dnd5eSystemTabFilterManager.matchesEconomyTabs | Evaluating action "${action.name}" (${action.id}) against active component ban lists: [${activeCompSubs.join(', ')}] | Effect causing reasons:`, effectReasons);
@@ -221,7 +230,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
             return baseFiltered;
         }
 
-        const actor = (filterContext?.actor ?? this.adapter?.actor ?? (subactions?.[0] as unknown as { actor?: Actor })?.actor ?? subactions?.[0]?.originalItem?.actor ?? null) as Actor | null;
+        const actor = filterContext?.actor ?? this.adapter?.actor ?? subactions[0]?.originalItem?.actor ?? null;
         const effectReasons = (this.adapter as Dnd5eSystemAdapter)?.getAutoBanEffectReasons?.(actor) ?? {};
 
         log.debug(`Dnd5eSystemTabFilterManager.filterSubactions | Current ban lists: [${activeCompSubs.join(', ')}] | Effect causing reasons:`, effectReasons);

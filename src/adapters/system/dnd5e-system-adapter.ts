@@ -1247,10 +1247,10 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Get spell component TabRef objects required by a document.
-     * @param {Document} doc
+     * @param {Action|Item5e} doc
      * @returns {TabRef[]}
      */
-    #getComponentTabs(doc: Item | Action): TabRef[] {
+    #getComponentTabs(doc: Action | Item5e): TabRef[] {
         return this.filterManager.getComponentTabs(doc);
     }
 
