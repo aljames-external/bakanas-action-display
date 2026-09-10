@@ -6,6 +6,7 @@ import { Action } from '../../ui/action.js';
 import { MODULE_ID } from '../../constants.js';
 import { Pf2eSystemContextMenuManager } from './context-menu/pf2e-system-context-menu-manager.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
+import type { ActorPF2e, ItemPF2e, Pf2eStatistic } from '../../types/systems.js';
 
 const SORT_ORDERS = deepFreeze({
     tabs: {
@@ -212,7 +213,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      */
     override extractCheckActions(actor?: Actor): Action[] {
         if (!actor) return [];
-        const act = actor as any;
+        const act = actor as ActorPF2e;
         const checkActions: Action[] = [];
 
         // 1. Core Saves (Fortitude, Reflex, Will) and Perception
@@ -292,10 +293,11 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         const actorSkills = act.skills ?? act.system?.skills ?? {};
         const skillEntries = actorSkills instanceof Map ? Array.from(actorSkills.entries()) : Object.entries(actorSkills);
 
-        for (const [key, skill] of skillEntries) {
-            const slug = (skill as any).slug ?? key;
-            const abl = (PF2E_SKILL_ABILITY_MAP as Record<string, string>)[slug] ?? (skill as any).ability ?? 'dex';
-            const label = (skill as any).label ?? (skill as any).name ?? (CONFIG as any)?.PF2E?.skills?.[slug] ?? slug;
+        for (const [key, rawSkill] of skillEntries) {
+            const skill = rawSkill as Pf2eStatistic;
+            const slug = skill.slug ?? key;
+            const abl = (PF2E_SKILL_ABILITY_MAP as Record<string, string>)[slug] ?? skill.ability ?? 'dex';
+            const label = skill.label ?? skill.name ?? (CONFIG as any)?.PF2E?.skills?.[slug] ?? slug;
             const skillImg = (PF2E_ABILITY_ICONS as Record<string, string>)[abl] ?? 'icons/svg/d20.svg';
             const skillAction = new Action({
                 id: `skill-${slug}`,

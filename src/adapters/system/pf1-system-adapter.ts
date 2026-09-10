@@ -6,6 +6,7 @@ import { Action } from '../../ui/action.js';
 import { MODULE_ID } from '../../constants.js';
 import { Pf1SystemContextMenuManager } from './context-menu/pf1-system-context-menu-manager.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
+import type { ActorPF, ItemPF, Pf1Skill } from '../../types/systems.js';
 
 const SORT_ORDERS = {
     tabs: {
@@ -247,7 +248,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      */
     override extractCheckActions(actor?: Actor): Action[] {
         if (!actor) return [];
-        const act = actor as any;
+        const act = actor as ActorPF;
         const checkActions: Action[] = [];
         const abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
         const abilityNames: Record<string, string[]> = {
@@ -333,7 +334,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         const skills = act.system?.skills ?? {};
         const pf1Config = (CONFIG as any)?.PF1;
         for (const [skillId, rawSkill] of Object.entries(skills)) {
-            const skill = rawSkill as any;
+            const skill = rawSkill as Pf1Skill;
             const abl = skill.ability ?? pf1Config?.skills?.[skillId]?.ability ?? 'dex';
             const label = skill.name ?? pf1Config?.skills?.[skillId] ?? skill.label ?? skillId;
             const skillImg = abilityIcons[abl] ?? 'icons/svg/d20.svg';
@@ -357,7 +358,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 
             if (skill.subSkills) {
                 for (const [subId, rawSub] of Object.entries(skill.subSkills)) {
-                    const subSkill = rawSub as any;
+                    const subSkill = rawSub as Pf1Skill;
                     const subAbl = subSkill.ability ?? abl;
                     const subLabel = subSkill.name ?? `${label} (${subId})`;
                     const subAction = new Action({

@@ -9,6 +9,7 @@ import { Dnd5eSystemContextMenuManager } from './context-menu/dnd5e-system-conte
 import { Dnd5eSystemTabFilterManager } from './filter/dnd5e-system-tab-filter-manager.js';
 import { Dnd5eSystemContextModifier } from './context-modifier/dnd5e-system-context-modifier.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
+import type { Actor5e, Item5e, Dnd5eSkill, Dnd5eTool } from '../../types/systems.js';
 
 const ALLOWED_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'feat', 'spell']);
 const PASSIVE_ITEM_TYPES = new Set(['equipment', 'weapon', 'consumable', 'tool', 'backpack', 'loot']);
@@ -289,7 +290,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     override extractCheckActions(actor?: Actor): Action[] {
         if (!actor) return [];
-        const act = actor as any;
+        const act = actor as Actor5e;
         const checkActions: Action[] = [];
         const abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
         const abilityNames: Record<string, string[]> = {
@@ -366,7 +367,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         const cfg = CONFIG?.DND5E;
         const skills = act.system?.skills ?? {};
         for (const [skillId, rawSkill] of Object.entries(skills)) {
-            const skill = rawSkill as any;
+            const skill = rawSkill as Dnd5eSkill;
             const abl = skill.ability ?? 'dex';
             const label = skill.label ?? cfg?.skills?.[skillId]?.label ?? skillId;
             const skillImg = abilityIcons[abl] ?? 'icons/svg/d20.svg';
@@ -392,7 +393,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         // 4. Tool Checks
         const tools = act.system?.tools ?? {};
         for (const [toolId, rawTool] of Object.entries(tools)) {
-            const tool = rawTool as any;
+            const tool = rawTool as Dnd5eTool;
             const toolConfig = cfg?.tools?.[toolId];
             const label = this.#getToolLabel(toolId, tool, cfg);
             const abl = tool.ability ?? toolConfig?.ability ?? 'int';
@@ -1707,10 +1708,12 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      */
     override isFavorite(actor: Actor, item: Item): boolean {
         if (!item) return false;
+        const item5e = item as Item5e;
+        const act = actor as Actor5e;
 
         // 1. Direct system.favorite property (dnd5e 3.x+)
-        if (item.system && 'favorite' in item.system) {
-            return Boolean((item.system as any).favorite);
+        if (item5e.system && 'favorite' in item5e.system) {
+            return Boolean(item5e.system.favorite);
         }
 
         // 2. Legacy / flag-based favorite (dnd5e 2.x)
@@ -1719,9 +1722,14 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         // 3. Actor system.favorites set/array (dnd5e 3.x+ actor favorites collection)
-        if ((actor?.system as any)?.favorites?.some) {
-            const relUuid = (item as any).getRelativeUUID?.(actor) ?? null;
-            return (actor.system as any).favorites.some((f: any) => f?.id === item.id || (relUuid && f?.id === relUuid) || f?.id === item.uuid);
+        if (act?.system?.favorites) {
+            const relUuid = item.getRelativeUUID?.(actor) ?? null;
+            const favorites = act.system.favorites;
+            if (Array.isArray(favorites)) {
+                return favorites.some((f: any) => f?.id === item.id || (relUuid && f?.id === relUuid) || f?.id === item.uuid);
+            } else if (typeof favorites.some === 'function') {
+                return favorites.some((f: any) => f?.id === item.id || (relUuid && f?.id === relUuid) || f?.id === item.uuid);
+            }
         }
 
         return false;
@@ -1738,16 +1746,18 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
     override async setFavorite(actor: Actor, item: Item, favorite: boolean): Promise<any> {
         if (!item) return null;
         const isFav = Boolean(favorite);
+        const item5e = item as Item5e;
+        const act = actor as Actor5e;
 
         // 1. If item has system.favorite field (modern dnd5e 3.x+)
-        if (item.system && 'favorite' in item.system) {
-            return await (item as any).update({ 'system.favorite': isFav });
+        if (item5e.system && 'favorite' in item5e.system) {
+            return await item.update({ 'system.favorite': isFav } as Record<string, unknown>);
         }
 
         // 2. If actor has addFavorite / removeFavorite methods (dnd5e 3.x actor methods)
-        const actorSystem = actor?.system as any;
+        const actorSystem = act?.system;
         if (actorSystem?.addFavorite && actorSystem?.removeFavorite) {
-            const uuid = (item as any).getRelativeUUID?.(actor) ?? item.id;
+            const uuid = item.getRelativeUUID?.(actor) ?? item.id;
             if (isFav) {
                 return await actorSystem.addFavorite({ id: uuid, type: 'item' });
             } else {
@@ -1756,7 +1766,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         // 3. Fallback to updating item flags
-        return await (item as any).update({ 'flags.dnd5e.favorite': isFav });
+        return await item.update({ 'flags.dnd5e.favorite': isFav } as Record<string, unknown>);
     }
 
     /**
