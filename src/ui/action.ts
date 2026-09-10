@@ -13,7 +13,7 @@ export interface ActionOptions {
     isHidden?: boolean;
     available?: boolean;
     uses?: { available?: number | string | null; max?: number | string | null; isUpcast?: boolean; [key: string]: unknown };
-    roll?: ((event?: any) => any) | null;
+    roll?: ((event?: Event | MouseEvent) => unknown) | null;
     originalItem?: any;
     subactions?: Action[];
     originalActivity?: any;
@@ -42,7 +42,7 @@ export class Action {
     isHidden: boolean;
     available: boolean;
     uses: { available?: number | string | null; max?: number | string | null; isUpcast?: boolean; [key: string]: unknown };
-    roll: ((event?: any) => any) | null;
+    roll: ((event?: Event | MouseEvent) => unknown) | null;
     originalItem: any;
     subactions: Action[];
     originalActivity: any;
