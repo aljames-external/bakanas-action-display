@@ -73,11 +73,10 @@ export class Dnd5eSystemContextMenuManager extends BaseSystemContextMenuManager 
                 name: "BAD.common.prepareSpell",
                 icon: '<i class="fas fa-book"></i>',
                 condition: (el: HTMLElement): boolean => {
-                    const item = this.#getOwnerItem(app, el);
-                    if (!item || (item.type as string) !== 'spell') return false;
-                    const item5e = item as Item5e;
-                    const method = item5e.system?.method ?? 'prepared';
-                    const prepared = Boolean(item5e.system?.prepared);
+                    const item = this.#getOwnerItem(app, el) as Item5e | null;
+                    if (!item || item.type !== 'spell') return false;
+                    const method = item.system?.method ?? 'prepared';
+                    const prepared = Boolean(item.system?.prepared);
                     return !INNATE_OR_PACT_METHODS.has(method) && !prepared;
                 },
                 callback: async (el: HTMLElement): Promise<void> => {
@@ -91,11 +90,10 @@ export class Dnd5eSystemContextMenuManager extends BaseSystemContextMenuManager 
                 name: "BAD.common.unprepareSpell",
                 icon: '<i class="fas fa-book-dead"></i>',
                 condition: (el: HTMLElement): boolean => {
-                    const item = this.#getOwnerItem(app, el);
-                    if (!item || (item.type as string) !== 'spell') return false;
-                    const item5e = item as Item5e;
-                    const method = item5e.system?.method ?? 'prepared';
-                    const prepared = Boolean(item5e.system?.prepared);
+                    const item = this.#getOwnerItem(app, el) as Item5e | null;
+                    if (!item || item.type !== 'spell') return false;
+                    const method = item.system?.method ?? 'prepared';
+                    const prepared = Boolean(item.system?.prepared);
                     return !INNATE_OR_PACT_METHODS.has(method) && prepared;
                 },
                 callback: async (el: HTMLElement): Promise<void> => {
