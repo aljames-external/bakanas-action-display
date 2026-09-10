@@ -37,7 +37,7 @@ export function format(key: string, data: Record<string, any> = {}, fallback?: s
         str = defaultStr;
     }
     if (data && typeof data === 'object' && str) {
-        return str.replace(/\{(\w+)\}/g, (match: any, p1: any) => data[p1] ?? match);
+        return str.replace(/\{(\w+)\}/g, (match: string, p1: string) => data[p1] ?? match);
     }
     return str;
 }
@@ -49,12 +49,12 @@ export function format(key: string, data: Record<string, any> = {}, fallback?: s
  * @param {Function|null} [mapFn=null] Optional mapper callback (element => value)
  * @returns {Set}
  */
-export function toSet(input: any, mapFn: ((item: any) => any) | null = null): Set<any> {
+export function toSet<T = any, R = T>(input: Iterable<T> | null | undefined, mapFn: ((item: T) => R) | null = null): Set<R> {
     if (!input) return new Set();
     if (!mapFn) {
-        return input instanceof Set ? input : new Set(input);
+        return input instanceof Set ? (input as unknown as Set<R>) : new Set(input as unknown as Iterable<R>);
     }
-    const set = new Set();
+    const set = new Set<R>();
     for (const item of input) {
         const val = mapFn(item);
         if (val != null) {

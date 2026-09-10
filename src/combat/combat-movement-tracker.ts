@@ -10,14 +10,14 @@ export class CombatMovementTracker {
      * @type {Map<string, number>}
      * @private
      */
-    static #movedDistances = new Map();
+    static #movedDistances = new Map<string | null, number>();
 
     /**
      * Map of tokenId -> { x: number, y: number, elevation: number } (last known token position).
      * @type {Map<string, { x: number, y: number, elevation: number }>}
      * @private
      */
-    static #lastPositions = new Map();
+    static #lastPositions = new Map<string | null, { x: number; y: number; elevation: number }>();
 
     /**
      * Current combat turn identifier string (e.g. "combatId-round-turn").
@@ -73,7 +73,7 @@ export class CombatMovementTracker {
      * @param {Object} changes Document change delta
      * @param {Object} [options={}] Operation options
      */
-    static recordTokenMovement(tokenDoc: any, changes: any, options = {}) {
+    static recordTokenMovement(tokenDoc: TokenDocument | null | undefined, changes: Record<string, any>, options: Record<string, any> = {}) {
         if (!tokenDoc) return;
         const combat = game.combat;
         if (!combat || !combat.started) return;
@@ -134,7 +134,7 @@ export class CombatMovementTracker {
      * @param {{ x: number, y: number, elevation?: number }} p1
      * @returns {number} Distance in grid units
      */
-    static measureSegmentDistance(p0: any, p1: any) {
+    static measureSegmentDistance(p0: { x: number; y: number; elevation?: number }, p1: { x: number; y: number; elevation?: number }): number {
         if (canvas?.grid && (canvas.grid as any).measurePath) {
             try {
                 const result = (canvas.grid as any).measurePath([p0, p1]);
@@ -165,9 +165,9 @@ export class CombatMovementTracker {
      * @param {Actor|null} [actor=null] Associated actor document
      * @returns {{ inCombat: boolean, distance: number, units: string }}
      */
-    static getMovementThisTurn(token: Token | null = null, actor: any = null) {
+    static getMovementThisTurn(token: Token | null = null, actor: any = null): { inCombat: boolean; distance: number; units: string } {
         const combat = game.combat;
-        const fallbackUnits = actor?.system?.attributes?.movement?.units ?? 'ft';
+        const fallbackUnits = (actor as any)?.system?.attributes?.movement?.units ?? 'ft';
         const units = canvas?.scene?.grid?.units ?? fallbackUnits;
 
         if (!combat || !combat.started) {

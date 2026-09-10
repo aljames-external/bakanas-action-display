@@ -3,10 +3,10 @@ import { log } from '../../lib/logger.js';
 import { adapter } from '../../adapters/index.js';
 import { positionFloatingMenu } from './menu-utils.js';
 
-export const dropdownSubactionMap = new WeakMap();
-const attachedDropdownItems = new WeakSet();
+export const dropdownSubactionMap = new WeakMap<HTMLElement, any>();
+const attachedDropdownItems = new WeakSet<HTMLElement>();
 
-const sortByName = (a: any, b: any) => (a.name ?? '').localeCompare(b.name ?? '');
+const sortByName = (a: { name?: string | null }, b: { name?: string | null }) => (a.name ?? '').localeCompare(b.name ?? '');
 
 /**
  * Open a context submenu for an individual subaction/activity item (e.g. right-clicking an activity in the dropdown).
@@ -14,7 +14,7 @@ const sortByName = (a: any, b: any) => (a.name ?? '').localeCompare(b.name ?? ''
  * @param {HTMLElement} targetLi Target activity list item element
  * @param {Object} subaction The subaction or activity data object
  */
-export function openActivitySubContextMenu(app: any, targetLi: any, subaction: any) {
+export function openActivitySubContextMenu(app: any, targetLi: HTMLElement, subaction: any) {
     const menuItems = [
         {
             name: "SIDEBAR.Edit",
@@ -110,7 +110,7 @@ export function buildSubactionMenuItem(sub: any, event: any, app: any = null) {
  * @param {Event} event Triggering click event
  * @param {Object} [parentAction=null] Optional parent action card object
  */
-export function showActivityDropdown(app: any, target: any, subactions: any, event: any, parentAction = null) {
+export function showActivityDropdown(app: any, target: HTMLElement, subactions: any[], event: any, parentAction: any = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
     app?._hideItemSummaryTooltip?.();
@@ -165,10 +165,10 @@ export function showActivityDropdown(app: any, target: any, subactions: any, eve
     const ContextMenuClass = adapter.foundry.ContextMenu;
     const targetBody = app?.element?.ownerDocument?.body ?? document.body;
 
-    const formatMenuItems = (menuEl: any) => {
+    const formatMenuItems = (menuEl: HTMLElement | null) => {
         if (!menuEl) return;
         const lis = menuEl.querySelectorAll('.context-item');
-        lis.forEach((li: any, idx: any) => {
+        lis.forEach((li: any, idx: number) => {
             const sub = sortedSubactions[idx];
             const itemData = menuItems[idx];
             if (sub) {

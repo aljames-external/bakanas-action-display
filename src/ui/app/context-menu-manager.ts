@@ -8,16 +8,16 @@ import { positionFloatingMenu } from './menu-utils.js';
  * Manages UI context menus for action items inside ActionDisplayApp.
  */
 export class ContextMenuManager {
-    app: any;
-    element: any;
+    app: ActionDisplayApp;
+    element: HTMLElement;
     _activeSubmenuEl: HTMLElement | null = null;
-    _submenuCloseTimeout: any = null;
+    _submenuCloseTimeout: ReturnType<typeof setTimeout> | number | null = null;
 
     /**
      * @param {ApplicationV2} app Active ActionDisplayApp instance
      * @param {HTMLElement} element Root application DOM element
      */
-    constructor(app: any, element: any) {
+    constructor(app: ActionDisplayApp, element: HTMLElement) {
         this.app = app;
         this.element = element;
     }
@@ -28,9 +28,9 @@ export class ContextMenuManager {
      * @returns {{ action: Action|null, item: Item|null }}
      * @private
      */
-    _resolveActionAndItem(el: any) {
+    _resolveActionAndItem(el: any): { action: Action | null; item: any } {
         const actionId = el?.dataset?.actionId;
-        const action = this.app.actions?.find((a: any) => a.id === actionId) ?? null;
+        const action = this.app.actions?.find((a: Action) => a.id === actionId) ?? null;
         const item = action?.originalItem ?? this.app.actor?.items?.get(actionId) ?? null;
         return { action, item };
     }
@@ -180,7 +180,7 @@ export class ContextMenuManager {
      */
     _positionContextMenu(target: any, itemCount: any) {
         const targetBody = this.app?.element?.ownerDocument?.body ?? document.body;
-        const menuEl = document.querySelector('#context-menu, .context-menu:not(.bad-sub-context-menu)');
+        const menuEl = document.querySelector<HTMLElement>('#context-menu, .context-menu:not(.bad-sub-context-menu)');
         if (!menuEl) return;
         positionFloatingMenu(menuEl, target, itemCount, targetBody);
     }

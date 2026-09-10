@@ -1,25 +1,23 @@
 import { log } from '../../lib/logger.js';
 import { localize, deepFreeze } from '../../lib/utils.js';
 
-/**
- * @typedef {Object} ControlBarButtonConfig
- * @property {string} id Unique button identifier (e.g. 'filter-resources')
- * @property {string} className CSS classes for the button
- * @property {string} action Declarative left-click action name
- * @property {string|null} contextAction Declarative right-click action name
- * @property {string} icon FontAwesome icon class
- * @property {boolean} isActive Primary active flag (illuminated purple state)
- * @property {boolean} isSecondaryActive Secondary active flag (e.g. orange outline state)
- * @property {boolean} isVisible Whether button should be rendered
- * @property {string|null} tooltip Localized tooltip text when showTooltips is enabled
- * @property {string} ariaLabel Accessibility label
- */
+export interface ControlBarButtonConfig {
+    id: string;
+    className: string;
+    action: string;
+    contextAction: string | null;
+    icon: string;
+    isActive: boolean;
+    isSecondaryActive: boolean;
+    isVisible: boolean;
+    tooltip: string | null;
+    ariaLabel: string;
+}
 
-/**
- * @typedef {Object} ControlBarModel
- * @property {ControlBarButtonConfig[]} left Left-aligned control buttons
- * @property {ControlBarButtonConfig[]} right Right-aligned control buttons
- */
+export interface ControlBarModel {
+    left: ControlBarButtonConfig[];
+    right: ControlBarButtonConfig[];
+}
 
 const LEGACY_FALLBACKS = deepFreeze([
     { selector: '.bad-combat-track-btn', method: '_onRightClickCombatAutoTrack' },
@@ -34,7 +32,7 @@ export class ControlBarManager {
      * @param {boolean} isAttached Whether HUD is currently attached to token
      * @returns {ControlBarModel}
      */
-    static prepareControlButtons(context: any, isAttached: any) {
+    static prepareControlButtons(context: Record<string, any>, isAttached: boolean): ControlBarModel {
         const showTooltips = Boolean(context.showTooltips);
         const showDepleted = Boolean(context.showDepleted);
         const autoTrackCombat = Boolean(context.autoTrackCombat);
