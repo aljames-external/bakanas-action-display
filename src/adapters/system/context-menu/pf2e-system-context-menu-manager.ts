@@ -53,8 +53,7 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
         if (app?.actor?.items && item.id && !app.actor.items.has(item.id)) return false;
         const itemPF2e = item as ItemPF2e;
         if (itemPF2e.system.traits?.value?.includes('unarmed')) return false;
-        const carryType = typeof itemPF2e.system.equipped === 'object' ? itemPF2e.system.equipped?.carryType : undefined;
-        return Boolean(carryType);
+        return Boolean(itemPF2e.system.equipped?.carryType);
     }
 
     /**

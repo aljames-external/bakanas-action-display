@@ -191,7 +191,12 @@ export interface ActorPF2e extends Omit<Actor, "system"> {
 
 export interface ItemPF2e extends Omit<Item, "system"> {
     system: {
-        equipped?: boolean | { value?: boolean; carryType?: string; [key: string]: unknown };
+        equipped?: {
+            carryType?: string;
+            handsHeld?: number;
+            invested?: boolean;
+            [key: string]: unknown;
+        };
         traits?: {
             value?: string[];
             [key: string]: unknown;

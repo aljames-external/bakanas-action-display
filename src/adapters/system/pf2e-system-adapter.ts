@@ -118,7 +118,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             return true;
         }
 
-        const carryType = typeof itemPF2e.system.equipped === 'object' ? itemPF2e.system.equipped?.carryType : undefined;
+        const carryType = itemPF2e.system.equipped?.carryType;
         if (carryType) {
             return carryType === 'held' || carryType === 'worn';
         }
