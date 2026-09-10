@@ -484,7 +484,7 @@ export class BaseSystemAdapter {
      * @param {Actor} actor
      * @param {HUDTabColumn} [tabColumn]
      */
-    updateTabs(actor: any, tabColumn = null) {
+    updateTabs(actor: Actor, tabColumn = null) {
         // NOP for base system adapter
     }
 
@@ -496,7 +496,7 @@ export class BaseSystemAdapter {
      * @param {string} subId
      * @param {boolean} isActive
      */
-    recordManualTabToggle(actor: any, parentId: any, subId: any, isActive: any) {
+    recordManualTabToggle(actor: Actor, parentId: string, subId: string, isActive: boolean) {
         // NOP for base system adapter
     }
 
@@ -680,19 +680,19 @@ export class BaseSystemAdapter {
      * @param {Item} item Item document
      * @returns {boolean} True if the item is favorited
      */
-    isFavorite(actor: any, item: any) {
+    isFavorite(actor: Actor, item: Item): boolean {
         return false;
     }
 
     /**
      * Set or unset favorite status on an item in a system-specific manner.
      *
-     * @param {Object} actor Actor document
+     * @param {Actor} actor Actor document
      * @param {Item} item Item document
      * @param {boolean} favorite True to favorite, false to unfavorite
      * @returns {Promise<any>|null} Result of update or null if unsupported
      */
-    async setFavorite(actor: any, item: any, favorite: any) {
+    async setFavorite(actor: Actor, item: Item, favorite: boolean): Promise<any> {
         return null;
     }
 

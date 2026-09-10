@@ -8,20 +8,20 @@ import { adapter } from '../adapters/index.js';
  * @param {Object} actor Actor document
  * @returns {Record<string, boolean>} Map of itemId to boolean
  */
-export function getActorFavorites(actor: any) {
+export function getActorFavorites(actor: Actor): Record<string, boolean> {
     if (!actor?.getFlag) return {};
-    return actor.getFlag(MODULE_ID, 'favorites') ?? {};
+    return (actor.getFlag(MODULE_ID, 'favorites') as Record<string, boolean>) ?? {};
 }
 
 /**
  * Check whether an item is favorited on an actor, checking both actor-level flag and system adapter.
  *
- * @param {Object} actor Actor document
- * @param {Object} item Item document
+ * @param {Actor} actor Actor document
+ * @param {Item} item Item document
  * @param {Object} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {boolean} True if favorited
  */
-export function isActorItemFavorite(actor: any, item: any, customAdapter = null) {
+export function isActorItemFavorite(actor: Actor, item: Item, customAdapter: any = null): boolean {
     if (!actor || !item?.id) return false;
 
     const favorites = getActorFavorites(actor);
@@ -34,13 +34,13 @@ export function isActorItemFavorite(actor: any, item: any, customAdapter = null)
 /**
  * Set or unset favorite state for an item on an actor, updating both the system-level state and actor flag map.
  *
- * @param {Object} actor Actor document
- * @param {Object} item Item document
+ * @param {Actor} actor Actor document
+ * @param {Item} item Item document
  * @param {boolean} isFavorite Target favorite state
  * @param {Object} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {Promise<void>}
  */
-export async function setActorItemFavorite(actor: any, item: any, isFavorite: any, customAdapter = null) {
+export async function setActorItemFavorite(actor: Actor, item: Item, isFavorite: boolean, customAdapter: any = null): Promise<void> {
     if (!actor || !item?.id) return;
 
     const targetFavorite = Boolean(isFavorite);
@@ -79,11 +79,11 @@ export async function setActorItemFavorite(actor: any, item: any, isFavorite: an
 /**
  * Synchronize the actor's favorites flag map with the system-level favorites if the system supports favorites.
  *
- * @param {Object} actor Actor document
+ * @param {Actor} actor Actor document
  * @param {Object} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {Promise<void>}
  */
-export async function syncActorFavorites(actor: any, customAdapter = null) {
+export async function syncActorFavorites(actor: Actor, customAdapter: any = null): Promise<void> {
     const sys = customAdapter ?? adapter.system;
     if (!actor || !sys?.hasFavorites?.() || !actor.isOwner) return;
 

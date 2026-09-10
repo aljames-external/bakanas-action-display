@@ -20,6 +20,7 @@ export interface ActionOptions {
     linkedAction?: any;
     collapseDropdownIfSingle?: boolean;
     extra?: Record<string, any>;
+    economyIndicators?: any[];
 }
 
 /**
@@ -45,6 +46,7 @@ export class Action {
     linkedAction: any;
     collapseDropdownIfSingle: boolean;
     extra: Record<string, any>;
+    economyIndicators?: any[];
 
     /**
      * @param {Object} options

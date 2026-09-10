@@ -1704,12 +1704,12 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item Item document
      * @returns {boolean} True if favorited in dnd5e
      */
-    isFavorite(actor: any, item: any) {
+    isFavorite(actor: Actor, item: Item): boolean {
         if (!item) return false;
 
         // 1. Direct system.favorite property (dnd5e 3.x+)
         if (item.system && 'favorite' in item.system) {
-            return Boolean(item.system.favorite);
+            return Boolean((item.system as any).favorite);
         }
 
         // 2. Legacy / flag-based favorite (dnd5e 2.x)
@@ -1718,9 +1718,9 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         // 3. Actor system.favorites set/array (dnd5e 3.x+ actor favorites collection)
-        if (actor?.system?.favorites?.some) {
-            const relUuid = item.getRelativeUUID?.(actor) ?? null;
-            return actor.system.favorites.some((f: any) => f?.id === item.id || (relUuid && f?.id === relUuid) || f?.id === item.uuid);
+        if ((actor?.system as any)?.favorites?.some) {
+            const relUuid = (item as any).getRelativeUUID?.(actor) ?? null;
+            return (actor.system as any).favorites.some((f: any) => f?.id === item.id || (relUuid && f?.id === relUuid) || f?.id === item.uuid);
         }
 
         return false;
@@ -1729,36 +1729,33 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
     /**
      * Set or unset favorite status on an item in DnD5e.
      *
-     * @param {Object} actor Actor document
+     * @param {Actor} actor Actor document
      * @param {Item} item Item document
      * @param {boolean} favorite True to favorite, false to unfavorite
      * @returns {Promise<any>|null} Result of update
      */
-    async setFavorite(actor: any, item: any, favorite: any) {
+    async setFavorite(actor: Actor, item: Item, favorite: boolean): Promise<any> {
         if (!item) return null;
         const isFav = Boolean(favorite);
 
         // 1. If item has system.favorite field (modern dnd5e 3.x+)
-        if (item.system && 'favorite' in item.system && item.update) {
-            return await item.update({ 'system.favorite': isFav });
+        if (item.system && 'favorite' in item.system) {
+            return await (item as any).update({ 'system.favorite': isFav });
         }
 
         // 2. If actor has addFavorite / removeFavorite methods (dnd5e 3.x actor methods)
-        if (actor?.system?.addFavorite && actor.system.removeFavorite) {
-            const uuid = item.getRelativeUUID?.(actor) ?? item.id;
+        const actorSystem = actor?.system as any;
+        if (actorSystem?.addFavorite && actorSystem?.removeFavorite) {
+            const uuid = (item as any).getRelativeUUID?.(actor) ?? item.id;
             if (isFav) {
-                return await actor.system.addFavorite({ id: uuid, type: 'item' });
+                return await actorSystem.addFavorite({ id: uuid, type: 'item' });
             } else {
-                return await actor.system.removeFavorite(uuid);
+                return await actorSystem.removeFavorite(uuid);
             }
         }
 
         // 3. Fallback to updating item flags
-        if (item.update) {
-            return await item.update({ 'flags.dnd5e.favorite': isFav });
-        }
-
-        return null;
+        return await (item as any).update({ 'flags.dnd5e.favorite': isFav });
     }
 
     /**
@@ -2147,7 +2144,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @param {HUDTabColumn} [tabColumn]
      */
-    updateTabs(actor: any, tabColumn = null) {
+    updateTabs(actor: Actor, tabColumn = null) {
         this.syncActorAutoBans(actor, tabColumn);
     }
 
@@ -2158,7 +2155,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {string} subId
      * @param {boolean} isActive
      */
-    recordManualTabToggle(actor: any, parentId: any, subId: any, isActive: any) {
+    recordManualTabToggle(actor: Actor, parentId: string, subId: string, isActive: boolean) {
         if (!actor || parentId !== 'components' || !SPELL_COMPONENT_KEYS.has(subId)) return;
         const autoBanState = actor.getFlag?.(MODULE_ID, 'autoBanState') ?? {};
         const conditions = autoBanState.conditions ?? {};
@@ -2172,8 +2169,8 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
         manualUnbans[subId] = !isActive;
 
-        if (actor.isOwner && actor.setFlag) {
-            actor.setFlag(MODULE_ID, 'autoBanState', {
+        if (actor.isOwner) {
+            (actor as any).setFlag(MODULE_ID, 'autoBanState', {
                 conditions,
                 manualUnbans
             }, { badInternal: true }).catch((err: any) => {

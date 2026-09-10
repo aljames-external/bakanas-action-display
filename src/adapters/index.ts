@@ -61,7 +61,7 @@ class Adapter {
      * @param {Actor} actor
      * @returns {Promise<Action[]>}
      */
-    async getActions(actor: any) {
+    async getActions(actor: Actor): Promise<Action[]> {
         if (!actor) return [];
 
         // 1. Core Base Extraction
@@ -126,7 +126,7 @@ class Adapter {
      * @returns {Action[]}
      * @private
      */
-    _extractBaseActions(actor: any) {
+    _extractBaseActions(actor: Actor): Action[] {
         const actions: any[] = [];
         if (!actor?.items) return actions;
 
@@ -322,7 +322,7 @@ class Adapter {
      * @param {Actor} actor
      * @param {HUDTabColumn} [tabColumn]
      */
-    updateTabs(actor: any, tabColumn: any = null) {
+    updateTabs(actor: Actor, tabColumn: any = null) {
         this.system?.updateTabs?.(actor, tabColumn);
     }
 
@@ -333,7 +333,7 @@ class Adapter {
      * @param {string} subId
      * @param {boolean} isActive
      */
-    recordManualTabToggle(actor: any, parentId: any, subId: any, isActive: any) {
+    recordManualTabToggle(actor: Actor, parentId: string, subId: string, isActive: boolean) {
         this.system?.recordManualTabToggle?.(actor, parentId, subId, isActive);
     }
 
@@ -345,7 +345,7 @@ class Adapter {
      * @param {string[]} rightTab
      * @returns {Object[]}
      */
-    filterSubactions(actor: any, subactions: any, leftTab?: any, rightTab?: any): any[] {
+    filterSubactions(actor: Actor, subactions: any[], leftTab?: any, rightTab?: any): any[] {
         return (this.system as any)?.filterSubactions?.(subactions, { actor, leftTab, rightTab }) ?? subactions;
     }
 
