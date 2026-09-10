@@ -96,6 +96,7 @@ declare global {
 
   type Dnd5eSkill = import('./systems.js').Dnd5eSkill;
   type Dnd5eTool = import('./systems.js').Dnd5eTool;
+  type Dnd5eAbility = import('./systems.js').Dnd5eAbility;
   type Dnd5eActivity = import('./systems.js').Dnd5eActivity;
   type Dnd5eTraitData = import('./systems.js').Dnd5eTraitData;
   type Dnd5eSensesData = import('./systems.js').Dnd5eSensesData;
@@ -122,6 +123,9 @@ declare global {
   type Pf2eSystemAdapter = import('../adapters/system/pf2e-system-adapter.js').Pf2eSystemAdapter;
   type ItemSummary = import('../adapters/system/base-system-adapter.js').ItemSummary;
   type ItemSummaryProperty = import('../adapters/system/base-system-adapter.js').ItemSummaryProperty;
+  type ItemSummaryPropertyItem = import('../adapters/system/base-system-adapter.js').ItemSummaryPropertyItem;
+  type ItemSummaryPropertyRow = import('../adapters/system/base-system-adapter.js').ItemSummaryPropertyRow;
+  type AutoBanEffectReason = import('../adapters/system/base-system-adapter.js').AutoBanEffectReason;
   type TabSideFilterContext = import('../adapters/system/filter/base-system-tab-filter-manager.js').TabSideFilterContext;
   type FilterContext = import('../adapters/system/filter/base-system-tab-filter-manager.js').FilterContext;
 }

@@ -23,15 +23,24 @@ export interface ItemSummaryProperty {
     value: string;
 }
 
+export type ItemSummaryPropertyItem = string | ItemSummaryProperty;
+export type ItemSummaryPropertyRow = ItemSummaryPropertyItem[];
+
 export interface ItemSummary {
     title: string;
     subtitle?: string;
     img?: string;
-    properties?: Array<string | ItemSummaryProperty>;
-    headerTags?: Array<string | ItemSummaryProperty>;
-    headerTag?: string | ItemSummaryProperty;
+    properties?: Array<ItemSummaryPropertyItem | ItemSummaryPropertyRow>;
+    headerTags?: Array<ItemSummaryPropertyItem>;
+    headerTag?: ItemSummaryPropertyItem;
     description?: string;
     [key: string]: unknown;
+}
+
+export interface AutoBanEffectReason {
+    name: string;
+    statuses: string[];
+    isDirectStatus: boolean;
 }
 
 /**
@@ -235,7 +244,7 @@ export class BaseSystemAdapter {
         try {
             return actions.filter((action: Action) => {
                 // Never hide weapons, even if they are out of ammo or charges
-                if (action.originalItem?.type === 'weapon') return true;
+                if ((action.originalItem?.type as string) === 'weapon') return true;
                 if (this._isResourceDepleted(action)) {
                     log.debug(`BaseSystemAdapter.modifyActions | Filtering out "${action.name}" (ID: ${action.id}) — action.uses.available (${action.uses?.available}) <= 0 and showDepleted is disabled`);
                     return false;
@@ -276,7 +285,7 @@ export class BaseSystemAdapter {
      * @param {Token|null} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor: Actor | null, token: Token | null = null): Promise<any> {
+    async getTokenInfo(actor: Actor | null, token: Token | null = null): Promise<Record<string, unknown> | null> {
         return null;
     }
 
@@ -336,7 +345,7 @@ export class BaseSystemAdapter {
      * @param {Actor|null} [actor=null] Target actor document
      * @returns {{ page: number, defaultLayout: string, categories: Object[]|null }}
      */
-    getPageConfig(page: number = 1, actor: Actor | null = null): { page: number; defaultLayout: string; categories: Record<string, any>[] | null } {
+    getPageConfig(page: number = 1, actor: Actor | null = null): { page: number; defaultLayout: string; categories: Record<string, unknown>[] | null } {
         const pageNum = Number.isFinite(page) && page > 0 ? page : 1;
         return {
             page: pageNum,
@@ -349,7 +358,7 @@ export class BaseSystemAdapter {
      * Apply a flat layout template to the HUD context.
      * @param {Record<string, any>} context The Handlebars render context
      */
-    formatFlatLayout(context: Record<string, any>): void {
+    formatFlatLayout(context: Record<string, unknown>): void {
         context.layout = 'flat';
     }
 
@@ -560,14 +569,14 @@ export class BaseSystemAdapter {
      * @param {Record<string, any>} [userColors={}] User configured colors & enablement
      * @returns {boolean}
      */
-    isEconomyTypeEnabled(type: { id: string; defaultEnabled?: boolean }, userColors: Record<string, any> = {}): boolean {
+    isEconomyTypeEnabled(type: { id: string; defaultEnabled?: boolean }, userColors: Record<string, unknown> = {}): boolean {
         if (!type?.id || type.id === 'none' || type.id === 'all') return false;
 
-        const disabled = userColors.disabled;
+        const disabled = userColors.disabled as { has?: (id: string) => boolean; includes?: (id: string) => boolean; [key: string]: unknown } | undefined;
         const isDisabled = Boolean(disabled?.has?.(type.id) ?? disabled?.includes?.(type.id) ?? disabled?.[type.id]);
         if (isDisabled) return false;
 
-        const enabled = userColors.enabled;
+        const enabled = userColors.enabled as { has?: (id: string) => boolean; includes?: (id: string) => boolean; [key: string]: unknown } | undefined;
         const isEnabled = Boolean(enabled?.has?.(type.id) ?? enabled?.includes?.(type.id) ?? enabled?.[type.id]);
         if (isEnabled) return true;
 
@@ -580,7 +589,7 @@ export class BaseSystemAdapter {
      * @param {Record<string, any>} [userColors={}] User configured color overrides
      * @returns {string|null} Hex color string or null if unmapped or disabled
      */
-    getEconomyColor(type: string, userColors: Record<string, any> = {}): string | null {
+    getEconomyColor(type: string, userColors: Record<string, unknown> = {}): string | null {
         if (!type || type === 'none' || type === 'all') return null;
 
         const types = this.getEconomyTypes() ?? [];
@@ -592,9 +601,10 @@ export class BaseSystemAdapter {
             return null;
         }
 
-        if (userColors[type]) return userColors[type];
+        if (userColors[type] && typeof userColors[type] === 'string') return userColors[type] as string;
         if (found?.defaultColor) return found.defaultColor;
-        return userColors['other'] ?? otherDef.defaultColor ?? '#64748b';
+        const fallbackColor = typeof userColors['other'] === 'string' ? userColors['other'] : null;
+        return fallbackColor ?? otherDef.defaultColor ?? '#64748b';
     }
 
     /**
@@ -605,7 +615,7 @@ export class BaseSystemAdapter {
      * @param {Record<string, any>} [userColors={}] User configured color overrides
      * @returns {{ type: string, label: string, active: boolean, color: string|null, tooltip: string }[]}
      */
-    extractEconomyIndicators(action: Action, userColors: Record<string, any> = {}): { type: string; label: string; active: boolean; color: string | null; tooltip: string }[] {
+    extractEconomyIndicators(action: Action, userColors: Record<string, unknown> = {}): { type: string; label: string; active: boolean; color: string | null; tooltip: string }[] {
         if (!action) return [];
 
         const systemTypes = this.getEconomyTypes() ?? [];
@@ -734,7 +744,7 @@ export class BaseSystemAdapter {
      * @param {boolean} favorite True to favorite, false to unfavorite
      * @returns {Promise<any>|null} Result of update or null if unsupported
      */
-    async setFavorite(actor: Actor, item: Item, favorite: boolean): Promise<any> {
+    async setFavorite(actor: Actor, item: Item, favorite: boolean): Promise<unknown> {
         return null;
     }
 
@@ -758,12 +768,14 @@ export class BaseSystemAdapter {
         const type = itemType ? (itemType.charAt(0).toUpperCase() + itemType.slice(1)) : '';
         const properties: Array<string | ItemSummaryProperty> = [];
 
-        const range = targetItem?.system?.range?.value
-            ? `${targetItem.system.range.value} ${targetItem.system.range.units ?? ''}`.trim()
+        const targetSystem = (targetItem as unknown as { system?: { range?: { value?: string | number; units?: string }; damage?: { value?: string; parts?: Array<[string, string]> }; description?: { value?: string } | string } })?.system;
+
+        const range = targetSystem?.range?.value
+            ? `${targetSystem.range.value} ${targetSystem.range.units ?? ''}`.trim()
             : null;
         if (range) properties.push({ label: 'Range', value: range });
 
-        const damage = targetItem?.system?.damage?.value ?? targetItem?.system?.damage?.parts?.[0]?.[0] ?? null;
+        const damage = targetSystem?.damage?.value ?? targetSystem?.damage?.parts?.[0]?.[0] ?? null;
         if (damage) properties.push({ label: 'Damage', value: damage });
 
         if (action?.uses?.available != null) {
@@ -771,12 +783,14 @@ export class BaseSystemAdapter {
             properties.push({ label: 'Uses', value: usesStr });
         }
 
-        let description = targetItem?.system?.description?.value ?? targetItem?.system?.description ?? '';
+        const rawDescription = typeof targetSystem?.description === 'object' && targetSystem?.description !== null ? targetSystem.description.value : targetSystem?.description;
+        let description = rawDescription ?? '';
         if (description) {
-            const rollData = targetItem?.getRollData?.() ?? actor?.getRollData?.() ?? {};
+            const targetWithRollData = targetItem as unknown as { getRollData?: () => Record<string, unknown> };
+            const rollData = targetWithRollData?.getRollData?.() ?? actor?.getRollData?.() ?? {};
             description = await this.enrichHTML(description, {
                 rollData,
-                relativeTo: targetItem ?? actor,
+                relativeTo: (targetItem instanceof Item ? targetItem : actor) ?? undefined,
                 secrets: false,
                 async: true
             });
@@ -801,7 +815,7 @@ export class BaseSystemAdapter {
      * @param {Actor} [actor]
      * @returns {Record<'vocal'|'somatic', Array<*>>}
      */
-    getAutoBanEffectReasons(actor?: Actor): Record<'vocal'|'somatic', any[]> {
+    getAutoBanEffectReasons(actor?: Actor | null): Record<'vocal'|'somatic', AutoBanEffectReason[] | string[]> {
         return { vocal: [], somatic: [] };
     }
 

@@ -500,7 +500,7 @@ class Adapter {
      * @param {Actor} actor
      * @returns {Record<'vocal'|'somatic', string[]>}
      */
-    getAutoBanEffectReasons(actor: Actor): Record<'vocal' | 'somatic', string[]> {
+    getAutoBanEffectReasons(actor: Actor): Record<'vocal' | 'somatic', AutoBanEffectReason[] | string[]> {
         return this.system?.getAutoBanEffectReasons?.(actor) ?? { vocal: [], somatic: [] };
     }
 

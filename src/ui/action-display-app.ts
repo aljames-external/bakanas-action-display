@@ -2183,7 +2183,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
                 if (Array.isArray(prop)) {
                     html += '<div class="bad-summary-tag-row">';
                     for (const item of prop) {
-                        if (item?.endsWith?.(':')) {
+                        if ((item as string)?.endsWith?.(':')) {
                             html += `<span class="bad-summary-row-label">${item}</span>`;
                         } else {
                             const text = formatSummaryTag(item);

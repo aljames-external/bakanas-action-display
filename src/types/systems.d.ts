@@ -14,15 +14,21 @@ export interface Dnd5eSkill {
     ability?: string;
     label?: string;
     value?: number;
+    mod?: number;
     total?: number;
+    prof?: { hasProficiency?: boolean; [key: string]: unknown };
     [key: string]: unknown;
 }
 
 export interface Dnd5eTool {
     ability?: string;
     label?: string;
+    value?: number;
+    mod?: number;
+    total?: number;
     img?: string;
     icon?: string;
+    prof?: { hasProficiency?: boolean; [key: string]: unknown };
     [key: string]: unknown;
 }
 
@@ -55,8 +61,20 @@ export interface Dnd5eSensesData {
     [key: string]: unknown;
 }
 
+export interface Dnd5eAbility {
+    value?: number;
+    mod?: number;
+    save?: number | { value?: number; total?: number; proficient?: boolean };
+    proficient?: boolean;
+    checkProf?: { hasProficiency?: boolean };
+    check?: { proficient?: boolean };
+    saveProf?: { hasProficiency?: boolean };
+    [key: string]: unknown;
+}
+
 export interface Actor5e extends Omit<Actor, "system"> {
     system: {
+        abilities?: Record<string, Dnd5eAbility>;
         skills?: Record<string, Dnd5eSkill>;
         tools?: Record<string, Dnd5eTool>;
         details?: {
