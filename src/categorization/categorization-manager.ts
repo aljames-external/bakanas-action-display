@@ -317,5 +317,5 @@ export const DEFAULT_CATEGORIES = deepFreeze([
  */
 export function getDefaultCategories(customAdapter: { getDefaultCategories?: () => unknown[] | null } | null = null): Category[] {
     const custom = customAdapter?.getDefaultCategories?.();
-    return (custom ? (custom as Category[]) : (DEFAULT_CATEGORIES as unknown as Category[]));
+    return (custom ? (custom as Category[]) : [...DEFAULT_CATEGORIES]);
 }

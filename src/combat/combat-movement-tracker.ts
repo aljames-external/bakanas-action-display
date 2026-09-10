@@ -139,10 +139,7 @@ export class CombatMovementTracker {
      * @returns {number} Distance in grid units
      */
     static measureSegmentDistance(p0: { x: number; y: number; elevation?: number }, p1: { x: number; y: number; elevation?: number }): number {
-        const grid = canvas?.grid as unknown as {
-            measurePath?: (waypoints: Array<{ x: number; y: number; elevation?: number }>) => { distance?: number };
-            measureDistance?: (p0: { x: number; y: number; elevation?: number }, p1: { x: number; y: number; elevation?: number }, options?: { gridSpaces?: boolean }) => number;
-        } | undefined;
+        const grid = canvas?.grid as any;
         if (grid?.measurePath) {
             try {
                 const result = grid.measurePath([p0, p1]);

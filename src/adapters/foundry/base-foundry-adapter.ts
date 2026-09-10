@@ -60,7 +60,7 @@ export class BaseFoundryAdapter {
      * @returns {number}
      */
     get generation(): number {
-        return (game as unknown as { release?: { generation?: number } })?.release?.generation ?? 12;
+        return game.release?.generation ?? 12;
     }
 
     /**
@@ -250,7 +250,7 @@ export class BaseFoundryAdapter {
      */
     async enrichHTML(content: string, options: Record<string, unknown> = {}): Promise<string> {
         if (!content) return '';
-        return this.TextEditor.enrichHTML(content, { secrets: false, async: true, ...options } as unknown as Parameters<typeof TextEditor.enrichHTML>[1]);
+        return this.TextEditor.enrichHTML(content, { secrets: false, async: true, ...options } as Parameters<typeof TextEditor.enrichHTML>[1]);
     }
 
     /**
@@ -324,10 +324,10 @@ export class BaseFoundryAdapter {
         if (userRole != null && userRole >= assistantRole) {
             return USER_PERMISSION_TIERS.GM;
         }
-        if (userRole === trustedRole || Boolean((user as unknown as { isTrusted?: boolean }).isTrusted)) {
+        if (userRole === trustedRole || Boolean(user?.isTrusted)) {
             return USER_PERMISSION_TIERS.TRUSTED;
         }
-        if (userRole === playerRole || !(user as unknown as { isTrusted?: boolean }).isTrusted) {
+        if (userRole === playerRole || !user?.isTrusted) {
             return USER_PERMISSION_TIERS.PLAYER;
         }
         return null;
@@ -348,7 +348,7 @@ export class BaseFoundryAdapter {
         }
 
         const ownerLevel = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-        const docObj = doc as unknown as {
+        const docObj = doc as {
             testUserPermission?: (u: User, p: string) => boolean;
             getUserLevel?: (u: User) => number;
             ownership?: Record<string, number> & { default?: number };

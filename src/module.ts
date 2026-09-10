@@ -351,7 +351,7 @@ Hooks.on('updateActor', ((actor: Actor, changes: Record<string, unknown>, option
 // Hook into ActiveEffect updates (status conditions gained/lost) on actors
 function handleActiveEffectChange(effect: ActiveEffect | { parent?: { documentName?: string; actor?: Actor | null; [key: string]: unknown } } | null | undefined): void {
     const parent = effect?.parent;
-    const actor = parent?.documentName === 'Actor' ? (parent as unknown as Actor) : ((parent as { actor?: Actor | null })?.actor ?? null);
+    const actor = parent?.documentName === 'Actor' ? (parent as Actor) : ((parent as { actor?: Actor | null })?.actor ?? null);
     if (!actor) return;
     const currentApp = actionDisplay.activeApp;
     const isCurrent = isMatchingActor(actor, null);

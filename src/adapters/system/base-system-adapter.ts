@@ -761,14 +761,14 @@ export class BaseSystemAdapter {
      */
     async getItemSummary(action: Action, item: Item | null = action?.originalItem ?? null, actor: Actor | null = null): Promise<ItemSummary | null> {
         if (!action && !item) return null;
-        const targetItem = (item ?? action?.originalItem ?? action);
+        const targetItem = item ?? action?.originalItem ?? null;
         const title = action?.name ?? targetItem?.name ?? '';
         const img = (action?.img && action.img.length > 0) ? action.img : (targetItem?.img ?? '');
         const itemType = targetItem?.type;
         const type = itemType ? (itemType.charAt(0).toUpperCase() + itemType.slice(1)) : '';
         const properties: Array<string | ItemSummaryProperty> = [];
 
-        const targetSystem = (targetItem as unknown as { system?: { range?: { value?: string | number; units?: string }; damage?: { value?: string; parts?: Array<[string, string]> }; description?: { value?: string } | string } })?.system;
+        const targetSystem = (targetItem?.system as { range?: { value?: string | number; units?: string }; damage?: { value?: string; parts?: Array<[string, string]> }; description?: { value?: string } | string } | undefined);
 
         const range = targetSystem?.range?.value
             ? `${targetSystem.range.value} ${targetSystem.range.units ?? ''}`.trim()
@@ -786,8 +786,7 @@ export class BaseSystemAdapter {
         const rawDescription = typeof targetSystem?.description === 'object' && targetSystem?.description !== null ? targetSystem.description.value : targetSystem?.description;
         let description = rawDescription ?? '';
         if (description) {
-            const targetWithRollData = targetItem as unknown as { getRollData?: () => Record<string, unknown> };
-            const rollData = targetWithRollData?.getRollData?.() ?? actor?.getRollData?.() ?? {};
+            const rollData = targetItem?.getRollData?.() ?? actor?.getRollData?.() ?? {};
             description = await this.enrichHTML(description, {
                 rollData,
                 relativeTo: (targetItem instanceof Item ? targetItem : actor) ?? undefined,
