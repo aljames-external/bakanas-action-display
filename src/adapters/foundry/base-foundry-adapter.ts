@@ -193,13 +193,14 @@ export class BaseFoundryAdapter {
     }
 
     /**
-     * Test whether version a is strictly newer than version b.
-     * @param {string} a Primary version string
-     * @param {string} b Target version string to compare against
+     * Test whether version v1 is strictly newer than version v0.
+     * @param {string|number} v1 Target version
+     * @param {string|number} v0 Reference version to compare against
+     * @param {object} [options] Comparison options
      * @returns {boolean}
      */
-    isNewerVersion(a: any, b: any) {
-        return foundry.utils.isNewerVersion(a, b);
+    isNewerVersion(v1: string | number, v0: string | number, options?: { majorOnly?: boolean }): boolean {
+        return foundry.utils.isNewerVersion(v1, v0, options);
     }
 
     /**

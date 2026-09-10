@@ -624,6 +624,17 @@ class Adapter {
     }
 
     /**
+     * Test whether version v1 is strictly newer than version v0 via the active Foundry platform adapter.
+     * @param {string|number} v1 Target version
+     * @param {string|number} v0 Reference version to compare against
+     * @param {object} [options] Comparison options
+     * @returns {boolean}
+     */
+    isNewerVersion(v1: string | number, v0: string | number, options?: { majorOnly?: boolean }): boolean {
+        return this.foundry.isNewerVersion(v1, v0, options);
+    }
+
+    /**
      * Preload Handlebars templates via the active Foundry platform adapter.
      * @param {string[]} paths Array of template paths
      * @returns {Promise<Function[]>}
