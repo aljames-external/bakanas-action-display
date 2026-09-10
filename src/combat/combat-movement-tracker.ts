@@ -30,7 +30,7 @@ export class CombatMovementTracker {
      * Reset movement tracking state for a new combat turn or encounter reset.
      * @param {Combat|null} [combat=game.combat]
      */
-    static resetTurn(combat: any = game.combat) {
+    static resetTurn(combat: Combat | null = game.combat) {
         if (!combat || !combat.started) {
             this.#movedDistances.clear();
             this.#lastPositions.clear();
@@ -52,9 +52,10 @@ export class CombatMovementTracker {
      * @param {Combat} combat
      * @private
      */
-    static #initializeCombatantPositions(combat: any) {
+    static #initializeCombatantPositions(combat: Combat) {
         if (!combat?.combatants) return;
         for (const combatant of combat.combatants) {
+            if (!combatant.tokenId) continue;
             const tokenDoc = combatant.token ?? canvas?.tokens?.get?.(combatant.tokenId)?.document;
             if (tokenDoc) {
                 this.#lastPositions.set(combatant.tokenId, {

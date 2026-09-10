@@ -219,7 +219,7 @@ export class BaseFoundryAdapter {
      * @param {Token} token Target Token placeable
      * @returns {Combatant[]}
      */
-    getCombatantsByToken(combat: any, token: Token): any[] {
+    getCombatantsByToken(combat: Combat, token: Token): Combatant[] {
         throw new Error('BaseFoundryAdapter.getCombatantsByToken must be implemented by version subclass');
     }
 
@@ -229,7 +229,7 @@ export class BaseFoundryAdapter {
      * @param {Token} token Target Token placeable
      * @returns {Combatant|null}
      */
-    getCombatantByToken(combat: any, token: Token): any {
+    getCombatantByToken(combat: Combat, token: Token): Combatant | null {
         return this.getCombatantsByToken(combat, token)[0] ?? null;
     }
 
@@ -238,7 +238,7 @@ export class BaseFoundryAdapter {
      * @param {Combatant} combatant
      * @returns {Token|null}
      */
-    getTokenFromCombatant(combatant: any): Token | null {
+    getTokenFromCombatant(combatant: Combatant | null | undefined): Token | null {
         if (!combatant) return null;
         if (combatant.token?.object) {
             return combatant.token.object;
@@ -252,7 +252,7 @@ export class BaseFoundryAdapter {
             if (activeTokens?.length) return activeTokens[0];
         }
         if (combatant.token) {
-            return combatant.token;
+            return (combatant.token as any).object ?? (combatant.token as any);
         }
         return null;
     }

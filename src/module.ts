@@ -370,7 +370,7 @@ Hooks.on('deleteActiveEffect', ((effect: any, options: any, userId: any) => {
  * Handle combat turn updates, dynamically switching or auto-toggling HUD visibility.
  * @param {Combat} combat Active combat document
  */
-export function handleCombatTurnChange(combat: any): void {
+export function handleCombatTurnChange(combat: Combat): void {
     CombatMovementTracker.resetTurn(combat);
     const isFeatureEnabled = Boolean((game?.settings as any)?.get(MODULE_ID, 'enableCombatAutoTrackButton'));
     const isAutoTrackCombat = Boolean((game?.settings as any)?.get(MODULE_ID, 'autoTrackCombat'));
@@ -452,11 +452,11 @@ export function handleCombatTurnChange(combat: any): void {
 }
 
 // Hook into Combat updates and turn advancements to update End Turn button visibility and auto-track
-Hooks.on('updateCombat', ((combat: any, changes: any, options: any, userId: any) => {
+Hooks.on('updateCombat', ((combat: Combat, changes: any, options: any, userId: any) => {
     handleCombatTurnChange(combat);
 }) as any);
 
-Hooks.on('deleteCombat', ((combat: any, options: any, userId: any) => {
+Hooks.on('deleteCombat', ((combat: Combat, options: any, userId: any) => {
     CombatMovementTracker.clear();
     const isFeatureEnabled = Boolean((game?.settings as any)?.get(MODULE_ID, 'enableCombatAutoTrackButton'));
     const isAutoToggleActive = isFeatureEnabled && Boolean((game?.settings as any)?.get(MODULE_ID, 'autoToggleCombat'));
