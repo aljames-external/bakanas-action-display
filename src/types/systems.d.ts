@@ -287,11 +287,13 @@ export interface ActorPF extends Omit<Actor, "system"> {
 
 export interface Pf1WeaponLink {
     id?: string;
+    type?: string;
+    uuid?: string;
     [key: string]: unknown;
 }
 
 export interface Pf1ItemAction {
-    id?: string;
+    id: string;
     name?: string;
     activation?: { type?: string; [key: string]: unknown };
     [key: string]: unknown;
@@ -299,6 +301,8 @@ export interface Pf1ItemAction {
 
 export interface Pf1Spellbook {
     kind?: string;
+    spellPreparationMode?: string;
+    spells?: Record<string, { value?: number; max?: number }>;
     [key: string]: unknown;
 }
 

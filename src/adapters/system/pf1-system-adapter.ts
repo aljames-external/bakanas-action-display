@@ -7,26 +7,6 @@ import { MODULE_ID } from '../../constants.js';
 import { Pf1SystemContextMenuManager } from './context-menu/pf1-system-context-menu-manager.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
 
-interface Pf1Spellbook {
-    kind?: string;
-    spellPreparationMode?: string;
-    spells?: Record<string, { value?: number; max?: number }>;
-    [key: string]: unknown;
-}
-
-interface Pf1ItemAction {
-    id: string;
-    name?: string;
-    activation?: { type?: string };
-    [key: string]: unknown;
-}
-
-interface Pf1WeaponLink {
-    id?: string;
-    type?: string;
-    uuid?: string;
-}
-
 interface Pf1Subaction {
     id: string;
     name: string;
@@ -128,7 +108,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
             for (const action of actions) {
                 const item = action.originalItem;
                 if (!item) continue;
-                const itemPF = item as unknown as ItemPF;
+                const itemPF = item as ItemPF;
                 const type = item.type as string;
 
                 let isUnequipped = false;
@@ -249,7 +229,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 
                     action.roll = async () => {
                         const active = this.#getBuffActiveState(item);
-                        await (item as unknown as { update: (data: Record<string, unknown>) => Promise<unknown> }).update({ "system.active": !active });
+                        await (item.update as Function)({ "system.active": !active });
                     };
 
                     action.isActive = this.#getBuffActiveState(item);
@@ -584,7 +564,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         const alignLabel = alignKey ? (cfg?.alignments?.[alignKey] ? localize(cfg.alignments[alignKey], alignKey) : alignKey) : '';
 
         // CR / Level
-        const level = (act as unknown as { level?: number }).level ?? (details.level as { value?: number } | undefined)?.value ?? 1;
+        const level = act.level ?? (details.level as { value?: number } | undefined)?.value ?? 1;
         const crObj = details.cr as { total?: string | number; base?: string | number } | string | number | undefined;
         const cr = (typeof crObj === 'object' && crObj !== null ? (crObj.total ?? crObj.base) : crObj) ?? '';
         const crLabel = (actor.type as string) === 'npc' && cr !== '' ? `CR ${cr}` : `Level ${level}`;
@@ -926,7 +906,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     #executeItemRoll(item: Item, actionId: string | null, event: unknown) {
         const proxiedEvent = this._createRollEvent(event);
         const options = actionId ? { actionId, event: proxiedEvent } : { event: proxiedEvent };
-        const rollableItem = item as unknown as { use?: (options: unknown) => unknown; roll?: (options: unknown) => unknown };
+        const rollableItem = item as ItemPF;
         if (rollableItem.use) {
             rollableItem.use(options);
         } else if (rollableItem.roll) {
@@ -1043,7 +1023,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      */
     #getWeaponLinkChildren(weapon: Item): Pf1WeaponLink[] {
         const itemPF = weapon as ItemPF;
-        return (itemPF.system as unknown as { links?: { children?: Pf1WeaponLink[] } })?.links?.children ?? [];
+        return itemPF.system?.links?.children ?? [];
     }
 
     /**
@@ -1054,7 +1034,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      */
     #getSpellbook(actor: Actor, spellbookId: string): Pf1Spellbook | undefined {
         const act = actor as ActorPF;
-        return (act.system as unknown as { attributes?: { spells?: { spellbooks?: Record<string, Pf1Spellbook> } } })?.attributes?.spells?.spellbooks?.[spellbookId];
+        return act.system?.attributes?.spells?.spellbooks?.[spellbookId];
     }
 
     #getSpellSubTab(spellbookId: string, spellbook: Pf1Spellbook | null | undefined, level: number | string): string {
@@ -1080,7 +1060,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      */
     #getItemActions(item: Item): Pf1ItemAction[] {
         const itemPF = item as ItemPF;
-        return (itemPF.system as unknown as { actions?: Pf1ItemAction[] })?.actions ?? [];
+        return itemPF.system?.actions ?? [];
     }
 
     /**
@@ -1109,7 +1089,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         if ((item.type as string) === 'weapon' && system.weaponSubtype === 'ranged' && system.ammo?.type) {
             const ammoId = system.ammo?.default;
             const ammoItem = ammoId ? actor?.items.get(ammoId) as ItemPF | undefined : undefined;
-            const rawQuantity = ammoItem ? (ammoItem.system as unknown as { quantity?: number })?.quantity : undefined;
+            const rawQuantity = ammoItem?.system?.quantity;
             const quantity = rawQuantity ?? 0;
             return { available: quantity, max: null };
         }
@@ -1254,26 +1234,17 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         const type = targetItem?.type ? (targetItem.type.charAt(0).toUpperCase() + targetItem.type.slice(1)) : '';
         const properties: Array<string | ItemSummaryProperty> = [];
 
-        const targetItemWithLabels = targetItem as unknown as {
-            labels?: {
-                toHit?: string;
-                damage?: string;
-                range?: string;
-                save?: string;
-            };
-        } | null;
-
-        if (targetItemWithLabels?.labels?.toHit) {
-            properties.push({ label: 'Attack', value: targetItemWithLabels.labels.toHit });
+        if (itemPF?.labels?.toHit) {
+            properties.push({ label: 'Attack', value: itemPF.labels.toHit });
         }
-        if (targetItemWithLabels?.labels?.damage) {
-            properties.push({ label: 'Damage', value: targetItemWithLabels.labels.damage });
+        if (itemPF?.labels?.damage) {
+            properties.push({ label: 'Damage', value: itemPF.labels.damage });
         }
-        if (targetItemWithLabels?.labels?.range) {
-            properties.push({ label: 'Range', value: targetItemWithLabels.labels.range });
+        if (itemPF?.labels?.range) {
+            properties.push({ label: 'Range', value: itemPF.labels.range });
         }
-        if (targetItemWithLabels?.labels?.save) {
-            properties.push({ label: 'Save', value: targetItemWithLabels.labels.save });
+        if (itemPF?.labels?.save) {
+            properties.push({ label: 'Save', value: itemPF.labels.save });
         }
         if (action?.uses?.available != null) {
             const usesStr = `${action.uses.available}${action.uses.max ? ` / ${action.uses.max}` : ''}`;
