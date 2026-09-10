@@ -3,7 +3,7 @@ import { log } from '../../lib/logger.js';
 import { adapter } from '../../adapters/index.js';
 import { positionFloatingMenu } from './menu-utils.js';
 
-export const dropdownSubactionMap = new WeakMap<HTMLElement, any>();
+export const dropdownSubactionMap = new WeakMap<HTMLElement, Action>();
 const attachedDropdownItems = new WeakSet<HTMLElement>();
 
 const sortByName = (a: { name?: string | null }, b: { name?: string | null }) => (a.name ?? '').localeCompare(b.name ?? '');
@@ -14,14 +14,14 @@ const sortByName = (a: { name?: string | null }, b: { name?: string | null }) =>
  * @param {HTMLElement} targetLi Target activity list item element
  * @param {Object} subaction The subaction or activity data object
  */
-export function openActivitySubContextMenu(app: any, targetLi: HTMLElement, subaction: any) {
+export function openActivitySubContextMenu(app: any, targetLi: HTMLElement, subaction: Action) {
     const menuItems = [
         {
             name: "SIDEBAR.Edit",
             icon: '<i class="fas fa-edit"></i>',
             condition: () => {
                 if (!app.actor?.isOwner) return false;
-                const entity = subaction?.originalActivity ?? subaction?.originalItem;
+                const entity = (subaction as any)?.originalActivity ?? (subaction as any)?.originalItem;
                 return Boolean(entity?.sheet?.render || entity?.edit);
             },
             callback: () => {
@@ -35,7 +35,7 @@ export function openActivitySubContextMenu(app: any, targetLi: HTMLElement, suba
     const subMenu = new ContextMenuClass(targetBody, ".context-item", menuItems, {
         jQuery: false
     });
-    subMenu?.render?.(targetLi)?.catch?.((err: any) => log.error("SubContextMenu render error:", err));
+    subMenu?.render?.(targetLi)?.catch?.((err: unknown) => log.error("SubContextMenu render error:", err));
 }
 
 /**
@@ -45,7 +45,7 @@ export function openActivitySubContextMenu(app: any, targetLi: HTMLElement, suba
  * @param {ApplicationV2} [app=null] Active HUD application
  * @returns {Object} Menu item configuration
  */
-export function buildSubactionMenuItem(sub: any, event: any, app: any = null) {
+export function buildSubactionMenuItem(sub: Action, event: Event, app: any = null) {
     const uses = sub?.uses;
     const iconHtml = sub?.img
         ? `<img class="bad-menu-icon bad-action-icon" src="${sub.img}" alt="${sub.name ?? ''}" />`
@@ -86,13 +86,13 @@ export function buildSubactionMenuItem(sub: any, event: any, app: any = null) {
         economyHtml,
         usesSlotHtml,
         callback: async () => {
-            if ((game.tooltip as any)?.locked) {
-                (game.tooltip as any).locked = false;
+            if (game.tooltip?.locked) {
+                game.tooltip.locked = false;
                 document.querySelector?.('#tooltip.locked')?.classList?.remove?.('locked');
             }
             app?._hideItemSummaryTooltip?.();
             await app?._activeLeftClickMenu?.close?.({ force: true });
-            const item = sub?.originalItem ?? sub;
+            const item = (sub as any)?.originalItem ?? sub;
             const actor = app?.actor ?? null;
             const token = app?.token ?? null;
             const user = game.user;
@@ -110,15 +110,21 @@ export function buildSubactionMenuItem(sub: any, event: any, app: any = null) {
  * @param {Event} event Triggering click event
  * @param {Object} [parentAction=null] Optional parent action card object
  */
-export function showActivityDropdown(app: any, target: HTMLElement, subactions: any[], event: any, parentAction: any = null) {
+export function showActivityDropdown(
+    app: any,
+    target: HTMLElement,
+    subactions: Action[],
+    event: Event,
+    parentAction: Action | null = null
+) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
     app?._hideItemSummaryTooltip?.();
 
-    const action = parentAction ?? (app?.displayedActions ?? app?.actions)?.find?.((a: any) => a.id === target?.dataset?.actionId);
+    const action = parentAction ?? (app?.displayedActions ?? app?.actions)?.find?.((a: Action) => a.id === target?.dataset?.actionId);
     if (action?.subactions?.length && action.subactions.length > (subactions?.length ?? 0)) {
-        const qualifyingIds = new Set((subactions ?? []).map((s: any) => s.id));
-        const filteredSubs = action.subactions.filter((sub: any) => !qualifyingIds.has(sub.id));
+        const qualifyingIds = new Set((subactions ?? []).map((s: Action) => s.id));
+        const filteredSubs = action.subactions.filter((sub: Action) => !qualifyingIds.has(sub.id));
         if (filteredSubs.length > 0) {
             log.group(`showActivityDropdown | Activities filtered from dropdown context menu on "${action.name ?? 'Action'}" (${action.id})`, 'debug');
             try {
@@ -138,7 +144,7 @@ export function showActivityDropdown(app: any, target: HTMLElement, subactions: 
         const prevLeftMenu = app._activeLeftClickMenu;
         app._activeLeftClickMenu = null;
         try {
-            prevLeftMenu.close()?.catch?.((err: any) => {
+            prevLeftMenu.close()?.catch?.((err: unknown) => {
                 log.debug("LeftClickMenu.close promise rejected:", err);
             });
         } catch (err) {
@@ -150,7 +156,7 @@ export function showActivityDropdown(app: any, target: HTMLElement, subactions: 
         const prevContextTarget = app._activeContextMenuTarget;
         app._activeContextMenuTarget = null;
         try {
-            app._contextMenu.close()?.catch?.((err: any) => {
+            app._contextMenu.close()?.catch?.((err: unknown) => {
                 log.debug("ContextMenu.close promise rejected:", err);
             });
         } catch (err) {
@@ -167,8 +173,8 @@ export function showActivityDropdown(app: any, target: HTMLElement, subactions: 
 
     const formatMenuItems = (menuEl: HTMLElement | null) => {
         if (!menuEl) return;
-        const lis = menuEl.querySelectorAll('.context-item');
-        lis.forEach((li: any, idx: number) => {
+        const lis = menuEl.querySelectorAll<HTMLElement>('.context-item');
+        lis.forEach((li: HTMLElement, idx: number) => {
             const sub = sortedSubactions[idx];
             const itemData = menuItems[idx];
             if (sub) {
@@ -193,25 +199,25 @@ export function showActivityDropdown(app: any, target: HTMLElement, subactions: 
                         }
                     });
 
-                    li.addEventListener('pointerout', (ev: any) => {
-                        const related = ev.relatedTarget?.closest?.('.context-item');
+                    li.addEventListener('pointerout', (ev: PointerEvent) => {
+                        const related = (ev.relatedTarget as HTMLElement | null)?.closest?.('.context-item');
                         if (related !== li && app._hoveredActionItem === li) {
                             app._hoveredActionItem = null;
                             app._hideItemSummaryTooltip();
                         }
                     });
 
-                    li.addEventListener('contextmenu', (ev: any) => {
+                    li.addEventListener('contextmenu', (ev: MouseEvent) => {
                         ev.preventDefault();
                         ev.stopPropagation();
                         ev.stopImmediatePropagation();
-                        if ((game.tooltip as any)?.locked) {
-                            (game.tooltip as any).locked = false;
+                        if (game.tooltip?.locked) {
+                            game.tooltip.locked = false;
                             document.querySelector?.('#tooltip.locked')?.classList?.remove?.('locked');
                         }
                         app._hideItemSummaryTooltip();
                         try {
-                            app._activeLeftClickMenu?.close({ force: true })?.catch?.((err: any) => {
+                            app._activeLeftClickMenu?.close({ force: true })?.catch?.((err: unknown) => {
                                 log.debug("LeftClickMenu.close promise rejected:", err);
                             });
                         } catch (err) {
@@ -225,14 +231,14 @@ export function showActivityDropdown(app: any, target: HTMLElement, subactions: 
         });
     };
 
-    const applyPositioning = (menuEl: any) => {
+    const applyPositioning = (menuEl: HTMLElement | null) => {
         if (!menuEl) return;
         formatMenuItems(menuEl);
         positionFloatingMenu(menuEl, target, sortedSubactions.length, targetBody);
     };
 
     const isTooltipFocused = () => {
-        if (Boolean((game.tooltip as any)?.locked)) return true;
+        if (Boolean(game.tooltip?.locked)) return true;
         const lockedEl = document.querySelector<HTMLElement>('#tooltip.locked, .locked-tooltip, [data-tooltip-locked="true"]');
         return Boolean(lockedEl?.classList?.contains?.('locked') || lockedEl?.classList?.contains?.('locked-tooltip') || lockedEl?.dataset?.tooltipLocked === 'true');
     };
@@ -240,7 +246,7 @@ export function showActivityDropdown(app: any, target: HTMLElement, subactions: 
     const options = {
         jQuery: false,
         onOpen: () => {
-            const menuEl = document.querySelector('#context-menu, .context-menu');
+            const menuEl = document.querySelector<HTMLElement>('#context-menu, .context-menu');
             if (menuEl) applyPositioning(menuEl);
         },
         onClose: () => {
@@ -249,21 +255,21 @@ export function showActivityDropdown(app: any, target: HTMLElement, subactions: 
             target?.classList?.remove?.('bad-dropdown-active');
             if (app._activeLeftClickMenu === menu) app._activeLeftClickMenu = null;
             if (app._activeMenuTarget === target) app._activeMenuTarget = null;
-            const menuEl = document.querySelector('#context-menu, .context-menu');
+            const menuEl = document.querySelector<HTMLElement>('#context-menu, .context-menu');
             menuEl?.classList?.remove?.('bad-context-menu');
             menuEl?.remove?.();
         }
     };
 
     const menu = new ContextMenuClass(targetBody, ".bad-action-item", menuItems, options);
-    menu._setPosition = (html: any) => {
-        const menuEl = (html instanceof HTMLElement ? html : html?.[0]) ?? document.querySelector('#context-menu, .context-menu');
+    menu._setPosition = (html: HTMLElement | JQuery | unknown) => {
+        const menuEl = (html instanceof HTMLElement ? html : (html as any)?.[0]) ?? document.querySelector<HTMLElement>('#context-menu, .context-menu');
         if (menuEl) applyPositioning(menuEl);
     };
     menu.setPosition = menu._setPosition;
 
     const origClose = menu.close?.bind(menu);
-    menu.close = async (closeOptions: any = {}) => {
+    menu.close = async (closeOptions: { force?: boolean } = {}) => {
         if (isTooltipFocused() && !closeOptions.force) {
             return;
         }
@@ -276,7 +282,7 @@ export function showActivityDropdown(app: any, target: HTMLElement, subactions: 
             target?.classList?.remove?.('bad-dropdown-active');
             if (app._activeLeftClickMenu === menu) app._activeLeftClickMenu = null;
             if (app._activeMenuTarget === target) app._activeMenuTarget = null;
-            const menuEl = document.querySelector('#context-menu, .context-menu');
+            const menuEl = document.querySelector<HTMLElement>('#context-menu, .context-menu');
             menuEl?.classList?.remove?.('bad-context-menu');
             menuEl?.remove?.();
         }
@@ -287,7 +293,7 @@ export function showActivityDropdown(app: any, target: HTMLElement, subactions: 
     const renderResult = menu.render(target);
     if (renderResult instanceof Promise) {
         return renderResult.then(() => {
-            const menuEl = document.querySelector('#context-menu, .context-menu');
+            const menuEl = document.querySelector<HTMLElement>('#context-menu, .context-menu');
             if (menuEl) {
                 applyPositioning(menuEl);
             }
@@ -296,7 +302,7 @@ export function showActivityDropdown(app: any, target: HTMLElement, subactions: 
         });
     }
 
-    const menuEl = document.querySelector('#context-menu, .context-menu');
+    const menuEl = document.querySelector<HTMLElement>('#context-menu, .context-menu');
     if (menuEl) {
         applyPositioning(menuEl);
     }
