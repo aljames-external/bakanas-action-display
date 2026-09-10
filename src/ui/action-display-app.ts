@@ -52,8 +52,9 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {number} targetPage Target page number
      * @param {ActionDisplayApp|null} [callerInstance=null] The instance initiating the change
      */
-    static setAllCachedHUDsPage(targetPage: number, callerInstance: ActionDisplayApp | null = null) {
-        const page = (Number.isFinite(targetPage) && targetPage > 0) ? targetPage : 1;
+    static setAllCachedHUDsPage(targetPage: number | string, callerInstance: ActionDisplayApp | null = null) {
+        const parsed = Number(targetPage);
+        const page = (Number.isFinite(parsed) && parsed > 0) ? parsed : 1;
 
         // 0. Update internal defaultPage module setting for newly opened HUDs
         ActionDisplayApp.defaultPage = page;
@@ -502,7 +503,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             this.element?.removeEventListener?.('wheel', this._boundOnWheel, { passive: false });
         }
         if (this._boundOnWindowWheel) {
-            window.removeEventListener('wheel', this._boundOnWindowWheel, { capture: true });
+            window.removeEventListener('wheel', this._boundOnWindowWheel);
         }
         this._hoveredActionItem = null;
         this._isQuestionMarkHeld = false;
@@ -986,7 +987,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             const combatant = this._getCombatant(combat);
 
             if (combatant) {
-                const canInteract = Boolean(this.actor?.isOwner || this.token.document.isOwner || game.user?.isGM);
+                const canInteract = Boolean(this.actor?.isOwner || this.token?.document?.isOwner || game.user?.isGM);
                 if (canInteract) {
                     const needsInitiative = combatant.initiative == null;
                     showRollInitiativeButton = needsInitiative;
@@ -994,7 +995,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
                     if (!needsInitiative && combat?.started) {
                         const currentCombatant = combat?.combatant;
                         if (currentCombatant) {
-                            const isTokenMatch = Boolean(currentCombatant.token?.object === this.token || (currentCombatant.token?.id ?? currentCombatant.tokenId) === this.token.id);
+                            const isTokenMatch = Boolean(this.token && (currentCombatant.token?.object === this.token || (currentCombatant.token?.id ?? currentCombatant.tokenId) === this.token.id));
                             const isActorMatch = Boolean(this.actor && (currentCombatant.actor === this.actor || (currentCombatant.actor?.id ?? currentCombatant.actorId) === this.actor.id));
                             isCurrentCombatant = isTokenMatch || isActorMatch;
                         }
