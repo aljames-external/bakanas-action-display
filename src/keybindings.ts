@@ -5,7 +5,7 @@ import { syncActorFavorites } from './favorites/favorites-manager.js';
 import { adapter } from './adapters/index.js';
 import { log } from './lib/logger.js';
 
-let lastSelectedTokenRef: any = null;
+let lastSelectedTokenRef: Token | null = null;
 let lastSelectedTokenId: string | null = null;
 
 /**
@@ -13,7 +13,7 @@ let lastSelectedTokenId: string | null = null;
  * @param {Token|null} token
  * @returns {boolean}
  */
-export function isTokenOwned(token: any) {
+export function isTokenOwned(token: Token | null | undefined): boolean {
     if (!token || token.destroyed) return false;
     return Boolean(token.document?.isOwner || token.actor?.isOwner);
 }
@@ -22,10 +22,10 @@ export function isTokenOwned(token: any) {
  * Record a token as the last selected / interacted token.
  * @param {Token|null} token
  */
-export function setLastSelectedToken(token: any) {
+export function setLastSelectedToken(token: Token | null | undefined) {
     if (isTokenOwned(token)) {
-        lastSelectedTokenRef = token;
-        lastSelectedTokenId = token.id;
+        lastSelectedTokenRef = token!;
+        lastSelectedTokenId = token!.id;
     }
 }
 
@@ -33,12 +33,12 @@ export function setLastSelectedToken(token: any) {
  * Retrieve the last selected token if it still exists on the active canvas and user has ownership.
  * @returns {Token|null}
  */
-export function getLastSelectedToken(): any {
+export function getLastSelectedToken(): Token | null {
     if (!lastSelectedTokenId && !lastSelectedTokenRef) return null;
 
-    let token: any = null;
+    let token: Token | null = null;
     if (canvas?.tokens?.get && lastSelectedTokenId) {
-        token = canvas.tokens.get(lastSelectedTokenId);
+        token = canvas.tokens.get(lastSelectedTokenId) ?? null;
     }
     if (!token && lastSelectedTokenRef) {
         const isPresent = canvas?.tokens?.placeables?.some(t => t === lastSelectedTokenRef || t.id === lastSelectedTokenId);
@@ -50,11 +50,11 @@ export function getLastSelectedToken(): any {
 
 /**
  * Toggle the Action Display HUD for a token, the currently controlled token, or the last selected token.
- * @param {Token} [explicitToken=null] Optional token to toggle HUD for
+ * @param {Token|null} [explicitToken=null] Optional token to toggle HUD for
  * @returns {boolean} True if a toggle action was executed, false otherwise
  */
-export function toggleHUD(explicitToken: any = null) {
-    let token = explicitToken ?? canvas?.tokens?.controlled?.[0] ?? null;
+export function toggleHUD(explicitToken: Token | null = null) {
+    let token: Token | null = explicitToken ?? canvas?.tokens?.controlled?.[0] ?? null;
 
     // If a token is explicitly passed or currently controlled on canvas, update lastSelectedToken
     if (token) {
