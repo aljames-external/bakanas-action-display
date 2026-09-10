@@ -12,9 +12,16 @@ import { categorizeActions } from '../categorization/categorization-manager.js';
 import { syncActorFavorites } from '../favorites/favorites-manager.js';
 import { setExplicitlyClosedTokenId } from '../module.js';
 
+export interface ActiveTabState {
+    activePage: number;
+    left?: any;
+    right?: any;
+    pages?: Record<string, any>;
+}
+
 // Cache to persist tab states per actor across HUD rebuilds
-const activeTabCache = new Map<string, any>();
-let lastActiveTabState: any = null;
+const activeTabCache = new Map<string | null | undefined, ActiveTabState>();
+let lastActiveTabState: ActiveTabState | null = null;
 
 const formatSummaryTag = (tag: any) => (tag?.label ? `${tag.label}: ${tag.value}` : (tag?.value ?? tag));
 
@@ -128,10 +135,10 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     actions: Action[];
     totalPages: number;
     activePage: number;
-    private _cachedPages: any;
+    private _cachedPages: Record<string, any>;
     private _tabColumns: Record<string, HUDTabColumn>;
     isAttached: boolean;
-    private _dragData: any;
+    private _dragData: { startX: number; startY: number; startLeft: number; startTop: number } | null;
     searchQuery: string;
     private _isSearching: boolean;
     private _searchSelectionStart: number | null;
@@ -214,7 +221,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {number} [page=this.activePage] Page number
      * @returns {HUDTabColumn}
      */
-    getTabColumn(side: any, page = this.activePage) {
+    getTabColumn(side: 'left' | 'right', page: number = this.activePage): HUDTabColumn {
         const parsedPage = Number(page ?? 1);
         const pageNum = (Number.isFinite(parsedPage) && parsedPage > 0) ? parsedPage : 1;
         if (!this._tabColumns) this._tabColumns = {};
@@ -256,10 +263,10 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {HUDTabColumn} column
      * @private
      */
-    _ensureDefaultTab(tabs: any, column: any) {
-        if (tabs.length && !tabs.some((p: any) => column.activeParents.has(p.id))) {
+    _ensureDefaultTab(tabs: HUDTab[], column: HUDTabColumn): void {
+        if (tabs.length && !tabs.some((p: HUDTab) => column.activeParents.has(p.id))) {
             column.resetToDefault();
-            const allTab = tabs.find((t: any) => t.id === 'all');
+            const allTab = tabs.find((t: HUDTab) => t.id === 'all');
             if (allTab) {
                 allTab.active = true;
                 allTab.expanded = true;
@@ -349,7 +356,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Object} [options={}]
      * @param {boolean} [options.shiftKey=false] Whether shift was held to update all cached HUDs
      */
-    changePage(targetPage: any, { shiftKey = false } = {}) {
+    changePage(targetPage: number | string, { shiftKey = false } = {}): void {
         const parsed = Number(targetPage);
         if (Number.isFinite(parsed) && parsed >= 1 && parsed <= this.totalPages) {
             const pageChanged = parsed !== this.activePage;
@@ -445,8 +452,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     /**
      * Retrieve active tab states for this actor from in-memory cache or client setting.
      */
-    retrieveActorTabCache(actorKey: any) {
-        let cached = activeTabCache.get(actorKey);
+    retrieveActorTabCache(actorKey: string | null | undefined): ActiveTabState | undefined {
+        let cached = actorKey ? activeTabCache.get(actorKey) : undefined;
         if (!cached && game.settings.get(MODULE_ID, 'persistTabState')) {
             const rawStates = game.settings.get(MODULE_ID, 'hudTabStates');
             const allStates = rawStates ?? {};
@@ -463,7 +470,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     /**
      * Close the application, logging the transition.
      */
-    async close(options: any = {}) {
+    async close(options: Record<string, any> = {}): Promise<void> {
         // Hide the element instantly to prevent any default close animations/transitions
         // from causing visual glitches (like shifting and covering the token).
         if (this.element) {
@@ -892,7 +899,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             }
         }
 
-        let visibleActions: any[] = [];
+        let visibleActions: Action[] = [];
         log.group(`ActionDisplayApp._prepareContext | Filtering actions for "${this.actor?.name ?? 'Actor'}"`, 'debug');
         try {
             const query = (this.searchQuery ?? '').trim().toLowerCase();
@@ -963,7 +970,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
 
         const parsedActivePage = Number(this.activePage);
         const currentActivePage = (Number.isFinite(parsedActivePage) && parsedActivePage > 0) ? parsedActivePage : 1;
-        const pages: any[] = [];
+        const pages: Array<{ page: number; active: boolean }> = [];
         for (let i = 1; i <= this.totalPages; i++) {
             pages.push({
                 page: i,
@@ -1033,7 +1040,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @returns {boolean} True if the action card should be rendered
      * @private
      */
-    _matchesFilters(action: any) {
+    _matchesFilters(action: Action): boolean {
         if (!action) return false;
 
         // Hidden Filter: If 'hidden' tab is selected, ONLY show actions that have action.isHidden === true
@@ -1056,8 +1063,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
             return false;
         }
 
-        const matchesLeft = categories.some((leftSub: any) => {
-            return leftSub.some((type: any) => {
+        const matchesLeft = categories.some((leftSub: string[]) => {
+            return leftSub.some((type: string) => {
                 if (this.leftTabs.activeParents.has(type)) {
                     const parentGroup = this.leftGroups?.[type];
                     const validSubIds = parentGroup?.getAllSubTabIds?.() ?? new Set();
@@ -1121,11 +1128,11 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @returns {boolean} True if matching
      * @private
      */
-    _matchesSearchQuery(action: any, query: any) {
+    _matchesSearchQuery(action: Action, query: string): boolean {
         if (!action || !query) return true;
         if (action.name?.toLowerCase().includes(query)) return true;
         if (action.originalItem?.name?.toLowerCase().includes(query)) return true;
-        if (action.subactions?.some((sub: any) => sub.name?.toLowerCase().includes(query))) return true;
+        if (action.subactions?.some((sub: Action) => sub.name?.toLowerCase().includes(query))) return true;
         return false;
     }
 
@@ -1164,7 +1171,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * Unified handler for parent tab click interactions.
      * @private
      */
-    _handleParentTabClick(side: any, target: any, event: any) {
+    _handleParentTabClick(side: 'left' | 'right', target: HTMLElement, event: MouseEvent) {
         event?.preventDefault?.();
         this._clearMenuState({ force: true });
         const isLeft = side === 'left';
@@ -1173,10 +1180,10 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         const clickedId = target?.dataset?.type;
 
         if (event?.shiftKey) {
-            this._handleParentTabToggle(side, clickedId);
+            this._handleParentTabToggle(side, clickedId!);
             return;
         }
-        const tab = groups?.[clickedId];
+        const tab = groups?.[clickedId!];
         tab?.onLeftClick(this, column, groups, event);
         this.render();
     }
@@ -1185,7 +1192,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * Unified handler for parent tab toggle interactions.
      * @private
      */
-    _handleParentTabToggle(side: any, parentId: any) {
+    _handleParentTabToggle(side: 'left' | 'right', parentId: string) {
         const isLeft = side === 'left';
         const column = isLeft ? this.leftTabs : this.rightTabs;
         const groups = isLeft ? this.leftGroups : this.parentGroups;
@@ -1198,7 +1205,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * Unified handler for sub-tab click interactions.
      * @private
      */
-    _handleSubTabClick(side: any, target: any, event: any) {
+    _handleSubTabClick(side: 'left' | 'right', target: HTMLElement, event: MouseEvent) {
         event?.preventDefault?.();
         this._clearMenuState({ force: true });
         const isLeft = side === 'left';
@@ -1208,17 +1215,17 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         const parentSelector = isLeft ? '.bad-left-tab' : '.bad-right-tab';
 
         const parentGroup = target?.closest?.(groupSelector);
-        const parentId = parentGroup?.querySelector(parentSelector)?.dataset?.type;
+        const parentId = (parentGroup?.querySelector(parentSelector) as HTMLElement)?.dataset?.type;
         const subId = target?.dataset?.type;
 
         if (event?.shiftKey) {
-            this._handleSubTabToggle(side, target, subId);
+            this._handleSubTabToggle(side, target, subId!);
             return;
         }
 
-        const subTab = groups?.[parentId]?.getSubTab(subId);
+        const subTab = parentId ? groups?.[parentId]?.getSubTab(subId!) : null;
         subTab?.onLeftClick(this, column, groups, event);
-        if (!isLeft && this.actor && parentId) {
+        if (!isLeft && this.actor && parentId && subId) {
             adapter.recordManualTabToggle(this.actor, parentId, subId, column.activeSubTypes.has(subId));
         }
         this.render();
@@ -1228,7 +1235,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * Unified handler for sub-tab toggle interactions.
      * @private
      */
-    _handleSubTabToggle(side: any, target: any, subId: any) {
+    _handleSubTabToggle(side: 'left' | 'right', target: HTMLElement, subId: string) {
         const isLeft = side === 'left';
         const column = isLeft ? this.leftTabs : this.rightTabs;
         const groups = isLeft ? this.leftGroups : this.parentGroups;
@@ -1236,8 +1243,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         const parentSelector = isLeft ? '.bad-left-tab' : '.bad-right-tab';
 
         const parentGroup = target?.closest?.(groupSelector);
-        const parentId = parentGroup?.querySelector(parentSelector)?.dataset?.type;
-        const subTab = groups?.[parentId]?.getSubTab(subId);
+        const parentId = (parentGroup?.querySelector(parentSelector) as HTMLElement)?.dataset?.type;
+        const subTab = parentId ? groups?.[parentId]?.getSubTab(subId) : null;
         subTab?.onRightClick(this, column, groups);
         if (!isLeft && this.actor && parentId) {
             adapter.recordManualTabToggle(this.actor, parentId, subId, column.activeSubTypes.has(subId));
@@ -1245,19 +1252,19 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         this.render();
     }
 
-    _onChangeLeftItemType(event: any, target: any) { return this._handleParentTabClick('left', target, event); }
-    _onChangeLeftSubItemType(event: any, target: any) { return this._handleSubTabClick('left', target, event); }
-    _onToggleLeftParent(parentId: any) { return this._handleParentTabToggle('left', parentId); }
-    _onToggleLeftSub(target: any, type: any) { return this._handleSubTabToggle('left', target, type); }
-    _onChangeActionType(event: any, target: any) { return this._handleParentTabClick('right', target, event); }
-    _onChangeSubActionType(event: any, target: any) { return this._handleSubTabClick('right', target, event); }
-    _onToggleRightParent(parentId: any) { return this._handleParentTabToggle('right', parentId); }
-    _onToggleRightSub(target: any, type: any) { return this._handleSubTabToggle('right', target, type); }
+    _onChangeLeftItemType(event: MouseEvent, target: HTMLElement) { return this._handleParentTabClick('left', target, event); }
+    _onChangeLeftSubItemType(event: MouseEvent, target: HTMLElement) { return this._handleSubTabClick('left', target, event); }
+    _onToggleLeftParent(parentId: string) { return this._handleParentTabToggle('left', parentId); }
+    _onToggleLeftSub(target: HTMLElement, type: string) { return this._handleSubTabToggle('left', target, type); }
+    _onChangeActionType(event: MouseEvent, target: HTMLElement) { return this._handleParentTabClick('right', target, event); }
+    _onChangeSubActionType(event: MouseEvent, target: HTMLElement) { return this._handleSubTabClick('right', target, event); }
+    _onToggleRightParent(parentId: string) { return this._handleParentTabToggle('right', parentId); }
+    _onToggleRightSub(target: HTMLElement, type: string) { return this._handleSubTabToggle('right', target, type); }
 
     /**
      * Toggle between Attached (dynamic token tracking) and Detached (floating) modes.
      */
-    async _onToggleAnchor(event: any, target: any) {
+    async _onToggleAnchor(event: MouseEvent, target: HTMLElement) {
         event.preventDefault();
         const el = this.element;
 
@@ -1281,7 +1288,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Event} [event] Triggering event
      * @param {HTMLElement} [target] Triggering element
      */
-    async _onRightClickToggleAnchor(event: any, target: any) {
+    async _onRightClickToggleAnchor(event: MouseEvent, target: HTMLElement) {
         return this._toggleBooleanSetting('persistHUD', event, target);
     }
 
@@ -1290,7 +1297,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    async _onCloseHUD(event: any, target: any) {
+    async _onCloseHUD(event: MouseEvent, target: HTMLElement) {
         event?.preventDefault?.();
         event?.stopPropagation?.();
         await this.close();
@@ -1301,7 +1308,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Event} event Click event
      * @param {HTMLElement} target Clicked element
      */
-    async _onPreviousPage(event: any, target: any) {
+    async _onPreviousPage(event: MouseEvent, target: HTMLElement) {
         event.preventDefault();
         this._clearMenuState({ force: true });
         this.previousPage({ shiftKey: Boolean(event?.shiftKey) });
@@ -1312,7 +1319,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Event} event Click event
      * @param {HTMLElement} target Clicked element
      */
-    async _onNextPage(event: any, target: any) {
+    async _onNextPage(event: MouseEvent, target: HTMLElement) {
         event.preventDefault();
         this._clearMenuState({ force: true });
         this.nextPage({ shiftKey: Boolean(event?.shiftKey) });
@@ -1323,7 +1330,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Event} event Click event
      * @param {HTMLElement} target Clicked element
      */
-    async _onChangePage(event: any, target: any) {
+    async _onChangePage(event: MouseEvent, target: HTMLElement) {
         event.preventDefault();
         this._clearMenuState({ force: true });
         const targetPage = Number(target?.dataset?.page ?? 1);
@@ -1335,7 +1342,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Event} event Click event
      * @param {HTMLElement} target Clicked element
      */
-    async _onRollAction(event: any, target: any) {
+    async _onRollAction(event: MouseEvent, target: HTMLElement) {
         event.preventDefault();
 
         if (this._preventReopen) {
@@ -1350,7 +1357,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         this._clearMenuState({ force: true });
 
         const actionId = target.dataset.actionId;
-        const action = (this.displayedActions ?? this.actions)?.find((a: any) => a.id === actionId);
+        const action = (this.displayedActions ?? this.actions)?.find((a: Action) => a.id === actionId);
 
         if (action) {
             const item = action.originalItem ?? action;
@@ -1383,15 +1390,15 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
                         log.debug(`ActionDisplayApp._onRollAction | Auto-rolling single qualifying activity "${chosenSub.name}" (${chosenSub.id}) on "${action.name}" — ${itemActivities.length - 1} other activities filtered out`);
                     }
                     log.debug(`_onRollAction | Rolling subaction "${chosenSub.name}":`, { action: chosenSub, item: chosenItem, actor, token, user });
-                    chosenSub.roll(event);
+                    chosenSub.roll?.(event);
                 } else {
                     log.debug(`_onRollAction | Rolling action "${action.name}":`, { action, item, actor, token, user });
-                    action.roll(event);
+                    action.roll?.(event);
                 }
             } else {
                 // No sub-actions: roll directly
                 log.debug(`_onRollAction | Rolling action "${action.name}":`, { action, item, actor, token, user });
-                action.roll(event);
+                action.roll?.(event);
             }
         }
     }
@@ -1404,14 +1411,14 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Object} [parentAction=null] Optional parent action card object
      * @private
      */
-    _showActivityDropdown(target: any, subactions: any, event: any, parentAction = null) {
+    _showActivityDropdown(target: HTMLElement, subactions: Action[], event: MouseEvent, parentAction: Action | null = null) {
         showActivityDropdown(this, target, subactions, event, parentAction);
     }
 
     /**
      * Toggle the "Show Depleted Items" setting.
      */
-    async _onToggleFilterResources(event: any, target: any) {
+    async _onToggleFilterResources(event: Event, target: HTMLElement) {
         return this._toggleBooleanSetting('showDepleted', event, target);
     }
 
@@ -1466,14 +1473,14 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Event} [event] Triggering event
      * @param {HTMLElement} [target] Triggering element
      */
-    async _onRightClickCombatAutoTrack(event: any, target: any) {
+    async _onRightClickCombatAutoTrack(event: Event, target: HTMLElement) {
         return this._toggleBooleanSetting('autoToggleCombat', event, target);
     }
 
     /**
      * Toggle the "Show Item Summaries" setting.
      */
-    async _onToggleItemSummaries(event: any, target: any) {
+    async _onToggleItemSummaries(event: Event, target: HTMLElement) {
         const next = await this._toggleBooleanSetting('showItemSummaries', event, target);
         if (next) {
             if (this._hoveredActionItem) {
@@ -1490,7 +1497,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Event} [event] Triggering event
      * @param {HTMLElement} [target] Triggering element
      */
-    async _onRecenterToken(event: any, target: any) {
+    async _onRecenterToken(event: Event, target: HTMLElement) {
         event?.preventDefault?.();
         const combatToken = adapter.foundry.getTokenFromCombatant(game.combat?.combatant);
         const targetToken = combatToken ?? this.token;
@@ -1505,7 +1512,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {Event} [event] Triggering event
      * @param {HTMLElement} [target] Triggering element
      */
-    async _onRightClickRecenterToken(event: any, target: any) {
+    async _onRightClickRecenterToken(event: Event, target: HTMLElement) {
         const next = await this._toggleBooleanSetting('autoCenterOnToken', event, target);
         if (next) {
             const isCenterEnabled = Boolean(game.settings.get(MODULE_ID, 'enableCenterOnToken'));
@@ -1525,7 +1532,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     /**
      * Clear the search filter query and re-render.
      */
-    _onClearSearch(event: any, target: any) {
+    _onClearSearch(event: Event, target: HTMLElement) {
         this.searchQuery = '';
         this._isSearching = false;
         this.render();
@@ -1537,7 +1544,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {HTMLElement} target Target button element
      * @protected
      */
-    async _onRollInitiative(event: any, target: any) {
+    async _onRollInitiative(event: PointerEvent | MouseEvent | Event, target: HTMLElement) {
         event?.preventDefault?.();
         event?.stopPropagation?.();
         const combat = game.combat;
@@ -1559,7 +1566,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {HTMLElement} target Target button element
      * @protected
      */
-    async _onEndCombatTurn(event: any, target: any) {
+    async _onEndCombatTurn(event: PointerEvent | MouseEvent | Event, target: HTMLElement) {
         event?.preventDefault?.();
         event?.stopPropagation?.();
         const combat = game.combat;
@@ -1578,7 +1585,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {HTMLElement} target Target button element
      * @protected
      */
-    async _onToggleInspiration(event: any, target: any) {
+    async _onToggleInspiration(event: PointerEvent | MouseEvent | Event, target: HTMLElement) {
         event?.preventDefault?.();
         event?.stopPropagation?.();
         if (!this.actor) return;
@@ -1797,7 +1804,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {object} [options]
      * @param {boolean} [options.force=false] Force closing even if a tooltip is focused/locked
      */
-    _clearMenuState(options: any = {}) {
+    _clearMenuState(options: { force?: boolean } = {}) {
         if (this.isTooltipFocused && !options.force) {
             return;
         }
@@ -1818,7 +1825,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
 
         if (contextMenu) {
             try {
-                contextMenu.close({ animate: false, force: true })?.catch?.((err: any) => {
+                contextMenu.close({ animate: false, force: true })?.catch?.((err: unknown) => {
                     log.debug("ContextMenu.close promise rejected (expected during re-render):", err);
                 });
             } catch (err) {
@@ -1828,7 +1835,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
 
         if (activeLeftMenu) {
             try {
-                activeLeftMenu.close({ animate: false, force: true })?.catch?.((err: any) => {
+                activeLeftMenu.close({ animate: false, force: true })?.catch?.((err: unknown) => {
                     log.debug("LeftClickMenu.close promise rejected:", err);
                 });
             } catch (err) {
@@ -2083,7 +2090,7 @@ this._lockedTooltipTarget = null;
      * @returns {string}
      * @protected
      */
-    _chooseTooltipDirection(element: any, hasTable = false, targetWidth = 360) {
+    _chooseTooltipDirection(element: HTMLElement | null | undefined, hasTable: boolean = false, targetWidth: number = 360): 'LEFT' | 'RIGHT' {
         if (!element) return 'RIGHT';
         try {
             const rect = element.getBoundingClientRect?.();
@@ -2114,7 +2121,7 @@ this._lockedTooltipTarget = null;
      * @returns {string}
      * @protected
      */
-    _formatItemSummaryHtml(summary: any, targetWidth: number | null = null, needsHorizontalScroll: boolean = false) {
+    _formatItemSummaryHtml(summary: ItemSummary | null | undefined, targetWidth: number | null = null, needsHorizontalScroll: boolean = false): string {
         if (!summary) return '';
         const title = summary.title ?? '';
         const subtitle = summary.subtitle ?? '';
@@ -2130,7 +2137,7 @@ this._lockedTooltipTarget = null;
 
         let html = `<div class="bad-item-summary-tooltip${tableClass}"${widthStyle}>`;
         html += '<div class="bad-summary-header">';
-        const headerTags = Array.isArray(summary.headerTags) ? summary.headerTags : (summary.headerTag ? [summary.headerTag] : []);
+        const headerTags = Array.isArray((summary as any).headerTags) ? (summary as any).headerTags : ((summary as any).headerTag ? [(summary as any).headerTag] : []);
         let headerTagsHtml = '';
         for (const tag of headerTags) {
             const text = formatSummaryTag(tag);
@@ -2199,7 +2206,7 @@ this._lockedTooltipTarget = null;
      * @returns {boolean}
      * @protected
      */
-    _isInsideTooltip(target: any) {
+    _isInsideTooltip(target: HTMLElement | null | undefined): boolean {
         if (!target?.closest) return false;
         return Boolean(target.closest('#tooltip, .bad-item-summary-tooltip, .bad-item-summary-tooltip-wrapper'));
     }
@@ -2209,7 +2216,7 @@ this._lockedTooltipTarget = null;
      * @param {HTMLElement} itemEl
      * @protected
      */
-    async _showItemSummaryTooltip(itemEl: any) {
+    async _showItemSummaryTooltip(itemEl: HTMLElement | null | undefined) {
         if (!itemEl) return;
         const actionId = itemEl.dataset?.actionId;
         const action = dropdownSubactionMap.get(itemEl) ?? this.actions.find(a => a.id === actionId);
@@ -2260,7 +2267,7 @@ this._lockedTooltipTarget = null;
      * @returns {{ targetWidth: number, needsHorizontalScroll: boolean }}
      * @protected
      */
-    _calculateTableTooltipWidth(descriptionHtml: any) {
+    _calculateTableTooltipWidth(descriptionHtml: string | null | undefined) {
         const normalWidth = 340;
         const maxAllowedWidth = Math.min(680, Math.floor((window.innerWidth ?? 1920) * 0.92));
 
@@ -2364,7 +2371,7 @@ this._lockedTooltipTarget = null;
      * @param {WheelEvent} event Wheel event
      * @protected
      */
-    _scrollTooltipDescription(descEl: any, event: any) {
+    _scrollTooltipDescription(descEl: HTMLElement, event: WheelEvent) {
         event.preventDefault?.();
         event.stopPropagation?.();
         if (descEl.classList?.contains?.('bad-summary-overflow-x') && (event.shiftKey || event.deltaX)) {
@@ -2382,10 +2389,10 @@ this._lockedTooltipTarget = null;
      * @param {WheelEvent} event
      * @protected
      */
-    _onWheel(event: any) {
+    _onWheel(event: WheelEvent) {
         if (!event) return;
         if (this.isTooltipFocused) {
-            const descEl = document.querySelector?.('#tooltip .bad-summary-desc, .bad-item-summary-tooltip .bad-summary-desc');
+            const descEl = document.querySelector?.('#tooltip .bad-summary-desc, .bad-item-summary-tooltip .bad-summary-desc') as HTMLElement | null;
             if (descEl) {
                 this._scrollTooltipDescription(descEl, event);
             }
@@ -2466,7 +2473,7 @@ this._lockedTooltipTarget = null;
      * @param {HTMLElement} columnElement Tab column container (.bad-left-tabs or .bad-right-tabs)
      * @param {string} subTabSelector CSS class selector for sub-tabs
      */
-    _syncColumnTabWidths(columnElement: any, subTabSelector: any) {
+    _syncColumnTabWidths(columnElement: HTMLElement | null | undefined, subTabSelector: string) {
         if (!columnElement || !columnElement.style) return;
 
         // Temporarily clear custom properties so natural/unconstrained dimensions can be measured
@@ -2478,8 +2485,8 @@ this._lockedTooltipTarget = null;
             ? `.bad-left-tab-group.expanded ${subTabSelector}, .bad-right-tab-group.expanded ${subTabSelector}`
             : subTabSelector;
 
-        const depth2Tabs = columnElement.querySelectorAll?.(`${scope}:not(.bad-nested-sub-tab)`) ?? [];
-        const depth3Tabs = columnElement.querySelectorAll?.(`${scope}.bad-nested-sub-tab`) ?? [];
+        const depth2Tabs = (columnElement.querySelectorAll?.(`${scope}:not(.bad-nested-sub-tab)`) ?? []) as NodeListOf<HTMLElement>;
+        const depth3Tabs = (columnElement.querySelectorAll?.(`${scope}.bad-nested-sub-tab`) ?? []) as NodeListOf<HTMLElement>;
 
         let maxDepth2 = 0;
         for (const tab of depth2Tabs) {
@@ -2536,7 +2543,7 @@ this._lockedTooltipTarget = null;
             this._preventReopen = false;
 
             // Safe close in capture phase (catch promise rejections)
-            this._contextMenu?.close()?.catch?.((err: any) => { });
+            this._contextMenu?.close()?.catch?.((err: unknown) => { });
 
             event.preventDefault();
             event.stopPropagation();
@@ -2596,7 +2603,7 @@ this._lockedTooltipTarget = null;
      * @param {string} actionId The ID of the action to toggle
      * @param {boolean} shouldHide Whether the action should be hidden
      */
-    async _toggleActionHidden(actionId: any, shouldHide: any) {
+    async _toggleActionHidden(actionId: string | null | undefined, shouldHide: boolean) {
         if (!actionId || !this.actor) return;
 
         const action = this.actions?.find(a => a.id === actionId);
@@ -2633,7 +2640,7 @@ this._lockedTooltipTarget = null;
      * Initialize drag state on mousedown on the drag handle.
      * @param {MouseEvent} event
      */
-    _onDragStart(event: any) {
+    _onDragStart(event: MouseEvent) {
         event.preventDefault();
         this._clearMenuState();
         const el = this.element;
@@ -2655,7 +2662,7 @@ this._lockedTooltipTarget = null;
      * Update HUD window position during active mouse drag.
      * @param {MouseEvent} event
      */
-    _onDragMove(event: any) {
+    _onDragMove(event: MouseEvent) {
         event.preventDefault();
         const el = this.element;
         if (!el || !this._dragData) return;
@@ -2690,7 +2697,7 @@ this._lockedTooltipTarget = null;
      * Finalize window position and persist settings on mouseup after dragging.
      * @param {MouseEvent} event
      */
-    async _onDragEnd(event: any) {
+    async _onDragEnd(event: MouseEvent) {
         event.preventDefault();
         document.removeEventListener('mousemove', this._onDragMove);
         document.removeEventListener('mouseup', this._onDragEnd);
@@ -2827,7 +2834,7 @@ this._lockedTooltipTarget = null;
      * Choose the best side to anchor the HUD based on available space.
      * @private
      */
-    _chooseAttachedSide(room1: any, room2: any, side1: any, side2: any, gridOffset: any, label1 = side1, label2 = side2) {
+    _chooseAttachedSide(room1: number, room2: number, side1: string, side2: string, gridOffset: number, label1: string = side1, label2: string = side2): string {
         if (room1 >= 0 && room2 >= 0) return room1 >= room2 ? side1 : side2;
         if (room1 >= 0) return side1;
         if (room2 >= 0) return side2;

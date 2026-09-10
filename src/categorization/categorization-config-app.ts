@@ -73,12 +73,12 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @returns {string} HTML string for the tooltip
      */
     _getExpressionHelpTooltip() {
-        const format = (key: any, data: any, fallback = '') => {
+        const format = (key: string, data: Record<string, string>, fallback = '') => {
             let str = localize(key, fallback);
             if (!str || str === key) {
                 str = fallback;
             }
-            return str.replace(/\{(\w+)\}/g, (match: any, p1: any) => data[p1] ?? match);
+            return str.replace(/\{(\w+)\}/g, (match: string, p1: string) => data[p1] ?? match);
         };
 
         const trueCode = '<code>true</code>';
@@ -273,7 +273,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      */
     _clearDragHighlights() {
         if (!this.element) return;
-        this.element.querySelectorAll('.drag-over, .dragging').forEach((el: any) => {
+        this.element.querySelectorAll('.drag-over, .dragging').forEach((el: Element) => {
             el.classList.remove('drag-over', 'dragging');
             el.setAttribute('draggable', 'false');
         });
@@ -322,7 +322,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLInputElement} target
      */
-    _onToggleEnabled(event: any, target: any) {
+    _onToggleEnabled(event: Event, target: HTMLInputElement) {
         this._syncFormData();
         this.config.enabled = target.checked;
     }
@@ -332,7 +332,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onAddCategory(event: any, target: any) {
+    _onAddCategory(event: Event, target: HTMLElement) {
         event.preventDefault();
         this._syncFormData();
         const newCatId = `cat_${Date.now()}_${this.config.categories.length}`;
@@ -352,7 +352,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onToggleFallthrough(event: any, target: any) {
+    _onToggleFallthrough(event: Event, target: HTMLElement) {
         event.preventDefault();
         this._syncFormData();
         const catIndex = Number(target.dataset.catIndex);
@@ -367,7 +367,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onAddSubCategory(event: any, target: any) {
+    _onAddSubCategory(event: Event, target: HTMLElement) {
         event.preventDefault();
         this._syncFormData();
         const catIndex = Number(target.dataset.catIndex);
@@ -389,7 +389,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onRemoveCategory(event: any, target: any) {
+    _onRemoveCategory(event: Event, target: HTMLElement) {
         event.preventDefault();
         this._syncFormData();
         const catIndex = Number(target.dataset.catIndex);
@@ -404,7 +404,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onRemoveSubCategory(event: any, target: any) {
+    _onRemoveSubCategory(event: Event, target: HTMLElement) {
         event.preventDefault();
         this._syncFormData();
         const catIndex = Number(target.dataset.catIndex);
@@ -420,7 +420,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onLoadPresets(event: any, target: any) {
+    _onLoadPresets(event: Event, target: HTMLElement) {
         event.preventDefault();
         const rawDefaults = getDefaultCategories(adapter);
         this.config.categories = normalizeCategorizationConfig({ categories: rawDefaults }).categories;
@@ -432,7 +432,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    async _onSaveConfig(event: any, target: any) {
+    async _onSaveConfig(event: Event, target: HTMLElement) {
         event.preventDefault();
         this._syncFormData();
 
@@ -479,7 +479,7 @@ export class CategorizationConfigApp extends adapter.foundry.HandlebarsApplicati
      * @param {Event} event
      * @param {HTMLElement} target
      */
-    _onCloseConfig(event: any, target: any) {
+    _onCloseConfig(event: Event, target: HTMLElement) {
         event.preventDefault();
         this.close();
     }

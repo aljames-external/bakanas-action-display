@@ -8,7 +8,7 @@ import { adapter } from '../adapters/index.js';
  * @param {Object} actor Actor document
  * @returns {Record<string, boolean>} Map of itemId to boolean
  */
-export function getActorFavorites(actor: Actor): Record<string, boolean> {
+export function getActorFavorites(actor: Actor | null | undefined): Record<string, boolean> {
     if (!actor?.getFlag) return {};
     return (actor.getFlag(MODULE_ID, 'favorites') as Record<string, boolean>) ?? {};
 }
@@ -21,7 +21,7 @@ export function getActorFavorites(actor: Actor): Record<string, boolean> {
  * @param {BaseSystemAdapter|null} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {boolean} True if favorited
  */
-export function isActorItemFavorite(actor: Actor, item: Item, customAdapter: BaseSystemAdapter | null = null): boolean {
+export function isActorItemFavorite(actor: Actor | null | undefined, item: Item | null | undefined, customAdapter: BaseSystemAdapter | null = null): boolean {
     if (!actor || !item?.id) return false;
 
     const favorites = getActorFavorites(actor);
@@ -40,7 +40,7 @@ export function isActorItemFavorite(actor: Actor, item: Item, customAdapter: Bas
  * @param {BaseSystemAdapter|null} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {Promise<void>}
  */
-export async function setActorItemFavorite(actor: Actor, item: Item, isFavorite: boolean, customAdapter: BaseSystemAdapter | null = null): Promise<void> {
+export async function setActorItemFavorite(actor: Actor | null | undefined, item: Item | null | undefined, isFavorite: boolean, customAdapter: BaseSystemAdapter | null = null): Promise<void> {
     if (!actor || !item?.id) return;
 
     const targetFavorite = Boolean(isFavorite);
