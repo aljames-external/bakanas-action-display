@@ -6,7 +6,9 @@ import { Action } from '../../ui/action.js';
 import { MODULE_ID } from '../../constants.js';
 import { Pf1SystemContextMenuManager } from './context-menu/pf1-system-context-menu-manager.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
-import type { ActorPF, ItemPF, Pf1Skill } from '../../types/systems.js';
+import type { ActorPF, ItemPF, Pf1Skill, Pf1TraitData } from '../../types/systems.js';
+import type { BaseFoundryAdapter } from '../foundry/base-foundry-adapter.js';
+import type { ItemSummary, ItemSummaryProperty } from './base-system-adapter.js';
 
 const SORT_ORDERS = {
     tabs: {
@@ -52,7 +54,7 @@ const ICONS = {
  * Handles PF1e's multi-action items, prepared/spontaneous spellcasting, and toggleable buffs.
  */
 export class BasePf1SystemAdapter extends FantasySystemAdapter {
-    constructor(foundry: any) {
+    constructor(foundry: BaseFoundryAdapter) {
         super('pf1', true, foundry);
         this.contextMenuManager = new Pf1SystemContextMenuManager(this);
     }
@@ -62,10 +64,11 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {boolean}
      */
-    getItemEquipped(item: any) {
+    override getItemEquipped(item: Item): boolean {
         if (!item?.system) return true;
-        if (item.system.equipped !== undefined) {
-            return Boolean(item.system.equipped);
+        const itemPF = item as ItemPF;
+        if (itemPF.system?.equipped !== undefined) {
+            return Boolean(itemPF.system.equipped);
         }
         return true;
     }
@@ -76,7 +79,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * Determine if a specific item should be extracted as a base action for PF1e.
      * Prevents allocating objects for unhandled item types (like containers).
      */
-    override shouldExtractItem(item: any) {
+    override shouldExtractItem(item: Item): boolean {
         return EXTRACTABLE_TYPES.has(item.type);
     }
 
@@ -437,10 +440,11 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    override async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
+    override async getTokenInfo(actor: Actor | null, token: Token | null = null): Promise<Record<string, unknown> | null> {
         if (!actor) return null;
 
-        const system = actor.system ?? {};
+        const act = actor as ActorPF;
+        const system = act.system ?? {};
         const cfg = (CONFIG as any)?.PF1;
 
         // 1. Name and Image
@@ -457,16 +461,16 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         const movementInfo = this.#extractMovement(actor, cfg, token);
 
         // 5. Damage Resistances (DR + Energy Resistances)
-        const resistances = this.#extractResistances(actor);
+        const resistances = this.#extractResistances(actor, cfg);
 
         // 6. Damage Immunities
-        const damageImmunities = this.#extractDamageImmunities(actor);
+        const damageImmunities = this.#extractDamageImmunities(actor, cfg);
 
         // 7. Condition Immunities
-        const conditionImmunities = this.#extractConditionImmunities(actor);
+        const conditionImmunities = this.#extractConditionImmunities(actor, cfg);
 
         // 8. Damage Vulnerabilities
-        const vulnerabilities = this.#extractVulnerabilities(actor);
+        const vulnerabilities = this.#extractVulnerabilities(actor, cfg);
 
         // 9. Languages
         const languages = this.#extractLanguages(actor, cfg);
@@ -475,7 +479,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         const senses = this.#extractSenses(actor, cfg);
 
         // 11. Biography / Notes
-        const rawBio = system.details?.biography?.value ?? system.details?.notes?.value ?? system.details?.biography?.public ?? '';
+        const rawBio = (system as any).details?.biography?.value ?? (system as any).details?.notes?.value ?? (system as any).details?.biography?.public ?? '';
         let biographyHTML = '';
         if (rawBio.trim()) {
             biographyHTML = await this.enrichHTML(rawBio, {
@@ -520,14 +524,15 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Actor|null} [actor=null]
      * @returns {{ inCombat: boolean, distance: number, units: string }}
      */
-    override getTurnMovement(token = null, actor = null) {
+    override getTurnMovement(token: Token | null = null, actor: Actor | null = null) {
         return CombatMovementTracker.getMovementThisTurn(token, actor);
     }
 
-    #extractCreatureType(actor: any, cfg: any = (CONFIG as any)?.PF1) {
-        const system = actor?.system ?? {};
-        const details = system.details ?? {};
-        const traits = system.traits ?? {};
+    #extractCreatureType(actor: Actor, cfg: any = (CONFIG as any)?.PF1) {
+        const act = actor as ActorPF;
+        const system = act?.system ?? {};
+        const details = (system as any).details ?? {};
+        const traits = (system as any).traits ?? {};
 
         // Size
         const rawSize = traits.size;
@@ -543,9 +548,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         const alignLabel = alignKey ? (cfg?.alignments?.[alignKey] ? localize(cfg.alignments[alignKey], alignKey) : alignKey) : '';
 
         // CR / Level
-        const level = actor.level ?? details.level?.value ?? 1;
+        const level = (act as any).level ?? details.level?.value ?? 1;
         const cr = details.cr?.total ?? details.cr?.base ?? details.cr ?? '';
-        const crLabel = actor.type === 'npc' && cr !== '' ? `CR ${cr}` : `Level ${level}`;
+        const crLabel = (actor.type as string) === 'npc' && cr !== '' ? `CR ${cr}` : `Level ${level}`;
 
         // Creature Type, Subtypes, Race
         const rawType = traits.type;
@@ -588,8 +593,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractArmorClass(actor: any) {
-        const ac = actor?.system?.attributes?.ac;
+    #extractArmorClass(actor: Actor) {
+        const act = actor as ActorPF;
+        const ac = (act?.system as any)?.attributes?.ac;
         const normal = ac?.normal?.total ?? ac?.value ?? ac?.total ?? 10;
         const touch = ac?.touch?.total;
         const flatFooted = ac?.flatFooted?.total;
@@ -605,8 +611,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractMovement(actor: any, cfg: any = (CONFIG as any)?.PF1, token: Token | null = null) {
-        const speed = actor?.system?.attributes?.speed ?? {};
+    #extractMovement(actor: Actor, cfg: any = (CONFIG as any)?.PF1, token: Token | null = null) {
+        const act = actor as ActorPF;
+        const speed = (act?.system as any)?.attributes?.speed ?? {};
         const land = speed.land?.total ?? speed.land?.value ?? 30;
         const primary = `${land} ft`;
         const secondaries: string[] = [];
@@ -637,11 +644,11 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 
     /**
      * Extract trait entries according to legacy PF1 (< v11) schema.
-     * @param {Object} [traitData]
+     * @param {Pf1TraitData|null|undefined} [traitData]
      * @param {Record<string, string>} [configMap]
      * @returns {string[]}
      */
-    extractTraitEntries(traitData: any, configMap: any = null): string[] {
+    extractTraitEntries(traitData: Pf1TraitData | null | undefined, configMap: Record<string, string> | null = null): string[] {
         if (!traitData) return [];
         const results: string[] = [];
 
@@ -663,8 +670,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         return Array.from(new Set(results));
     }
 
-    #extractResistances(actor: any, cfg: any = (CONFIG as any)?.PF1) {
-        const traits = actor?.system?.traits ?? {};
+    #extractResistances(actor: Actor, cfg: any = (CONFIG as any)?.PF1): string[] {
+        const act = actor as ActorPF;
+        const traits = (act?.system as any)?.traits ?? {};
         const results: string[] = [];
 
         // Damage Reduction (DR)
@@ -682,24 +690,29 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         return Array.from(new Set(results));
     }
 
-    #extractDamageImmunities(actor: any, cfg: any = (CONFIG as any)?.PF1) {
-        return this.extractTraitEntries(actor?.system?.traits?.di, cfg?.damageTypes);
+    #extractDamageImmunities(actor: Actor, cfg: any = (CONFIG as any)?.PF1): string[] {
+        const act = actor as ActorPF;
+        return this.extractTraitEntries((act?.system as any)?.traits?.di, cfg?.damageTypes);
     }
 
-    #extractConditionImmunities(actor: any, cfg: any = (CONFIG as any)?.PF1) {
-        return this.extractTraitEntries(actor?.system?.traits?.ci, cfg?.conditionTypes ?? cfg?.conditions);
+    #extractConditionImmunities(actor: Actor, cfg: any = (CONFIG as any)?.PF1): string[] {
+        const act = actor as ActorPF;
+        return this.extractTraitEntries((act?.system as any)?.traits?.ci, cfg?.conditionTypes ?? cfg?.conditions);
     }
 
-    #extractVulnerabilities(actor: any, cfg: any = (CONFIG as any)?.PF1) {
-        return this.extractTraitEntries(actor?.system?.traits?.dv, cfg?.damageTypes);
+    #extractVulnerabilities(actor: Actor, cfg: any = (CONFIG as any)?.PF1): string[] {
+        const act = actor as ActorPF;
+        return this.extractTraitEntries((act?.system as any)?.traits?.dv, cfg?.damageTypes);
     }
 
-    #extractLanguages(actor: any, cfg: any = (CONFIG as any)?.PF1) {
-        return this.extractTraitEntries(actor?.system?.traits?.languages, cfg?.languages);
+    #extractLanguages(actor: Actor, cfg: any = (CONFIG as any)?.PF1): string[] {
+        const act = actor as ActorPF;
+        return this.extractTraitEntries((act?.system as any)?.traits?.languages, cfg?.languages);
     }
 
-    #extractSenses(actor: any, cfg: any = (CONFIG as any)?.PF1) {
-        const sensesData = actor?.system?.traits?.senses;
+    #extractSenses(actor: Actor, cfg: any = (CONFIG as any)?.PF1): string[] {
+        const act = actor as ActorPF;
+        const sensesData = (act?.system as any)?.traits?.senses;
         if (!sensesData) return [];
 
         const results: string[] = [];
@@ -850,17 +863,17 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 
     // #region System Specific Data Extractors & Schema Helpers
 
-    #executeItemRoll(item: any, actionId: any, event: any) {
+    #executeItemRoll(item: Item, actionId: string | null, event: unknown) {
         const proxiedEvent = this._createRollEvent(event);
         const options = actionId ? { actionId, event: proxiedEvent } : { event: proxiedEvent };
-        if (item.use) {
-            item.use(options);
-        } else if (item.roll) {
-            item.roll(options);
+        if ((item as any).use) {
+            (item as any).use(options);
+        } else if ((item as any).roll) {
+            (item as any).roll(options);
         }
     }
 
-    #buildSubactions(item: any, itemActions: any[], uses: any) {
+    #buildSubactions(item: Item, itemActions: any[], uses: { available: number | null; max: number | null }) {
         const subactions: any[] = [];
         for (const itemAction of itemActions) {
             const activationType = this.#parseActivationType(itemAction.activation?.type);
@@ -873,13 +886,13 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                 activationType,
                 right: [TabRef.from('economy', activationType)],
                 uses,
-                roll: (event: any) => this.#executeItemRoll(item, itemAction.id, event)
+                roll: (event: unknown) => this.#executeItemRoll(item, itemAction.id, event)
             });
         }
         return subactions;
     }
 
-    #buildLinkedAttackSubactions(linkedAttacks: any[], weapon: any, uses: any) {
+    #buildLinkedAttackSubactions(linkedAttacks: Item[], weapon: Item, uses: { available: number | null; max: number | null }) {
         const subactions: any[] = [];
         for (const attackItem of linkedAttacks) {
             for (const itemAction of this.#getItemActions(attackItem)) {
@@ -897,7 +910,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                     activationType,
                     right: [TabRef.from('economy', activationType)],
                     uses,
-                    roll: (event: any) => this.#executeItemRoll(attackItem, itemAction.id, event)
+                    roll: (event: unknown) => this.#executeItemRoll(attackItem, itemAction.id, event)
                 });
             }
         }
@@ -911,8 +924,8 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @returns {string|null} Normalized activation type
      * @private
      */
-    #parseActivationType(actType: any) {
-        if (!actType) return null;
+    #parseActivationType(actType: unknown): string | null {
+        if (!actType || typeof actType !== 'string') return null;
 
         switch (actType.toLowerCase()) {
             case 'standard':
@@ -930,26 +943,26 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         }
     }
 
-    #buildWeaponAttackLinks(actor: any) {
-        const attackToWeaponMap = new Map();
-        const weaponLinkedAttacks = new Map();
+    #buildWeaponAttackLinks(actor: Actor): { attackToWeaponMap: Map<string, Item>; weaponLinkedAttacks: Map<string, Item[]> } {
+        const attackToWeaponMap = new Map<string, Item>();
+        const weaponLinkedAttacks = new Map<string, Item[]>();
 
-        const weapons = actor.items.filter((i: any) => i.type === 'weapon');
+        const weapons = (actor.items as any).filter((i: Item) => (i.type as string) === 'weapon');
 
         for (const weapon of weapons) {
             const children = this.#getWeaponLinkChildren(weapon);
-            const linked: any[] = [];
+            const linked: Item[] = [];
             for (const child of children) {
                 if (!child.uuid) continue;
 
-                let childItem: any = null;
+                let childItem: Item | null = null;
                 try {
-                    childItem = this.fromUuidSync(child.uuid, { relative: actor });
+                    childItem = this.fromUuidSync(child.uuid, { relative: actor as unknown as Record<string, unknown> }) as Item | null;
                 } catch (e) {
                     log.error(`Pf1SystemAdapter.modifyActions | Failed to resolve child UUID ${child.uuid}:`, e);
                 }
 
-                if (childItem?.type === 'attack') {
+                if ((childItem?.type as string) === 'attack' && childItem && childItem.id) {
                     attackToWeaponMap.set(childItem.id, weapon);
                     linked.push(childItem);
                 }
@@ -967,8 +980,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Item} weapon
      * @returns {Object[]} Link children objects
      */
-    #getWeaponLinkChildren(weapon: any) {
-        return weapon.system.links?.children ?? [];
+    #getWeaponLinkChildren(weapon: Item): any[] {
+        const itemPF = weapon as ItemPF;
+        return (itemPF.system as any)?.links?.children ?? [];
     }
 
     /**
@@ -977,18 +991,19 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {string} spellbookId
      * @returns {Object|undefined}
      */
-    #getSpellbook(actor: any, spellbookId: any) {
-        return actor.system.attributes?.spells?.spellbooks?.[spellbookId];
+    #getSpellbook(actor: Actor, spellbookId: string): any {
+        const act = actor as ActorPF;
+        return (act.system as any)?.attributes?.spells?.spellbooks?.[spellbookId];
     }
 
-    #getSpellSubTab(spellbookId: any, spellbook: any, level: any) {
+    #getSpellSubTab(spellbookId: string, spellbook: any, level: number | string): string {
         if (spellbookId === 'spelllike' || spellbookId === 'sla') return 'sla';
         if (level === 0 && spellbook?.kind === 'arcane') return 'cantrip';
         if (level === 0 && spellbook?.kind === 'divine') return 'orison';
         return level.toString();
     }
 
-    #promoteFirstSubaction(action: any, subactions: any, left: any, uses: any) {
+    #promoteFirstSubaction(action: Action, subactions: any[], left: string[], uses: { available: number | null; max: number | null }) {
         const firstSub = subactions[0];
         action.subactions = subactions;
         action.activationType = firstSub.activationType;
@@ -1002,8 +1017,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {Object[]} Sub-action objects
      */
-    #getItemActions(item: any) {
-        return item.system.actions ?? [];
+    #getItemActions(item: Item): any[] {
+        const itemPF = item as ItemPF;
+        return (itemPF.system as any)?.actions ?? [];
     }
 
     /**
@@ -1011,33 +1027,37 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {boolean}
      */
-    #getBuffActiveState(item: any) {
-        return item.system.active ?? false;
+    #getBuffActiveState(item: Item): boolean {
+        const itemPF = item as ItemPF;
+        return Boolean((itemPF.system as any)?.active);
     }
 
     /**
      * Calculate remaining charges/uses for PF1e items.
      */
-    #calculateUses(item: any, actor: any) {
+    #calculateUses(item: Item, actor: Actor | null): { available: number | null; max: number | null } {
+        const itemPF = item as ItemPF;
+        const system = (itemPF.system as any) ?? {};
+
         // 1. Ranged weapon ammunition tracking
-        if (item.type === 'weapon' && item.system.weaponSubtype === 'ranged' && item.system.ammo?.type) {
-            const ammoId = item.system.ammo?.default;
-            const quantity = (ammoId && actor?.items.get(ammoId)?.system.quantity) ?? 0;
+        if ((item.type as string) === 'weapon' && system.weaponSubtype === 'ranged' && system.ammo?.type) {
+            const ammoId = system.ammo?.default;
+            const quantity = (ammoId && (actor?.items.get(ammoId) as any)?.system?.quantity) ?? 0;
             return { available: quantity, max: null };
         }
 
         // 2. Standard charges/uses
-        const max = item.system.uses?.max ?? 0;
-        const value = item.system.uses?.value;
+        const max = system.uses?.max ?? 0;
+        const value = system.uses?.value;
 
         if (max > 0 || (value ?? 0) > 0) {
             return { available: value ?? max, max };
         }
 
         // Fallback for consumables: use quantity if uses are not defined
-        if (item.type === 'consumable' && item.system.quantity !== undefined) {
+        if ((item.type as string) === 'consumable' && system.quantity !== undefined) {
             return {
-                available: item.system.quantity ?? 0,
+                available: system.quantity ?? 0,
                 max: null
             };
         }
@@ -1048,13 +1068,14 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
     /**
      * Calculate spell slot / prepared uses for PF1e spells.
      */
-    #calculateSpellUses(spellbook: any, spell: any) {
-        const level = spell.system.level ?? 0;
+    #calculateSpellUses(spellbook: any, spell: Item): { available: number | null; max: number | null } {
+        const itemPF = spell as ItemPF;
+        const level = (itemPF.system as any)?.level ?? 0;
         if (level === 0) return { available: null, max: null }; // Cantrips have infinite uses
 
         // 1. Prepared Spellcasting (Wizard, Cleric, Alchemist, etc.)
-        if (spellbook.spellPreparationMode === 'prepared') {
-            const prep = spell.system.preparation;
+        if (spellbook?.spellPreparationMode === 'prepared') {
+            const prep = (itemPF.system as any)?.preparation;
             if (prep?.max > 0) {
                 return { available: prep.value ?? prep.max, max: prep.max };
             }
@@ -1063,7 +1084,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 
         // 2. Spontaneous Spellcasting (Sorcerer, Bard, etc.)
         // Uses the spellbook's slots for that level on the actor
-        const slot = spellbook.spells?.[`spell${level}`];
+        const slot = spellbook?.spells?.[`spell${level}`];
         if (slot) {
             return {
                 available: slot.value ?? 0,
@@ -1155,26 +1176,27 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Object} [actor] The owning actor document
      * @returns {{title: string, subtitle?: string, img?: string, properties?: Array<string|{label?: string, value: string}>, description?: string}|null}
      */
-    override async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null): Promise<any> {
+    override async getItemSummary(action: Action, item: Item | null = action?.originalItem ?? null, actor: Actor | null = null): Promise<ItemSummary | null> {
         if (!action && !item) return null;
-        const targetItem = item ?? action?.originalItem ?? action;
+        const targetItem = item ?? action?.originalItem;
         const title = action?.name ?? targetItem?.name ?? '';
         const img = (action?.img && action.img.length > 0) ? action.img : (targetItem?.img ?? '');
-        const system = targetItem?.system ?? {};
+        const itemPF = targetItem as ItemPF | null;
+        const system = (itemPF?.system as any) ?? {};
         const type = targetItem?.type ? (targetItem.type.charAt(0).toUpperCase() + targetItem.type.slice(1)) : '';
-        const properties: any[] = [];
+        const properties: Array<string | ItemSummaryProperty> = [];
 
-        if (targetItem?.labels?.toHit) {
-            properties.push({ label: 'Attack', value: targetItem.labels.toHit });
+        if ((targetItem as any)?.labels?.toHit) {
+            properties.push({ label: 'Attack', value: (targetItem as any).labels.toHit });
         }
-        if (targetItem?.labels?.damage) {
-            properties.push({ label: 'Damage', value: targetItem.labels.damage });
+        if ((targetItem as any)?.labels?.damage) {
+            properties.push({ label: 'Damage', value: (targetItem as any).labels.damage });
         }
-        if (targetItem?.labels?.range) {
-            properties.push({ label: 'Range', value: targetItem.labels.range });
+        if ((targetItem as any)?.labels?.range) {
+            properties.push({ label: 'Range', value: (targetItem as any).labels.range });
         }
-        if (targetItem?.labels?.save) {
-            properties.push({ label: 'Save', value: targetItem.labels.save });
+        if ((targetItem as any)?.labels?.save) {
+            properties.push({ label: 'Save', value: (targetItem as any).labels.save });
         }
         if (action?.uses?.available != null) {
             const usesStr = `${action.uses.available}${action.uses.max ? ` / ${action.uses.max}` : ''}`;
@@ -1211,11 +1233,11 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
 export class Pf1SystemAdapter_11_0 extends BasePf1SystemAdapter {
     /**
      * Extract trait entries according to modern PF1 (v11+) schema.
-     * @param {Object} [traitData]
+     * @param {Pf1TraitData|null|undefined} [traitData]
      * @param {Record<string, string>} [configMap]
      * @returns {string[]}
      */
-    override extractTraitEntries(traitData: any, configMap: any = null): string[] {
+    override extractTraitEntries(traitData: Pf1TraitData | null | undefined, configMap: Record<string, string> | null = null): string[] {
         if (!traitData) return [];
         const results: string[] = [];
 
@@ -1237,7 +1259,7 @@ export class Pf1SystemAdapter_11_0 extends BasePf1SystemAdapter {
  * Automatically delegates to Pf1SystemAdapter_11_0 on v11+ and BasePf1SystemAdapter on legacy versions.
  */
 export class Pf1SystemAdapter extends BasePf1SystemAdapter {
-    constructor(foundry: any) {
+    constructor(foundry: BaseFoundryAdapter) {
         if (!foundry) {
             throw new Error(`Pf1SystemAdapter requires a valid Foundry adapter instance, received: ${foundry}`);
         }

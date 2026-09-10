@@ -66,7 +66,7 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
         if (!item) return;
         if (app?.actor?.items && item.id && !app.actor.items.has(item.id)) return;
         const targetItem = (app?.actor?.items && item.id) ? app.actor.items.get(item.id) : item;
-        await (targetItem as any)?.update?.(updates);
+        await targetItem?.update(updates as Record<string, unknown>);
     }
 
     /**
@@ -87,9 +87,12 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                     {
                         name: "PF2E.CarryType.held1",
                         icon: '<i class="fas fa-hand"></i>',
-                        active: (item: any) => item?.system?.equipped?.carryType === 'held' && item?.system?.equipped?.handsHeld === 1,
-                        condition: (item: any) => item?.type !== 'armor',
-                        callback: async (item: any) => {
+                        active: (item: Item): boolean => {
+                            const itemPF2e = item as ItemPF2e;
+                            return itemPF2e?.system?.equipped?.carryType === 'held' && itemPF2e?.system?.equipped?.handsHeld === 1;
+                        },
+                        condition: (item: Item): boolean => (item.type as string) !== 'armor',
+                        callback: async (item: Item): Promise<void> => {
                             await this.#safeUpdateItem(app, item, {
                                 "system.equipped.carryType": "held",
                                 "system.equipped.handsHeld": 1
@@ -99,9 +102,12 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                     {
                         name: "PF2E.CarryType.held2",
                         icon: '<i class="fas fa-hands"></i>',
-                        active: (item: any) => item?.system?.equipped?.carryType === 'held' && item?.system?.equipped?.handsHeld === 2,
-                        condition: (item: any) => item?.type === 'weapon' || item?.type === 'equipment',
-                        callback: async (item: any) => {
+                        active: (item: Item): boolean => {
+                            const itemPF2e = item as ItemPF2e;
+                            return itemPF2e?.system?.equipped?.carryType === 'held' && itemPF2e?.system?.equipped?.handsHeld === 2;
+                        },
+                        condition: (item: Item): boolean => (item.type as string) === 'weapon' || (item.type as string) === 'equipment',
+                        callback: async (item: Item): Promise<void> => {
                             await this.#safeUpdateItem(app, item, {
                                 "system.equipped.carryType": "held",
                                 "system.equipped.handsHeld": 2
@@ -111,9 +117,9 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                     {
                         name: "PF2E.CarryType.worn",
                         icon: '<i class="fas fa-shirt"></i>',
-                        active: (item: any) => item?.system?.equipped?.carryType === 'worn',
-                        condition: () => true,
-                        callback: async (item: any) => {
+                        active: (item: Item): boolean => (item as ItemPF2e)?.system?.equipped?.carryType === 'worn',
+                        condition: (): boolean => true,
+                        callback: async (item: Item): Promise<void> => {
                             await this.#safeUpdateItem(app, item, {
                                 "system.equipped.carryType": "worn",
                                 "system.equipped.handsHeld": 0
@@ -123,9 +129,9 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                     {
                         name: "PF2E.CarryType.stowed",
                         icon: '<i class="fas fa-box-archive"></i>',
-                        active: (item: any) => item?.system?.equipped?.carryType === 'stowed',
-                        condition: () => true,
-                        callback: async (item: any) => {
+                        active: (item: Item): boolean => (item as ItemPF2e)?.system?.equipped?.carryType === 'stowed',
+                        condition: (): boolean => true,
+                        callback: async (item: Item): Promise<void> => {
                             await this.#safeUpdateItem(app, item, {
                                 "system.equipped.carryType": "stowed",
                                 "system.equipped.handsHeld": 0
@@ -135,9 +141,9 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
                     {
                         name: "PF2E.CarryType.dropped",
                         icon: '<i class="fas fa-arrow-down"></i>',
-                        active: (item: any) => item?.system?.equipped?.carryType === 'dropped',
-                        condition: () => true,
-                        callback: async (item: any) => {
+                        active: (item: Item): boolean => (item as ItemPF2e)?.system?.equipped?.carryType === 'dropped',
+                        condition: (): boolean => true,
+                        callback: async (item: Item): Promise<void> => {
                             await this.#safeUpdateItem(app, item, {
                                 "system.equipped.carryType": "dropped",
                                 "system.equipped.handsHeld": 0

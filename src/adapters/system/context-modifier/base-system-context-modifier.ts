@@ -134,7 +134,7 @@ export class BaseSystemContextModifier {
             case 'tools':
                 return localize('BAD.page2.tools', 'Tools');
             default: {
-                const configLabel = (CONFIG.Item as any)?.typeLabels?.[parentId];
+                const configLabel = (CONFIG.Item as unknown as { typeLabels?: Record<string, string> })?.typeLabels?.[parentId];
                 if (configLabel) {
                     const localized = localize(configLabel);
                     if (localized) return localized;

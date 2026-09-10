@@ -6,6 +6,7 @@ import { initializeModuleAdapters, BaseModuleAdapter } from './module/index.js';
 import { MODULE_ID } from '../constants.js';
 import { log } from '../lib/logger.js';
 import { Action } from '../ui/action.js';
+import { TabRef } from '../ui/tab-ref.js';
 import { CombatMovementTracker } from '../combat/combat-movement-tracker.js';
 import type { HUDTabColumn } from '../ui/hud-tab-column.js';
 
@@ -107,7 +108,7 @@ class Adapter {
                     log.debug(`Adapter.getActions | Marking "${action.name}" (ID: ${itemId}) as hidden — item is in actor's hiddenItems flag map`);
                     action.isHidden = true;
                     action.left = ['hidden'];
-                    action.right = ['all'];
+                    action.right = [TabRef.from('all')];
                     filtered.push(action);
                     continue;
                 }

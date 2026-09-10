@@ -127,15 +127,31 @@ const LEVEL_ORDINALS = deepFreeze({ '1': '1st', '2': '2nd', '3': '3rd' });
 const GEAR_TYPES = deepFreeze(['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot']);
 const GENERIC_GEAR_TYPES = deepFreeze(['consumable', 'tool', 'backpack', 'loot']);
 
+import type { HUDTab } from '../../../ui/hud-tab.js';
+
+interface ContextApp {
+    actor?: Actor | null;
+    leftTabs?: {
+        activeParents?: Set<string>;
+        activeSubTypes?: Set<string>;
+    };
+}
+
+interface ModifierContext {
+    itemTypes?: HUDTab[];
+    showTooltips?: boolean;
+    [key: string]: unknown;
+}
+
 export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
     constructor(adapter: BaseSystemAdapter) {
         super(adapter);
     }
 
-    override modifyContext(context: any, app: any) {
-        const findParent = (id: any) => context.itemTypes?.find((t: any) => t.id === id);
+    override modifyContext(context: ModifierContext, app: ContextApp): void {
+        const findParent = (id: string): HUDTab | undefined => context.itemTypes?.find(t => t.id === id);
 
-        const showAll = app?.actor?.getFlag?.(MODULE_ID, 'showAll') ?? false;
+        const showAll = Boolean(app?.actor?.getFlag?.(MODULE_ID, 'showAll'));
 
         const allParent = findParent('all');
         if (allParent) {
@@ -210,17 +226,17 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
 
     /**
      * Helper to inject an "All" sub-tab into a parent tab group.
-     * @param {HUDTab} parent Parent tab group
-     * @param {ApplicationV2} app Active HUD application
+     * @param {HUDTab|undefined} parent Parent tab group
+     * @param {ContextApp} app Active HUD application
      * @param {string} label Localized tab label
      * @param {string} flagKey Actor flag key for unprepared/unequipped display toggle
      * @param {boolean} [requireSubTabs=false] Only inject if parent has existing subtabs
      * @param {boolean} [forceShow=false] Force orange indicator if showAll is true
      * @param {string} [tooltip=''] Contextual tooltip when showTooltips is enabled
      */
-    #ensureAllSubTab(parent: any, app: any, label: any, flagKey: any, requireSubTabs = false, forceShow = false, tooltip = '') {
-        if (!parent || !parent.addSubTab || (requireSubTabs && parent.subTabs?.length === 0)) return;
-        const flagValue = app?.actor?.getFlag?.(MODULE_ID, flagKey) ?? false;
+    #ensureAllSubTab(parent: HUDTab | undefined, app: ContextApp, label: string, flagKey: string, requireSubTabs = false, forceShow = false, tooltip = ''): void {
+        if (!parent?.addSubTab || (requireSubTabs && parent.subTabs?.length === 0)) return;
+        const flagValue = Boolean(app?.actor?.getFlag?.(MODULE_ID, flagKey));
         const showUnprepared = Boolean(forceShow || flagValue);
         parent.addSubTab({
             id: 'all',
@@ -229,7 +245,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
             showUnprepared,
             tooltip
         });
-        parent.updateOrder?.(Object.keys((SORT_ORDERS.tabs as Record<string, any>)[parent.id] ?? {}));
+        parent.updateOrder?.(Object.keys((SORT_ORDERS.tabs as Record<string, Record<string, number>>)[parent.id] ?? {}));
     }
 
     /**
@@ -300,7 +316,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
             }
             const prefix = parentId.charAt(0).toUpperCase() + parentId.slice(1);
             const subTitle = subId.charAt(0).toUpperCase() + subId.slice(1);
-            const dndConfig = (CONFIG as any)?.DND5E;
+            const dndConfig = (CONFIG as unknown as { DND5E?: { weaponTypes?: Record<string, string>; equipmentTypes?: Record<string, string> } })?.DND5E;
             const configMap = parentId === 'weapon' ? dndConfig?.weaponTypes : dndConfig?.equipmentTypes;
             return localize(`DND5E.${prefix}${subTitle}`, configMap?.[subId] ?? subId);
         }
@@ -313,7 +329,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @returns {string}
      */
     override getActionTypeLabel(parentId: string): string {
-        const config = (LABEL_KEYS.action_type as Record<string, any>)[parentId];
+        const config = (LABEL_KEYS.action_type as Record<string, { key: string; fallback: string }>)[parentId];
         return config ? localize(config.key, config.fallback) : super.getActionTypeLabel(parentId);
     }
 
@@ -332,14 +348,21 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @returns {string}
      */
     override getActionSubTabLabel(subId: string): string {
-        const config = (LABEL_KEYS.action_subtab as Record<string, any>)[subId];
+        const config = (LABEL_KEYS.action_subtab as Record<string, { key: string; fallback: string; altKey?: string }>)[subId];
         const fallback = config?.fallback ?? subId;
 
-        const cfg = (CONFIG as any)?.DND5E;
+        const cfg = (CONFIG as unknown as {
+            DND5E?: {
+                activityActivationCategories?: Record<string, { label?: string; name?: string } | string>;
+                activityActivationTypes?: Record<string, { label?: string; name?: string } | string>;
+            };
+        })?.DND5E;
         const configLabel = cfg?.activityActivationCategories?.[subId]
             ?? cfg?.activityActivationTypes?.[subId];
         if (configLabel) {
-            const label = configLabel.label ?? configLabel.name ?? configLabel;
+            const label = (configLabel as { label?: string; name?: string }).label
+                ?? (configLabel as { label?: string; name?: string }).name
+                ?? (configLabel as string);
             const localized = localize(label, null);
             if (localized) return localized;
         }

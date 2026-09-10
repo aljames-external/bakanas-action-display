@@ -7,6 +7,8 @@ import { MODULE_ID } from '../../constants.js';
 import { Pf2eSystemContextMenuManager } from './context-menu/pf2e-system-context-menu-manager.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
 import type { ActorPF2e, ItemPF2e, Pf2eStatistic } from '../../types/systems.js';
+import type { BaseFoundryAdapter } from '../foundry/base-foundry-adapter.js';
+import type { ItemSummary, ItemSummaryProperty } from './base-system-adapter.js';
 
 const SORT_ORDERS = deepFreeze({
     tabs: {
@@ -94,7 +96,7 @@ const PF2E_SIZE_MAP = deepFreeze({
  * Modifies the base actions list by mapping feats and spells, and injecting Strikes (attacks).
  */
 export class BasePf2eSystemAdapter extends FantasySystemAdapter {
-    constructor(foundry: any) {
+    constructor(foundry: BaseFoundryAdapter) {
         super('pf2e', true, foundry);
         this.contextMenuManager = new Pf2eSystemContextMenuManager(this);
     }
@@ -107,12 +109,12 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {boolean}
      */
-    getItemEquipped(item: any) {
+    override getItemEquipped(item: Item): boolean {
         if (!item?.system) return true;
-        if (item.isPhysical === false) return true;
-        if (item.category === 'unarmed' || item.system.category?.value === 'unarmed') return true;
-
         const itemPF2e = item as ItemPF2e;
+        if (itemPF2e.isPhysical === false) return true;
+        if (itemPF2e.category === 'unarmed' || itemPF2e.system.category === 'unarmed' || (itemPF2e.system.category as { value?: string })?.value === 'unarmed') return true;
+
         const traits = itemPF2e.system.traits?.value;
         if (traits?.includes('unarmed') || traits?.includes('natural')) {
             return true;
@@ -122,8 +124,8 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         if (carryType) {
             return carryType === 'held' || carryType === 'worn';
         }
-        if (item.isEquipped !== undefined) {
-            return Boolean(item.isEquipped);
+        if (itemPF2e.isEquipped !== undefined) {
+            return Boolean(itemPF2e.isEquipped);
         }
         return true;
     }
@@ -134,7 +136,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * Determine if a specific item should be extracted as a base action for PF2e.
      * Prevents allocating objects for unhandled item types (like equipment/consumables).
      */
-    override shouldExtractItem(item: any) {
+    override shouldExtractItem(item: Item): boolean {
         return EXTRACTABLE_TYPES.has(item.type);
     }
 
@@ -291,7 +293,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
         // 2. Skills
         const actorSkills = act.skills ?? act.system?.skills ?? {};
-        const skillEntries = typeof actorSkills?.entries === 'function' ? Array.from(actorSkills.entries()) : Object.entries(actorSkills);
+        const skillEntries: [string, unknown][] = (actorSkills as any)?.entries ? Array.from((actorSkills as any).entries()) : Object.entries(actorSkills);
 
         for (const [key, rawSkill] of skillEntries) {
             const skill = rawSkill as Pf2eStatistic;
@@ -467,10 +469,11 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Token} [token]
      * @returns {Promise<Object|null>}
      */
-    override async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
+    override async getTokenInfo(actor: Actor | null, token: Token | null = null): Promise<Record<string, unknown> | null> {
         if (!actor) return null;
 
-        const system = actor.system ?? {};
+        const act = actor as ActorPF2e;
+        const system = act.system ?? {};
         const cfg = (CONFIG as any)?.PF2E;
 
         // 1. Name and Image
@@ -491,7 +494,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
         // 6. Immunities
         const damageImmunities = this.#extractImmunities(actor, cfg);
-        const conditionImmunities: any[] = [];
+        const conditionImmunities: string[] = [];
 
         // 7. Weaknesses (PF2e vulnerabilities)
         const vulnerabilities = this.#extractWeaknesses(actor, cfg);
@@ -503,7 +506,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         const senses = this.#extractSenses(actor, cfg);
 
         // 10. Biography / Description
-        const rawBio = system.details?.biography?.value ?? system.details?.biography?.public ?? system.details?.publicNotes ?? system.details?.description?.value ?? '';
+        const rawBio = (system as any).details?.biography?.value ?? (system as any).details?.biography?.public ?? (system as any).details?.publicNotes ?? (system as any).details?.description?.value ?? '';
         let biographyHTML = '';
         if (rawBio.trim()) {
             biographyHTML = await this.enrichHTML(rawBio, {
@@ -548,14 +551,15 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor|null} [actor=null]
      * @returns {{ inCombat: boolean, distance: number, units: string }}
      */
-    override getTurnMovement(token = null, actor = null) {
+    override getTurnMovement(token: Token | null = null, actor: Actor | null = null) {
         return CombatMovementTracker.getMovementThisTurn(token, actor);
     }
 
-    #extractCreatureType(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
-        const system = actor?.system ?? {};
-        const details = system.details ?? {};
-        const traits = system.traits ?? {};
+    #extractCreatureType(actor: Actor, cfg: any = (CONFIG as any)?.PF2E) {
+        const act = actor as ActorPF2e;
+        const system = act?.system ?? {};
+        const details = (system as any).details ?? {};
+        const traits = (system as any).traits ?? {};
 
         // Size
         const rawSize = traits.size;
@@ -563,20 +567,20 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         const sizeLabel = cfg?.actorSizes?.[sizeStr] ? localize(cfg.actorSizes[sizeStr], sizeStr) : ((PF2E_SIZE_MAP as Record<string, string>)[sizeStr.toLowerCase()] ?? (sizeStr ? sizeStr.charAt(0).toUpperCase() + sizeStr.slice(1) : 'Medium'));
 
         // Level / CR
-        const level = actor.level ?? details.level?.value ?? 1;
-        const crLabel = actor.type === 'npc' ? `Creature ${level}` : `Level ${level}`;
+        const level = (act as any).level ?? details.level?.value ?? 1;
+        const crLabel = (actor.type as string) === 'npc' ? `Creature ${level}` : `Level ${level}`;
 
         // Alignment
         const alignment = details.alignment?.value ? localize(`PF2E.Alignment${details.alignment.value}`, details.alignment.value) : '';
 
         // Traits / Creature Type / Ancestry
-        const traitList = Array.isArray(traits.value) ? traits.value : [];
+        const traitList: string[] = Array.isArray(traits.value) ? traits.value : [];
         const ancestry = details.ancestry?.name ?? details.heritage?.name ?? '';
         const creatureType = details.creatureType ? localize(details.creatureType, details.creatureType) : '';
 
         let typeStr = creatureType.length > 0 ? creatureType : ancestry;
         if (!typeStr && traitList.length > 0) {
-            typeStr = traitList.map((t: any) => cfg?.creatureTraits?.[t] ? localize(cfg.creatureTraits[t], t) : (t.charAt(0).toUpperCase() + t.slice(1))).join(', ');
+            typeStr = traitList.map((t: string) => cfg?.creatureTraits?.[t] ? localize(cfg.creatureTraits[t], t) : (t.charAt(0).toUpperCase() + t.slice(1))).join(', ');
         }
 
         const fullLabel = [sizeLabel, typeStr].filter(Boolean).join(' ');
@@ -591,9 +595,10 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractArmorClass(actor: any) {
-        const ac = actor?.armorClass?.value ?? actor?.system?.attributes?.ac?.value ?? 10;
-        const shield = actor?.system?.attributes?.shield;
+    #extractArmorClass(actor: Actor) {
+        const act = actor as ActorPF2e;
+        const ac = (act as any)?.armorClass?.value ?? (act as any)?.system?.attributes?.ac?.value ?? 10;
+        const shield = (act as any)?.system?.attributes?.shield;
 
         const parts: string[] = [];
         let shieldLabel = '';
@@ -610,8 +615,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractMovement(actor: any, token: Token | null = null) {
-        const speed = actor?.system?.attributes?.speed ?? {};
+    #extractMovement(actor: Actor, token: Token | null = null) {
+        const act = actor as ActorPF2e;
+        const speed = (act as any)?.system?.attributes?.speed ?? {};
         const primaryVal = speed.value ?? speed.total ?? 25;
         const primary = `${primaryVal} ft`;
         const secondaries: string[] = [];
@@ -640,8 +646,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractResistances(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
-        const resistances = actor?.system?.attributes?.resistances ?? [];
+    #extractResistances(actor: Actor, cfg: any = (CONFIG as any)?.PF2E): string[] {
+        const act = actor as ActorPF2e;
+        const resistances = (act as any)?.system?.attributes?.resistances ?? [];
         const results: string[] = [];
 
         for (const res of resistances) {
@@ -659,8 +666,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return results;
     }
 
-    #extractImmunities(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
-        const immunities = actor?.system?.attributes?.immunities ?? [];
+    #extractImmunities(actor: Actor, cfg: any = (CONFIG as any)?.PF2E): string[] {
+        const act = actor as ActorPF2e;
+        const immunities = (act as any)?.system?.attributes?.immunities ?? [];
         const results: string[] = [];
 
         for (const imm of immunities) {
@@ -677,8 +685,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return results;
     }
 
-    #extractWeaknesses(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
-        const weaknesses = actor?.system?.attributes?.weaknesses ?? [];
+    #extractWeaknesses(actor: Actor, cfg: any = (CONFIG as any)?.PF2E): string[] {
+        const act = actor as ActorPF2e;
+        const weaknesses = (act as any)?.system?.attributes?.weaknesses ?? [];
         const results: string[] = [];
 
         for (const weak of weaknesses) {
@@ -696,8 +705,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return results;
     }
 
-    #extractLanguages(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
-        const langData = actor?.system?.details?.languages;
+    #extractLanguages(actor: Actor, cfg: any = (CONFIG as any)?.PF2E): string[] {
+        const act = actor as ActorPF2e;
+        const langData = (act as any)?.system?.details?.languages;
         if (!langData) return [];
 
         const results: string[] = [];
@@ -721,8 +731,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return Array.from(new Set(results));
     }
 
-    #extractSenses(actor: any, cfg: any = (CONFIG as any)?.PF2E) {
-        const sensesData = actor?.system?.traits?.senses ?? actor?.perception?.senses;
+    #extractSenses(actor: Actor, cfg: any = (CONFIG as any)?.PF2E): string[] {
+        const act = actor as ActorPF2e;
+        const sensesData = (act as any)?.system?.traits?.senses ?? (act as any)?.perception?.senses;
         if (!sensesData) return [];
 
         const results: string[] = [];
@@ -746,8 +757,8 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
     // #region System Specific Data Extractors & Schema Helpers
 
-    #buildAmmoQuantitiesMap(actor: any) {
-        const ammoQuantities = new Map();
+    #buildAmmoQuantitiesMap(actor: Actor): Map<string, number> {
+        const ammoQuantities = new Map<string, number>();
         for (const i of actor.items ?? []) {
             const { baseItem, quantity } = this.#getAmmoInfo(i);
             if (baseItem) {
@@ -757,10 +768,10 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return ammoQuantities;
     }
 
-    #buildSpellToEntryMap(actor: any) {
-        const spellToEntryMap = new Map();
+    #buildSpellToEntryMap(actor: Actor): Map<string, unknown> {
+        const spellToEntryMap = new Map<string, unknown>();
         for (const entry of this.#getSpellcastingEntries(actor)) {
-            for (const spell of entry.spells ?? []) {
+            for (const spell of (entry as any).spells ?? []) {
                 spellToEntryMap.set(spell.id, entry);
             }
         }
@@ -772,9 +783,10 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {{ baseItem: string|undefined, quantity: number }}
      */
-    #getAmmoInfo(item: any) {
-        return item.type === 'ammo'
-            ? { baseItem: item.system.baseItem, quantity: item.system.quantity ?? 0 }
+    #getAmmoInfo(item: Item): { baseItem: string | undefined; quantity: number } {
+        const itemPF2e = item as ItemPF2e;
+        return (item.type as string) === 'ammo'
+            ? { baseItem: itemPF2e.system.baseItem, quantity: itemPF2e.system.quantity ?? 0 }
             : { baseItem: undefined, quantity: 0 };
     }
 
@@ -783,76 +795,80 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {string|null}
      */
-    #getActionType(item: any) {
-        return (PF2E_ACTION_TYPE_MAP as Record<string, string>)[item.system.actionType?.value] ?? null;
+    #getActionType(item: Item): string | null {
+        const itemPF2e = item as ItemPF2e;
+        const actionTypeValue = itemPF2e.system.actionType?.value;
+        return actionTypeValue ? (PF2E_ACTION_TYPE_MAP as Record<string, string>)[actionTypeValue] ?? null : null;
     }
 
     /**
      * Get spellcasting entries from a PF2e Actor.
      * @param {Actor} actor
-     * @returns {Object[]}
+     * @returns {unknown[]}
      */
-    #getSpellcastingEntries(actor: any) {
-        return actor.spellcasting ?? [];
+    #getSpellcastingEntries(actor: Actor): unknown[] {
+        const act = actor as ActorPF2e;
+        return (act as any).spellcasting ?? [];
     }
 
     /**
      * Get Strikes (attacks) registered on a PF2e Actor.
      * @param {Actor} actor
-     * @returns {Object[]}
+     * @returns {unknown[]}
      */
-    #getActorStrikes(actor: any) {
-        return actor.system.actions ?? [];
+    #getActorStrikes(actor: Actor): unknown[] {
+        const act = actor as ActorPF2e;
+        return (act.system as any)?.actions ?? [];
     }
 
-    #getSpellSubTab(entry: any, spellLevel: any) {
+    #getSpellSubTab(entry: any, spellLevel: number | string): string {
         if (entry.isFocusPool) return 'focus';
         if (entry.isInnate) return 'innate';
         if (entry.isRitual) return 'ritual';
         return spellLevel.toString();
     }
 
-    #executeFeatRoll(item: any, event: any) {
+    #executeFeatRoll(item: Item, event: unknown) {
         const proxiedEvent = this._createRollEvent(event);
-        if (item.toMessage) {
-            return item.toMessage();
+        if ((item as any).toMessage) {
+            return (item as any).toMessage();
         }
-        return item.use?.({ event: proxiedEvent });
+        return (item as any).use?.({ event: proxiedEvent });
     }
 
-    #executeSpellRoll(entry: any, item: any, event: any) {
+    #executeSpellRoll(entry: any, item: Item, event: unknown) {
         const proxiedEvent = this._createRollEvent(event);
         if (entry?.cast) {
             return entry.cast(item, { event: proxiedEvent });
         }
-        return item.toMessage?.();
+        return (item as any).toMessage?.();
     }
 
-    #executeStrikeRoll(strike: any, event: any) {
+    #executeStrikeRoll(strike: any, event: unknown) {
         const proxiedEvent = this._createRollEvent(event);
         return (strike.variants?.[0] ?? strike)?.roll?.({ event: proxiedEvent });
     }
 
-    #executeConsumableRoll(item: any, event: any) {
+    #executeConsumableRoll(item: Item, event: unknown) {
         const proxiedEvent = this._createRollEvent(event);
-        if (item.consume) {
-            return item.consume();
+        if ((item as any).consume) {
+            return (item as any).consume();
         }
-        if (item.toMessage) {
-            return item.toMessage();
+        if ((item as any).toMessage) {
+            return (item as any).toMessage();
         }
-        return item.use?.({ event: proxiedEvent });
+        return (item as any).use?.({ event: proxiedEvent });
     }
 
-    #executeEquipmentRoll(item: any, event: any) {
+    #executeEquipmentRoll(item: Item, event: unknown) {
         const proxiedEvent = this._createRollEvent(event);
-        if (item.toMessage) {
-            return item.toMessage();
+        if ((item as any).toMessage) {
+            return (item as any).toMessage();
         }
-        return item.use?.({ event: proxiedEvent });
+        return (item as any).use?.({ event: proxiedEvent });
     }
 
-    #createStrikeAction(strike: any, ammoQuantities: any): Action {
+    #createStrikeAction(strike: any, ammoQuantities: Map<string, number>): Action {
         return new Action({
             id: `strike-${strike.slug ?? strike.label}`,
             name: strike.label,
@@ -864,90 +880,92 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             hidden: false,
             available: true,
             uses: this.#getStrikeAmmoUses(strike, ammoQuantities),
-            roll: (event: any) => this.#executeStrikeRoll(strike, event),
+            roll: (event: unknown) => this.#executeStrikeRoll(strike, event),
             originalItem: strike.item,
             extra: { pf2eStrike: strike }
         });
     }
 
-    #formatActionRow(action: any, spellToEntryMap: any) {
+    #formatActionRow(action: Action, spellToEntryMap: Map<string, unknown>): boolean {
         const item = action.originalItem;
         if (!item) return false;
-        if (item.type === 'action' || item.type === 'feat') {
+        const itemType = item.type as string;
+        if (itemType === 'action' || itemType === 'feat') {
             return this.#formatFeatAction(action, item);
         }
-        if (item.type === 'spell') {
+        if (itemType === 'spell') {
             return this.#formatSpellAction(action, item, spellToEntryMap.get(item.id));
         }
-        if (item.type === 'consumable') {
+        if (itemType === 'consumable') {
             return this.#formatConsumableAction(action, item);
         }
-        if (item.type === 'equipment') {
+        if (itemType === 'equipment') {
             return this.#formatEquipmentAction(action, item);
         }
         return false;
     }
 
-    #formatFeatAction(action: any, item: any) {
+    #formatFeatAction(action: Action, item: Item): boolean {
         const activationType = this.#getActionType(item);
         if (!activationType) {
-            const rawType = item.system.actionType?.value;
+            const rawType = (item as ItemPF2e).system.actionType?.value;
             log.debug(`Pf2eSystemAdapter.#formatFeatAction | Filtering out "${item.name}" (${item.type}, ID: ${item.id}) — item.system.actionType.value ("${rawType}") is not in PF2E_ACTION_TYPE_MAP`);
             return false;
         }
 
         action.activationType = activationType;
         action.right = [TabRef.from('economy', activationType)];
-        action.left = [item.type === 'action' ? 'feat' : item.type];
+        action.left = [(item.type as string) === 'action' ? 'feat' : item.type];
         action.uses = this.#getUses(item);
-        action.roll = (event: any) => this.#executeFeatRoll(item, event);
+        action.roll = (event: unknown) => this.#executeFeatRoll(item, event);
         return true;
     }
 
-    #formatSpellAction(action: any, item: any, entry: any) {
+    #formatSpellAction(action: Action, item: Item, entry: any): boolean {
         if (!entry) {
             log.debug(`Pf2eSystemAdapter.#formatSpellAction | Filtering out spell "${item.name}" (ID: ${item.id}) — no spellcasting entry found in spellToEntryMap (spell is not registered in any spellcasting entry on this actor)`);
             return false;
         }
 
-        const spellLevel = item.rank ?? 0;
+        const spellLevel = (item as any).rank ?? 0;
         action.right = [TabRef.from('economy', 'action')];
         action.activationType = 'action';
         action.left = ['spell', this.#getSpellSubTab(entry, spellLevel)];
-        action.roll = (event: any) => this.#executeSpellRoll(entry, item, event);
+        action.roll = (event: unknown) => this.#executeSpellRoll(entry, item, event);
         action.uses = this.#getSpellUses(entry, item);
         action.name = `${item.name} (${entry.name})`;
         return true;
     }
 
-    #formatConsumableAction(action: any, item: any) {
+    #formatConsumableAction(action: Action, item: Item): boolean {
         action.name = action.name ?? item.name;
         const activationType = this.#getActionType(item) ?? 'action';
         action.activationType = activationType;
         action.right = [TabRef.from('economy', activationType)];
         action.left = ['consumable'];
         action.uses = this.#getConsumableUses(item);
-        action.roll = (event: any) => this.#executeConsumableRoll(item, event);
+        action.roll = (event: unknown) => this.#executeConsumableRoll(item, event);
         return true;
     }
 
-    #formatEquipmentAction(action: any, item: any) {
+    #formatEquipmentAction(action: Action, item: Item): boolean {
         action.name = action.name ?? item.name;
         const activationType = this.#getActionType(item) ?? 'action';
         action.activationType = activationType;
         action.right = [TabRef.from('economy', activationType)];
         action.left = ['equipment'];
         action.uses = this.#getUses(item);
-        action.roll = (event: any) => this.#executeEquipmentRoll(item, event);
+        action.roll = (event: unknown) => this.#executeEquipmentRoll(item, event);
         return true;
     }
 
-    #getConsumableUses(item: any) {
-        const uses = item.system.uses;
-        if (uses && uses.max > 0) {
-            return { available: uses.value ?? 0, max: uses.max };
+    #getConsumableUses(item: Item): { available: number | null; max: number | null } {
+        const itemPF2e = item as ItemPF2e;
+        const uses = itemPF2e.system.uses;
+        if (uses && (uses.max ?? 0) > 0) {
+            return { available: uses.value ?? 0, max: uses.max ?? null };
         }
-        const quantity = item.system.quantity;
+        const quantity = itemPF2e.system.quantity;
         if (quantity != null) {
             return { available: quantity, max: null };
         }
@@ -959,8 +977,9 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {{ available: number|null, max: number|null }}
      */
-    #getUses(item: any) {
-        const freq = item.system.frequency;
+    #getUses(item: Item): { available: number | null; max: number | null } {
+        const itemPF2e = item as ItemPF2e;
+        const freq = itemPF2e.system.frequency;
         return freq
             ? { available: freq.value ?? 0, max: freq.max ?? 0 }
             : { available: null, max: null };
@@ -972,13 +991,13 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} spell Spell item
      * @returns {{ available: number|null, max: number|null }}
      */
-    #getSpellUses(entry: any, spell: any) {
+    #getSpellUses(entry: any, spell: Item): { available: number | null; max: number | null } {
         if (entry.isFocusPool) {
             const focus = entry.actor?.system?.resources?.focus;
             return { available: focus?.value ?? 0, max: focus?.max ?? 0 };
         }
 
-        const level = spell.rank ?? 0;
+        const level = (spell as any).rank ?? 0;
         if (entry.isSpontaneous && level > 0) {
             const slot = entry.system.slots?.[`slot${level}`];
             return { available: slot?.value ?? 0, max: slot?.max ?? 0 };
@@ -993,8 +1012,8 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Map<string, number>} ammoQuantities
      * @returns {{ available: number|null, max: number|null }}
      */
-    #getStrikeAmmoUses(strike: any, ammoQuantities: any) {
-        const baseType = strike.item?.type === 'weapon' && strike.item.system.ammo?.baseType;
+    #getStrikeAmmoUses(strike: any, ammoQuantities: Map<string, number>): { available: number | null; max: number | null } {
+        const baseType = (strike.item?.type as string) === 'weapon' && strike.item.system?.ammo?.baseType;
         return baseType
             ? { available: ammoQuantities.get(baseType) ?? 0, max: null }
             : { available: null, max: null };
@@ -1097,14 +1116,15 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [actor] The owning actor document
      * @returns {{title: string, subtitle?: string, img?: string, properties?: Array<string|{label?: string, value: string}>, description?: string}|null}
      */
-    override async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null): Promise<any> {
+    override async getItemSummary(action: Action, item: Item | null = action?.originalItem ?? null, actor: Actor | null = null): Promise<ItemSummary | null> {
         if (!action && !item) return null;
-        const targetItem = item ?? action?.originalItem ?? action;
+        const targetItem = item ?? action?.originalItem;
         const title = action?.name ?? targetItem?.name ?? '';
         const img = (action?.img && action.img.length > 0) ? action.img : (targetItem?.img ?? '');
-        const system = targetItem?.system ?? {};
+        const itemPF2e = targetItem as ItemPF2e | null;
+        const system = (itemPF2e?.system as any) ?? {};
         const type = targetItem?.type ? (targetItem.type.charAt(0).toUpperCase() + targetItem.type.slice(1)) : '';
-        const properties: any[] = [];
+        const properties: Array<string | ItemSummaryProperty> = [];
 
         if (system.damage?.dice && system.damage?.die) {
             properties.push({ label: 'Damage', value: `${system.damage.dice}${system.damage.die} ${system.damage.damageType ?? ''}`.trim() });
@@ -1151,7 +1171,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
  * Dynamically instantiates the appropriate version subclass based on game.system.version.
  */
 export class Pf2eSystemAdapter extends BasePf2eSystemAdapter {
-    constructor(foundry: any) {
+    constructor(foundry: BaseFoundryAdapter) {
         if (!foundry) {
             throw new Error(`Pf2eSystemAdapter requires a valid Foundry adapter instance, received: ${foundry}`);
         }

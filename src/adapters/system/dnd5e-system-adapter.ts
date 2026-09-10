@@ -9,7 +9,8 @@ import { Dnd5eSystemContextMenuManager } from './context-menu/dnd5e-system-conte
 import { Dnd5eSystemTabFilterManager } from './filter/dnd5e-system-tab-filter-manager.js';
 import { Dnd5eSystemContextModifier } from './context-modifier/dnd5e-system-context-modifier.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
-import type { Actor5e, Item5e, Dnd5eSkill, Dnd5eTool } from '../../types/systems.js';
+import type { Actor5e, Item5e, Dnd5eSkill, Dnd5eTool, Dnd5eActivity, Dnd5eTraitData, Dnd5eSensesData } from '../../types/systems.js';
+import type { BaseFoundryAdapter } from '../foundry/base-foundry-adapter.js';
 
 const ALLOWED_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'feat', 'spell']);
 const PASSIVE_ITEM_TYPES = new Set(['equipment', 'weapon', 'consumable', 'tool', 'backpack', 'loot']);
@@ -30,20 +31,20 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
     declare filterManager: Dnd5eSystemTabFilterManager;
     declare contextMenuManager: Dnd5eSystemContextMenuManager;
     declare contextModifier: Dnd5eSystemContextModifier;
-    #actor: any = null;
+    #actor: Actor | null = null;
     #highestAvailableSlot: number = 0;
     #ammoQuantities: Map<string, number> = new Map();
-    #resolvedSpellCache: Map<string, any> = new Map();
-    #cachedForMap: Map<string, any> = new Map();
+    #resolvedSpellCache: Map<string, Item | null> = new Map();
+    #cachedForMap: Map<string, Item> = new Map();
 
-    constructor(foundry: any) {
+    constructor(foundry: BaseFoundryAdapter) {
         super('dnd5e', true, foundry);
         this.contextMenuManager = new Dnd5eSystemContextMenuManager(this);
         this.filterManager = new Dnd5eSystemTabFilterManager(this);
         this.contextModifier = new Dnd5eSystemContextModifier(this);
     }
 
-    get actor() {
+    get actor(): Actor | null {
         return this.#actor;
     }
 
@@ -52,7 +53,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * Pre-calculates ammo quantities, highest available spell slot, and cached item lookups for O(1) lookups during action modification.
      * @param {Actor} actor
      */
-    init(actor: any) {
+    init(actor: Actor | null) {
         this.#actor = actor;
         this.#highestAvailableSlot = actor ? this.#getHighestAvailableSpellSlot(actor) : 0;
         this.#ammoQuantities = actor ? this.#getAmmoQuantities(actor) : new Map();
@@ -95,7 +96,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * Determine if a specific item should be extracted as a base action for DnD5e.
      * Prevents allocating objects for unallowed types, cached helper items, and unequipped gear.
      */
-    override shouldExtractItem(item: any) {
+    override shouldExtractItem(item: Item): boolean {
         const type = item.type;
         if (!ALLOWED_TYPES.has(type)) {
             log.debug(`Dnd5eSystemAdapter.shouldExtractItem | Skipping "${item.name}" (${type}, ID: ${item.id}) — type not in ALLOWED_TYPES`);
@@ -187,14 +188,14 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                         const activityName = activity.name?.trim?.() ?? '';
                         const activityImg = activity.img?.trim?.() ?? '';
                         return new Action({
-                            id: activity.id,
+                            id: activity.id ?? '',
                             name: (activityName.length > 0 ? activityName : null) ?? linkedAction?.name ?? activity.type?.toUpperCase() ?? 'Action',
                             img: (activityImg.length > 0 ? activityImg : null) ?? linkedAction?.img ?? item.img ?? '',
                             uses: this.#calculateActivityUses(activity, item),
                             right: [tabRef],
                             roll: async (event) => {
                                 const proxiedEvent = this._createRollEvent(event);
-                                return activity.use({ event: proxiedEvent }, { event: proxiedEvent });
+                                return activity.use?.({ event: proxiedEvent }, { event: proxiedEvent });
                             },
                             originalItem: item,
                             originalActivity: activity,
@@ -443,7 +444,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             : (cfg?.tools?.[toolId]?.id ?? cfg?.toolIds?.[toolId]);
         if (compendiumId?.startsWith?.('Compendium.')) {
             try {
-                const doc = this.fromUuidSync(compendiumId);
+                const doc = this.fromUuidSync(compendiumId) as Item | null;
                 if (doc?.name) return doc.name;
             } catch (err) {
                 log.debug(`Dnd5eSystemAdapter.#getToolLabel | fromUuidSync failed for "${compendiumId}":`, err);
@@ -494,7 +495,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {string} type
      * @returns {string|null} Category identifier ('standard', 'time', 'rest', 'combat', 'monster', 'vehicle') or null if direct
      */
-    #getEconomyCategory(type: any) {
+    #getEconomyCategory(type: string | null | undefined): string | null {
         if (!type) return null;
         const norm = String(type).toLowerCase();
         switch (norm) {
@@ -538,7 +539,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {string} type
      * @returns {string} Canonical sub-tab identifier
      */
-    #getCanonicalSubTab(type: any) {
+    #getCanonicalSubTab(type: string | null | undefined): string {
         if (!type) return 'none';
         const norm = String(type).toLowerCase();
         switch (norm) {
@@ -712,10 +713,11 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor Target actor document
      * @returns {{ supported: boolean, value: boolean }}
      */
-    override getInspiration(actor: any) {
+    override getInspiration(actor: Actor): { supported: boolean; value: boolean } {
         if (!actor) return { supported: false, value: false };
-        const system = actor.system ?? {};
-        const supported = actor.type === 'character' || system.attributes?.inspiration !== undefined;
+        const act5e = actor as Actor5e;
+        const system = act5e.system ?? {};
+        const supported = (actor.type as string) === 'character' || system.attributes?.inspiration !== undefined;
         const value = Boolean(system.attributes?.inspiration);
         return { supported, value };
     }
@@ -726,11 +728,12 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {boolean} [force] Optional explicit state to set
      * @returns {Promise<boolean>} Resulting inspiration state
      */
-    override async toggleInspiration(actor: any, force: any) {
+    override async toggleInspiration(actor: Actor, force?: boolean): Promise<boolean> {
         if (!actor) return false;
-        const current = Boolean(actor.system?.attributes?.inspiration);
+        const act5e = actor as Actor5e;
+        const current = Boolean(act5e.system?.attributes?.inspiration);
         const next = force ?? !current;
-        await actor.update({ 'system.attributes.inspiration': next });
+        await actor.update({ 'system.attributes.inspiration': next } as Record<string, unknown>);
         return next;
     }
 
@@ -759,19 +762,20 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         return key.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     }
 
-    #extractCreatureType(actor: any, cfg = CONFIG?.DND5E) {
-        const system = actor?.system ?? {};
+    #extractCreatureType(actor: Actor, cfg = (CONFIG as any)?.DND5E) {
+        const act5e = actor as Actor5e;
+        const system = act5e?.system ?? {};
         const details = system.details ?? {};
         const traits = system.traits ?? {};
 
         // Size
-        const rawSize = traits.size;
+        const rawSize = traits.size as any;
         const sizeKey = rawSize?.value ?? rawSize?.label ?? rawSize?.id ?? rawSize ?? 'med';
         const formattedSize = this.#formatLabel(sizeKey, cfg?.actorSizes);
         const sizeLabel = (formattedSize && formattedSize.length > 0) ? formattedSize : 'Medium';
 
         // Alignment
-        const alignment = details.alignment ? localize(details.alignment, details.alignment) : '';
+        const alignment = details.alignment ? localize(details.alignment as string, details.alignment as string) : '';
 
         // CR or Level
         let crLabel = '';
@@ -782,13 +786,13 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         // Check if NPC type object or PC race
-        const typeData = details.type;
+        const typeData = details.type as any;
         const rawType = typeData?.value ?? (typeof typeData === 'string' ? typeData : '');
         const subtype = typeData?.subtype ?? '';
         const swarm = typeData?.swarm ?? '';
         const custom = typeData?.custom ?? '';
 
-        const raceData = details.race;
+        const raceData = details.race as any;
         const raceName = raceData?.name ?? (typeof raceData === 'string' ? raceData : '');
 
         const typeLabel = this.#formatLabel(rawType, cfg?.creatureTypes);
@@ -823,8 +827,9 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractArmorClass(actor: any, cfg = CONFIG?.DND5E) {
-        const acData = actor?.system?.attributes?.ac ?? {};
+    #extractArmorClass(actor: Actor, cfg = (CONFIG as any)?.DND5E) {
+        const act5e = actor as Actor5e;
+        const acData = (act5e?.system?.attributes?.ac as any) ?? {};
         const value = acData.value ?? 10;
         const calc = acData.calc ?? 'default';
         const formula = acData.formula ?? '';
@@ -856,8 +861,9 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractMovement(actor: any, token: Token | null = null) {
-        const mov = actor?.system?.attributes?.movement ?? {};
+    #extractMovement(actor: Actor, token: Token | null = null) {
+        const act5e = actor as Actor5e;
+        const mov = (act5e?.system?.attributes?.movement as any) ?? {};
         const units = mov.units ?? 'ft';
         const walk = mov.walk ?? 0;
         const fly = mov.fly ?? 0;
@@ -920,7 +926,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         };
     }
 
-    #extractTraitList(traitData: any, typeMap: any = CONFIG?.DND5E?.damageTypes, bypassMap: any = CONFIG?.DND5E?.physicalWeaponBypasses) {
+    #extractTraitList(traitData: Dnd5eTraitData | null | undefined, typeMap: Record<string, unknown> = (CONFIG as any)?.DND5E?.damageTypes, bypassMap: Record<string, unknown> = (CONFIG as any)?.DND5E?.physicalWeaponBypasses) {
         if (!traitData) return [];
         const result: string[] = [];
         const values = toSet(traitData.value);
@@ -951,7 +957,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         return result;
     }
 
-    #extractConditionImmunities(ciData: any, cfg: any = CONFIG?.DND5E) {
+    #extractConditionImmunities(ciData: Dnd5eTraitData | null | undefined, cfg: any = (CONFIG as any)?.DND5E) {
         if (!ciData) return [];
         const result: string[] = [];
         const values = toSet(ciData.value);
@@ -974,7 +980,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         return result;
     }
 
-    #extractLanguages(langData: any, cfg: any = CONFIG?.DND5E, extraComm: any = null) {
+    #extractLanguages(langData: (Dnd5eTraitData & { ranges?: Record<string, unknown>; units?: string }) | null | undefined, cfg: any = (CONFIG as any)?.DND5E, extraComm: any = null) {
         if (!langData && !extraComm) return [];
         const result: string[] = [];
         const units = langData?.units ?? extraComm?.units ?? 'ft';
@@ -1008,9 +1014,9 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         // Special Communication (semicolon-separated)
-        const specialData = langData?.special;
+        const specialData = (langData as any)?.special;
         if (specialData) {
-            const list = Array.isArray(specialData) || specialData instanceof Set ? specialData : [specialData];
+            const list = Array.isArray(specialData) || (specialData as any) instanceof Set ? specialData : [specialData];
             for (const item of list) {
                 const parts = typeof item === 'string' ? item.split(';').map((s: string) => s.trim()).filter(Boolean) : [];
                 for (const part of parts) {
@@ -1020,7 +1026,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         // Communication / Ranged Communication (from langData.communication or extraComm)
-        const commSources = [langData?.communication, extraComm].filter(Boolean);
+        const commSources = [(langData as any)?.communication, extraComm].filter(Boolean);
         for (const commData of commSources) {
             if (typeof commData === 'string') {
                 const commParts = commData.split(';').map((s: string) => s.trim()).filter(Boolean);
@@ -1069,11 +1075,11 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Extract senses according to D&D 5e v4.x baseline schema.
-     * @param {Object} sensesData
+     * @param {Dnd5eSensesData} sensesData
      * @param {Object} [cfg]
      * @returns {string[]}
      */
-    extractSenses(sensesData: any, cfg: any = CONFIG?.DND5E) {
+    extractSenses(sensesData: Dnd5eSensesData | null | undefined, cfg: any = (CONFIG as any)?.DND5E): string[] {
         if (!sensesData) return [];
         const result: string[] = [];
         const units = sensesData.units ?? 'ft';
@@ -1082,7 +1088,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         const senseKeys = [...new Set([...defaultSenseKeys, ...configuredKeys])];
 
         for (const s of senseKeys) {
-            const val = sensesData[s];
+            const val = (sensesData as Record<string, unknown>)[s];
             if (val && Number(val) > 0) {
                 const label = this.formatSenseLabel(s, cfg?.senses);
                 result.push(`${label} ${val} ${units}`);
@@ -1101,7 +1107,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Object} [sensesMap]
      * @returns {string}
      */
-    formatSenseLabel(key: any, sensesMap = CONFIG?.DND5E?.senses) {
+    formatSenseLabel(key: string, sensesMap = (CONFIG as any)?.DND5E?.senses): string {
         const formatted = this.#formatLabel(key, sensesMap);
         return (formatted && formatted.length > 0 ? formatted : null) ?? (key.charAt(0).toUpperCase() + key.slice(1));
     }
@@ -1112,32 +1118,33 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Validate if an object is an Item Document.
-     * @param {Object} doc
+     * @param {unknown} doc
      * @returns {boolean}
      */
-    #isItemDocument(doc: any) {
-        return doc?.documentName === 'Item';
+    #isItemDocument(doc: unknown): doc is Item {
+        return (doc as Item)?.documentName === 'Item';
     }
 
     /**
      * Extract the spell document from an activity or item reference.
-     * @param {Object} obj
+     * @param {unknown} obj
      * @returns {Item|null}
      */
-    #extractItemSpell(obj: any) {
-        if (!obj) return null;
-        if (obj.linkedAction !== undefined) return obj.linkedAction;
-        const spell = obj.spell;
+    #extractItemSpell(obj: unknown): Item | null {
+        if (!obj || typeof obj !== 'object') return null;
+        const target = obj as { linkedAction?: Item | null; spell?: any; type?: string };
+        if (target.linkedAction !== undefined) return target.linkedAction;
+        const spell = target.spell;
         return (this.#isItemDocument(spell) || spell?.type === 'spell') ? spell : null;
     }
 
     /**
      * Resolve the underlying root spell document for a given activity or linked action.
-     * @param {Object} sub Subaction or activity
-     * @param {Item} [parentItem] Parent item document
-     * @returns {Item|Object|null}
+     * @param {Object|null} sub Subaction or activity
+     * @param {Item|null} [parentItem] Parent item document
+     * @returns {Item|null}
      */
-    resolveRootSpellDocument(sub: any, parentItem: any = null) {
+    resolveRootSpellDocument(sub: { linkedAction?: any; originalActivity?: Dnd5eActivity; originalItem?: Item | null } | null, parentItem: Item | null = null): Item | null {
         if (!sub) return null;
 
         let doc = sub.linkedAction;
@@ -1148,8 +1155,8 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             const fullKey = parentItemId && actId ? `${parentItemId}.${actId}` : null;
             if (fullKey) {
                 doc = this.#cachedForMap.get(fullKey)
-                    ?? this.#actor?.items?.find?.((i: any) => {
-                        const cf = i.flags?.dnd5e?.cachedFor ?? i.getFlag?.('dnd5e', 'cachedFor');
+                    ?? this.#actor?.items?.find?.((i: Item) => {
+                        const cf = i.flags?.dnd5e?.cachedFor ?? (i as any).getFlag?.('dnd5e', 'cachedFor');
                         return this.#normalizeCachedForKey(cf) === fullKey;
                     });
             }
@@ -1157,7 +1164,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 doc = this.#extractItemSpell(activity);
             }
             if (!doc) {
-                const uuid = activity.spell?.uuid ?? (activity.spell?.startsWith?.('Compendium.') ? activity.spell : null);
+                const uuid = (activity.spell as any)?.uuid ?? (typeof activity.spell === 'string' && activity.spell.startsWith('Compendium.') ? activity.spell : null);
                 if (uuid) {
                     doc = this.fromUuidSync(uuid);
                 }
@@ -1176,17 +1183,17 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             }
         }
 
-        if (doc && (doc.type === 'spell' || doc.type === 'cast' || doc.spell)) return doc;
+        if (doc && ((doc.type as string) === 'spell' || (doc.type as string) === 'cast' || (doc as any).spell)) return doc as Item;
 
         if (activity?.type === 'cast') {
             if (activity.spell && !this.#isItemDocument(activity.spell)) {
-                return activity.spell;
+                return activity.spell as Item;
             }
-            return activity.spell ?? null;
+            return (activity.spell as Item) ?? null;
         }
 
         const origItem = sub.originalItem ?? parentItem;
-        if (origItem?.type === 'spell') {
+        if ((origItem?.type as string) === 'spell') {
             return origItem;
         }
 
@@ -1195,12 +1202,12 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Resolve linked action document for a D&D 5e Activity.
-     * @param {Activity} activity
-     * @param {Actor} [actor]
-     * @param {Item} [item]
-     * @returns {Promise<Document|Object|null>}
+     * @param {Dnd5eActivity} activity
+     * @param {Actor|null} [actor]
+     * @param {Item|null} [item]
+     * @returns {Promise<Document|Item|null>}
      */
-    async #resolveActivityLinkedAction(activity: any, actor: any, item: any = null) {
+    async #resolveActivityLinkedAction(activity: Dnd5eActivity, actor: Actor | null, item: Item | null = null): Promise<Item | null> {
         if (activity.type !== 'cast') {
             return null;
         }
@@ -1210,32 +1217,32 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         const fullKey = parentItemId && actId ? `${parentItemId}.${actId}` : null;
 
         if (fullKey && this.#cachedForMap.has(fullKey)) {
-            return this.#cachedForMap.get(fullKey);
+            return this.#cachedForMap.get(fullKey) ?? null;
         }
 
         if (actor && fullKey) {
-            const cached = actor.items?.find?.((i: any) => {
-                const cf = i.flags?.dnd5e?.cachedFor ?? i.getFlag?.('dnd5e', 'cachedFor');
+            const cached = actor.items?.find?.((i: Item) => {
+                const cf = i.flags?.dnd5e?.cachedFor ?? (i as any).getFlag?.('dnd5e', 'cachedFor');
                 return this.#normalizeCachedForKey(cf) === fullKey;
             });
             if (cached) return cached;
         }
 
-        const uuid = activity.spell?.uuid ?? (activity.spell?.startsWith?.('Compendium.') ? activity.spell : null);
+        const uuid = (activity.spell as any)?.uuid ?? (typeof activity.spell === 'string' && activity.spell.startsWith('Compendium.') ? activity.spell : null);
         if (uuid) {
             if (this.#resolvedSpellCache.has(uuid)) {
-                return this.#resolvedSpellCache.get(uuid);
+                return this.#resolvedSpellCache.get(uuid) ?? null;
             }
-            const doc = this.fromUuidSync(uuid) ?? await this.fromUuid(uuid);
+            const doc = (this.fromUuidSync(uuid) ?? await this.fromUuid(uuid)) as Item | null;
             if (doc) {
                 this.#resolvedSpellCache.set(uuid, doc);
                 return doc;
             }
         }
-        if (this.#isItemDocument(activity.spell) || activity.spell?.system) {
-            return activity.spell;
+        if (this.#isItemDocument(activity.spell) || (activity.spell as any)?.system) {
+            return activity.spell as Item;
         }
-        return activity.spell ?? null;
+        return (activity.spell as Item) ?? null;
     }
 
     /**
@@ -1243,17 +1250,17 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Document} doc
      * @returns {TabRef[]}
      */
-    #getComponentTabs(doc: any) {
+    #getComponentTabs(doc: Item | Action): TabRef[] {
         return this.filterManager.getComponentTabs(doc);
     }
 
     /**
      * Collect unique right-side tabs across a collection of activities.
-     * @param {Object[]} activities
+     * @param {Action[]} activities
      * @returns {TabRef[]}
      */
-    #collectUniqueTabs(activities: any) {
-        const uniqueTabsMap = new Map();
+    #collectUniqueTabs(activities: Action[]): TabRef[] {
+        const uniqueTabsMap = new Map<string, TabRef>();
         for (const activity of activities) {
             for (const tab of activity.right ?? []) {
                 if (tab?.path && !uniqueTabsMap.has(tab.path)) {
@@ -1268,16 +1275,17 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * Determine left-side item tab paths for an item.
      * @param {Item} item
      * @param {string} type
-     * @param {Object[]} filteredActivities
+     * @param {Action[]} filteredActivities
      * @returns {string[]}
      */
-    #getItemTabTypes(item: any, type: any, filteredActivities: any) {
+    #getItemTabTypes(item: Item, type: string, filteredActivities: Action[]): string[] {
+        const item5e = item as Item5e;
         if (type === 'spell') {
-            return ['spell', `level_${item.system.level ?? 0}`];
+            return ['spell', `level_${item5e.system?.level ?? 0}`];
         }
 
         const hasLimited = this.#hasLimitedUses(item);
-        const hasCastActivity = filteredActivities.some((act: any) => act.originalActivity?.type === 'cast');
+        const hasCastActivity = filteredActivities.some((act: Action) => act.originalActivity?.type === 'cast');
         const isItemCharges = (type === 'equipment' && hasLimited)
             || (LIMITED_ITEM_TYPES.has(type) && hasLimited && hasCastActivity);
 
@@ -1285,7 +1293,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             return ['spell', 'itemCharges'];
         }
         if (type === 'weapon' || type === 'equipment') {
-            const subType = item.system.type?.value;
+            const subType = item5e.system?.type?.value;
             return subType ? [type, subType] : [type];
         }
         return [type];
@@ -1296,25 +1304,26 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item
      * @returns {boolean}
      */
-    getItemEquipped(item: any) {
-        return item.system.equipped !== false;
+    override getItemEquipped(item: Item): boolean {
+        const item5e = item as Item5e;
+        return item5e.system?.equipped !== false;
     }
 
     /**
      * Get activities collection from a D&D 5e item.
      * @param {Item} item
-     * @returns {Activities[]}
+     * @returns {Dnd5eActivity[]}
      */
-    getItemActivities(item: any) {
-        const activities = item?.system?.activities;
+    getItemActivities(item: Item): Dnd5eActivity[] {
+        const activities = (item as Item5e)?.system?.activities;
         if (!activities) return [];
         if (Array.isArray(activities)) {
             return activities;
         }
-        if (typeof activities.values === 'function') {
-            return Array.from(activities.values());
+        if (typeof (activities as any).values === 'function') {
+            return Array.from((activities as any).values());
         }
-        return Object.entries(activities as Record<string, any>).map(([id, act]: [string, any]) => {
+        return Object.entries(activities as Record<string, Dnd5eActivity>).map(([id, act]) => {
             if (act && !act.id) act.id = id;
             return act;
         });
@@ -1322,57 +1331,61 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Calculate available and maximum uses for an item.
+     * @param {Item} item
+     * @returns {{available: number|string|null, max: number|null}}
      */
-    calculateUses(item: any) {
+    calculateUses(item: Item): { available: number | string | null; max: number | null } {
         return this.#calculateUses(item);
     }
 
     /**
      * Internal implementation to calculate uses and charges for an item.
      * @param {Item} item
-     * @returns {{available: number|null, max: number|null}}
+     * @returns {{available: number|string|null, max: number|null}}
      */
-    #calculateUses(item: any) {
-        const system = item?.system;
+    #calculateUses(item: Item): { available: number | string | null; max: number | null } {
+        const item5e = item as Item5e;
+        const system = item5e?.system;
         if (!system) return { available: null, max: null };
 
         // 1. Limited Uses (standard item charges/uses, innate/monster spells, magic items, features)
         const limitedUses = this.#calculateLimitedUses(system.uses);
         if (limitedUses) {
             // Scale by quantity for consumables
-            const quantity = system.quantity ?? 1;
-            if (quantity > 1 && item.type === 'consumable') {
-                limitedUses.available = limitedUses.available + (quantity - 1) * limitedUses.max;
-                limitedUses.max = limitedUses.max * quantity;
+            const quantity = (system as any).quantity ?? 1;
+            if (quantity > 1 && (item.type as string) === 'consumable') {
+                const max = limitedUses.max !== null ? limitedUses.max * quantity : null;
+                const available = limitedUses.max !== null ? limitedUses.available + (quantity - 1) * limitedUses.max : limitedUses.available;
+                return { available, max };
             }
             return limitedUses;
         }
 
         // 2. Recharge feature/spell/monster power
-        if (system.recharge?.value) {
+        if ((system as any).recharge?.value) {
             return {
-                available: system.recharge.charged ? 1 : 0,
+                available: (system as any).recharge.charged ? 1 : 0,
                 max: 1
             };
         }
 
         // 3. Spells (without item-level limited uses -> spell slots)
-        if (item.type === 'spell') {
+        if ((item.type as string) === 'spell') {
             return this.#calculateSpellSlots(item);
         }
 
         // 4. Consumable Quantity (if no explicit charges, quantity is the uses)
-        if (item.type === 'consumable') {
+        if ((item.type as string) === 'consumable') {
             return {
-                available: system.quantity ?? 1,
+                available: (system as any).quantity ?? 1,
                 max: null
             };
         }
 
         // 5. Thrown Weapons (quantity is the uses)
-        if (item.type === 'weapon' && this.getProperty(system.properties, 'thr') && !this.getProperty(system.properties, 'ret')) {
+        if ((item.type as string) === 'weapon' && this.getProperty(system.properties ?? {}, 'thr') && !this.getProperty(system.properties ?? {}, 'ret')) {
             return {
-                available: system.quantity ?? 1,
+                available: (system as any).quantity ?? 1,
                 max: null
             };
         }
@@ -1385,19 +1398,20 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item} item The item to check
      * @returns {boolean} True if the item has limited uses
      */
-    #hasLimitedUses(item: any) {
-        if (this.#calculateLimitedUses(item?.system?.uses)) return true;
-        if (item?.system?.recharge?.value) return true;
+    #hasLimitedUses(item: Item): boolean {
+        const item5e = item as Item5e;
+        if (this.#calculateLimitedUses(item5e?.system?.uses)) return true;
+        if ((item5e?.system as any)?.recharge?.value) return true;
         return this.getItemActivities(item)
-            .some(activity => this.#calculateLimitedUses(activity?.uses));
+            .some(activity => this.#calculateLimitedUses((activity as any)?.uses));
     }
 
     /**
      * Parse and calculate limited uses configuration.
      * @param {Object} uses
-     * @returns {{available: number|null, max: number|null}|null}
+     * @returns {{available: number, max: number|null}|null}
      */
-    #calculateLimitedUses(uses: any) {
+    #calculateLimitedUses(uses: { max?: number | string | null; spent?: number | null; value?: number | null } | null | undefined): { available: number; max: number | null } | null {
         if (!uses) return null;
 
         const rawMax = Number(uses.max);
@@ -1410,9 +1424,9 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             return { available, max };
         }
 
-        if (Number.isFinite(uses.value) && uses.value > 0) {
-            const available = uses.value;
-            const max = uses.max ?? null;
+        if (Number.isFinite(uses.value) && Number(uses.value) > 0) {
+            const available = uses.value as number;
+            const max = uses.max != null ? Number(uses.max) : null;
             return { available, max };
         }
 
@@ -1426,14 +1440,16 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Actor} actor
      * @returns {Item|null}
      */
-    #resolveTargetItem(targetId: any, item: any, actor: any) {
+    #resolveTargetItem(targetId: string | null | undefined, item: Item, actor: Actor | null): Item | null {
         if (!targetId) return null;
-        return targetId.includes('.')
-            ? (this.fromUuidSync(targetId, { relative: item })
-               ?? this.fromUuidSync(targetId, { relative: actor })
-               ?? this.fromUuidSync(targetId)
-               ?? actor.items.get(targetId))
-            : actor.items.get(targetId);
+        if (targetId.includes('.')) {
+            const doc = this.fromUuidSync(targetId, { relative: item as unknown as Record<string, unknown> })
+                ?? (actor ? this.fromUuidSync(targetId, { relative: actor as unknown as Record<string, unknown> }) : null)
+                ?? this.fromUuidSync(targetId)
+                ?? actor?.items.get(targetId);
+            return (doc as Item) ?? null;
+        }
+        return actor?.items.get(targetId) ?? null;
     }
 
     /**
@@ -1445,18 +1461,19 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {number} [highestAvailableSlot=this.#highestAvailableSlot] The highest available spell slot level on the actor
      * @returns {{available: number|null, max: number|null}} The uses count
      */
-    #calculateActivityUses(activity: any, item: any, actor = this.#actor, ammoQuantities = this.#ammoQuantities, highestAvailableSlot = this.#highestAvailableSlot) {
-        const targets = activity.consumption?.targets ?? [];
+    #calculateActivityUses(activity: Dnd5eActivity, item: Item, actor: Actor | null = this.#actor, ammoQuantities: Map<string, number> = this.#ammoQuantities, highestAvailableSlot: number = this.#highestAvailableSlot): { available: number | string | null; max: number | null; isUpcast?: boolean } {
+        const targets = (activity as any).consumption?.targets ?? [];
         
         // 1. If the activity has its own explicit limited uses
-        const selfUses = this.#calculateLimitedUses(activity.uses);
+        const selfUses = this.#calculateLimitedUses((activity as any).uses);
         if (selfUses) return selfUses;
         
         // 2. Resolve based on consumption targets
+        const item5e = item as Item5e;
         for (const target of targets) {
             if (target.type === 'activityUses') {
                 // Consumes another activity's uses (or self if target is empty)
-                const targetActivity = target.target ? item.system?.activities?.get?.(target.target) : activity;
+                const targetActivity = target.target ? (item5e.system?.activities as any)?.get?.(target.target) : activity;
                 if (targetActivity) {
                     const actUses = this.#calculateLimitedUses(targetActivity.uses);
                     if (actUses) return actUses;
@@ -1472,12 +1489,12 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 }
 
                 // If the spell is innate or at-will without limited uses, it is unlimited / at will
-                if (INNATE_OR_ATWILL_METHODS.has(item.system?.method)) {
+                if (INNATE_OR_ATWILL_METHODS.has(item5e.system?.method ?? '')) {
                     return { available: null, max: null };
                 }
 
                 // Otherwise, consumes actor spell slots
-                const level = target.target ?? item.system?.level; // Fallback to spell's base level if target is empty (dynamic slots)
+                const level = target.target ?? item5e.system?.level; // Fallback to spell's base level if target is empty (dynamic slots)
                 return this.#getSpellSlotUses(actor, level, highestAvailableSlot);
             } else if (target.type === 'item' || target.type === 'material') {
                 // Consumes quantity of another item (e.g. ammunition / components) or charges of another item
@@ -1489,14 +1506,15 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                         // If the target item has its own limited uses (like a wand), use those
                         const uses = this.#calculateUses(targetItem);
                         if (uses.available !== null) {
+                            const avail = typeof uses.available === 'number' ? uses.available : Number(uses.available);
                             return {
-                                available: Math.floor(uses.available / consumed),
+                                available: Number.isFinite(avail) ? Math.floor(avail / consumed) : uses.available,
                                 max: uses.max !== null ? Math.floor(uses.max / consumed) : null
                             };
                         }
                     }
                     // Otherwise, use its quantity (standard ammo/consumable/material)
-                    const qty = targetItem.system?.quantity ?? 0;
+                    const qty = (targetItem as Item5e).system?.quantity ?? 0;
                     return {
                         available: Math.floor(qty / consumed),
                         max: null
@@ -1512,7 +1530,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         // Fallback for weapons requiring ammunition if no explicit consumption target was resolved
-        if (item.type === 'weapon' && item.system?.ammunition?.type) {
+        if ((item.type as string) === 'weapon' && item5e.system?.ammunition?.type) {
             return this.#calculateWeaponAmmunition(item, ammoQuantities);
         }
 
@@ -1521,13 +1539,14 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Calculate spell slot uses (pact or standard) for a given slot level, including upcast logic.
-     * @param {Actor} actor
+     * @param {Actor|null} actor
      * @param {string|number} level
      * @param {number} highestAvailableSlot
      * @returns {{available: number|string|null, max: number|null, isUpcast?: boolean}}
      */
-    #getSpellSlotUses(actor: any, level: any, highestAvailableSlot: any) {
-        const actorSpells = actor?.system?.spells;
+    #getSpellSlotUses(actor: Actor | null, level: string | number | null | undefined, highestAvailableSlot: number): { available: number | string | null; max: number | null; isUpcast?: boolean } {
+        const act5e = actor as Actor5e | null;
+        const actorSpells = (act5e?.system?.spells as any);
         const isPact = level === 'pact';
         const numLevel = Number(level);
         const lvl = isPact ? (actorSpells?.pact?.level ?? 0) : (Number.isFinite(numLevel) ? numLevel : 0);
@@ -1554,18 +1573,19 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
     /**
      * Calculate remaining spell slots for a spell item.
      * @param {Item} item
-     * @param {Actor} [actor=this.#actor]
+     * @param {Actor|null} [actor=this.#actor]
      * @param {number} [highestAvailableSlot=this.#highestAvailableSlot]
      * @returns {{available: number|string|null, max: number|null, isUpcast?: boolean}}
      */
-    #calculateSpellSlots(item: any, actor = this.#actor, highestAvailableSlot = this.#highestAvailableSlot) {
-        const system = item.system;
-        const prepMode = system.method;
-        const level = system.level ?? 0;
+    #calculateSpellSlots(item: Item, actor: Actor | null = this.#actor, highestAvailableSlot: number = this.#highestAvailableSlot): { available: number | string | null; max: number | null; isUpcast?: boolean } {
+        const item5e = item as Item5e;
+        const system = item5e.system;
+        const prepMode = system?.method;
+        const level = system?.level ?? 0;
         
         if (prepMode === 'pact') {
             return this.#getSpellSlotUses(actor, 'pact', highestAvailableSlot);
-        } else if (!INNATE_OR_ATWILL_METHODS.has(prepMode)) {
+        } else if (!INNATE_OR_ATWILL_METHODS.has(prepMode ?? '')) {
             return this.#getSpellSlotUses(actor, level, highestAvailableSlot);
         }
         return { available: null, max: null };
@@ -1577,8 +1597,9 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Map<string, number>} ammoQuantities
      * @returns {{available: number, max: null}}
      */
-    #calculateWeaponAmmunition(item: any, ammoQuantities: any) {
-        const ammoType = item.system.ammunition?.type;
+    #calculateWeaponAmmunition(item: Item, ammoQuantities: Map<string, number>): { available: number; max: null } {
+        const item5e = item as Item5e;
+        const ammoType = item5e.system?.ammunition?.type ?? '';
         const quantity = ammoQuantities.get(ammoType) ?? 0;
         return {
             available: quantity,
@@ -1588,16 +1609,17 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Build map of ammunition quantities available on an actor.
-     * @param {Actor} actor
+     * @param {Actor|null} actor
      * @returns {Map<string, number>}
      */
-    #getAmmoQuantities(actor: any) {
-        const ammoQuantities = new Map();
-        for (const i of actor?.items ?? []) {
-            if (i.type === 'consumable' && i.system.type?.value === 'ammo') {
-                const subtype = i.system.type.subtype;
+    #getAmmoQuantities(actor: Actor | null): Map<string, number> {
+        const ammoQuantities = new Map<string, number>();
+        const act5e = actor as Actor5e | null;
+        for (const i of (act5e?.items as any) ?? []) {
+            if ((i.type as string) === 'consumable' && (i.system as any)?.type?.value === 'ammo') {
+                const subtype = (i.system as any).type.subtype;
                 if (subtype) {
-                    const qty = i.system.quantity ?? 0;
+                    const qty = (i.system as any).quantity ?? 0;
                     ammoQuantities.set(subtype, (ammoQuantities.get(subtype) ?? 0) + qty);
                 }
             }
@@ -1607,11 +1629,12 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Find highest available spell slot level on an actor.
-     * @param {Actor} actor
+     * @param {Actor|null} actor
      * @returns {number}
      */
-    #getHighestAvailableSpellSlot(actor: any) {
-        const actorSpells = actor?.system?.spells;
+    #getHighestAvailableSpellSlot(actor: Actor | null): number {
+        const act5e = actor as Actor5e | null;
+        const actorSpells = (act5e?.system?.spells as any);
         if (!actorSpells) return 0;
 
         let highest = 0;
@@ -1632,7 +1655,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {*} type
      * @returns {string|null}
      */
-    #normalizeActivationType(type: any) {
+    #normalizeActivationType(type: unknown): string | null {
         if (!type || type === true || type === 'none') return null;
         const str = String(type).trim().toLowerCase();
         return str.length > 0 && str !== 'none' ? str : null;
@@ -1640,27 +1663,28 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
     /**
      * Extract activation type for a D&D 5e activity.
-     * @param {Activity} activity
+     * @param {Dnd5eActivity} activity
      * @param {Item} item
-     * @param {Item|null} [linkedAction=null]
+     * @param {Action|Item|null} [linkedAction=null]
      * @returns {string}
      */
-    #getActivityActivationType(activity: any, item: any, linkedAction = null) {
-        const actOverride = Boolean(activity.activation?.override ?? activity.system?.activation?.override);
+    #getActivityActivationType(activity: Dnd5eActivity, item: Item, linkedAction: Action | Item | null = null): string | null {
+        const actOverride = Boolean((activity.activation as any)?.override ?? (activity as any).system?.activation?.override);
         if (actOverride) {
-            const overrideType = this.#normalizeActivationType(activity.activation?.type ?? activity.system?.activation?.type);
+            const overrideType = this.#normalizeActivationType((activity.activation as any)?.type ?? (activity as any).system?.activation?.type);
             if (overrideType) return overrideType;
         }
 
-        const spellDoc = linkedAction ?? this.resolveRootSpellDocument({ originalActivity: activity, linkedAction: activity.spell });
+        const spellDoc = linkedAction ?? this.resolveRootSpellDocument({ originalActivity: activity, linkedAction: (activity as any).spell });
         if (spellDoc) {
-            const rawType = spellDoc.system?.activation?.type ?? spellDoc.activation?.type;
+            const rawType = (spellDoc as any).system?.activation?.type ?? (spellDoc as any).activation?.type;
             const spellType = this.#normalizeActivationType(rawType);
             if (spellType) return spellType;
         }
 
-        return this.#normalizeActivationType(item.system?.activation?.type)
-            ?? this.#normalizeActivationType(activity.activation?.type ?? activity.system?.activation?.type)
+        const item5e = item as Item5e;
+        return this.#normalizeActivationType(item5e.system?.activation?.type)
+            ?? this.#normalizeActivationType((activity.activation as any)?.type ?? (activity as any).system?.activation?.type)
             ?? 'none';
     }
 

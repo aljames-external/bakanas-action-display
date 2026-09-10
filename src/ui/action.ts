@@ -6,21 +6,21 @@ export interface ActionOptions {
     type?: string;
     img?: string;
     page?: number;
-    right?: any[];
+    right?: TabRef[];
     left?: string[];
     itemCategories?: any[] | null;
     hidden?: boolean;
     isHidden?: boolean;
     available?: boolean;
-    uses?: Record<string, any>;
+    uses?: { available?: number | string | null; max?: number | string | null; isUpcast?: boolean; [key: string]: unknown };
     roll?: ((event?: any) => any) | null;
     originalItem?: any;
     subactions?: Action[];
     originalActivity?: any;
     linkedAction?: any;
     collapseDropdownIfSingle?: boolean;
-    extra?: Record<string, any>;
-    economyIndicators?: any[];
+    extra?: Record<string, unknown>;
+    economyIndicators?: unknown[];
     isActive?: boolean;
     activationType?: string;
     excludeFromAll?: boolean;
@@ -36,20 +36,20 @@ export class Action {
     img: string;
     page: number;
     left: string[];
-    right: any[];
+    right: TabRef[];
     itemCategories: any[] | null;
     hidden: boolean;
     isHidden: boolean;
     available: boolean;
-    uses: Record<string, any>;
+    uses: { available?: number | string | null; max?: number | string | null; isUpcast?: boolean; [key: string]: unknown };
     roll: ((event?: any) => any) | null;
     originalItem: any;
     subactions: Action[];
     originalActivity: any;
     linkedAction: any;
     collapseDropdownIfSingle: boolean;
-    extra: Record<string, any>;
-    economyIndicators?: any[];
+    extra: Record<string, unknown>;
+    economyIndicators?: unknown[];
     isActive: boolean;
     activationType?: string;
     excludeFromAll: boolean;
@@ -141,6 +141,6 @@ export class Action {
      */
     get isDepleted() {
         if (this.uses?.available == null) return false;
-        return this.uses.available <= 0 && !this.uses.isUpcast;
+        return Number(this.uses.available) <= 0 && !this.uses.isUpcast;
     }
 }

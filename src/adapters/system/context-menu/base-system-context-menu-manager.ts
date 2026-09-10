@@ -31,10 +31,10 @@ export class BaseSystemContextMenuManager {
      */
     setActorFlagOptimistic(actor: Actor, scope: string, key: string, value: unknown): Promise<unknown> | undefined {
         if (!actor) return;
-        (actor as any).flags ??= {};
-        (actor as any).flags[scope] ??= {};
-        (actor as any).flags[scope][key] = value;
-        return (actor as any).setFlag?.(scope, key, value, { badInternal: true });
+        const actorFlags = (actor.flags ?? {}) as Record<string, Record<string, unknown>>;
+        actorFlags[scope] ??= {};
+        actorFlags[scope][key] = value;
+        return (actor.setFlag as unknown as ((scope: string, key: string, value: unknown, options?: object) => Promise<unknown>) | undefined)?.(scope, key, value, { badInternal: true });
     }
 
     /**
@@ -46,21 +46,23 @@ export class BaseSystemContextMenuManager {
      */
     updateActorFlagsOptimistic(actor: Actor, scope: string, flags: Record<string, unknown>): Promise<unknown> | undefined {
         if (!actor) return;
-        (actor as any).flags ??= {};
-        (actor as any).flags[scope] ??= {};
+        const actorFlags = (actor.flags ?? {}) as Record<string, Record<string, unknown>>;
+        actorFlags[scope] ??= {};
         for (const [key, value] of Object.entries(flags)) {
-            (actor as any).flags[scope][key] = value;
+            actorFlags[scope][key] = value;
         }
-        if ((actor as any).update) {
+        if (actor.update) {
             const updates: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(flags)) {
                 updates[`flags.${scope}.${key}`] = value;
             }
-            return (actor as any).update(updates, { badInternal: true });
+            return (actor.update as unknown as ((data: Record<string, unknown>, options?: object) => Promise<unknown>))(updates, { badInternal: true });
         }
         const promises: Promise<unknown>[] = [];
+        const setFlagFn = actor.setFlag as unknown as ((scope: string, key: string, value: unknown, options?: object) => Promise<unknown>) | undefined;
         for (const [key, value] of Object.entries(flags)) {
-            promises.push((actor as any).setFlag?.(scope, key, value, { badInternal: true }));
+            const p = setFlagFn?.(scope, key, value, { badInternal: true });
+            if (p) promises.push(p);
         }
         return Promise.all(promises);
     }

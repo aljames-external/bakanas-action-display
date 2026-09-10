@@ -4,7 +4,7 @@ import { localize, deepFreeze } from '../../lib/utils.js';
 import { Action } from '../../ui/action.js';
 import { BaseFoundryAdapter } from '../foundry/base-foundry-adapter.js';
 import { BaseSystemContextMenuManager } from './context-menu/base-system-context-menu-manager.js';
-import { BaseSystemTabFilterManager } from './filter/base-system-tab-filter-manager.js';
+import { BaseSystemTabFilterManager, type FilterContext } from './filter/base-system-tab-filter-manager.js';
 import { BaseSystemContextModifier } from './context-modifier/base-system-context-modifier.js';
 import { categorizeActions } from '../../categorization/categorization-manager.js';
 import type { HUDTabColumn } from '../../ui/hud-tab-column.js';
@@ -13,7 +13,7 @@ const MODIFIER_KEY_MAP = {
     altKey: 'Alt',
     ctrlKey: 'Control',
     shiftKey: 'Shift'
-};
+} as const;
 
 const EXCLUDED_ECONOMY_LABELS = new Set(['economy', 'none', 'all']);
 const DEFAULT_ECONOMY_OTHER = deepFreeze({ id: 'other', defaultColor: '#64748b', defaultEnabled: false });
@@ -90,8 +90,8 @@ export class BaseSystemAdapter {
      * @param {Record<string, unknown>} [options={}] Resolution options
      * @returns {Document|null}
      */
-    fromUuidSync(uuid: string, options: Record<string, unknown> = {}): any {
-        return this.foundry.fromUuidSync(uuid, options);
+    fromUuidSync(uuid: string, options: Record<string, unknown> = {}): Document | null {
+        return this.foundry.fromUuidSync(uuid, options) as Document | null;
     }
 
     /**
@@ -100,8 +100,8 @@ export class BaseSystemAdapter {
      * @param {Record<string, unknown>} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    async fromUuid(uuid: string, options: Record<string, unknown> = {}): Promise<any> {
-        return this.foundry.fromUuid(uuid, options);
+    async fromUuid(uuid: string, options: Record<string, unknown> = {}): Promise<Document | null> {
+        return this.foundry.fromUuid(uuid, options) as Promise<Document | null>;
     }
 
     /**
@@ -145,7 +145,7 @@ export class BaseSystemAdapter {
         return this.foundry.setProperty(obj, path, value);
     }
 
-    getContextMenuItems(app: unknown): any[] {
+    getContextMenuItems(app: unknown): unknown[] {
         return this.contextMenuManager.getContextMenuItems(app);
     }
 
@@ -158,17 +158,19 @@ export class BaseSystemAdapter {
     /**
      * Create a proxy around a browser event to inject keyboard modifiers (Alt/Ctrl/Shift)
      * while preserving all other native event properties and methods (like target, preventDefault).
-     * @param {Event} event The original browser event
-     * @returns {Event|object} A proxy event or empty object
+     * @param {Event} [event] The original browser event
+     * @returns {unknown} A proxy event or empty object
      * @protected
      */
-    _createRollEvent(event: any) {
+    _createRollEvent(event?: any): any {
         if (!event) return {};
 
         return new Proxy(event, {
             get: (target, prop) => {
-                if (prop in MODIFIER_KEY_MAP) {
-                    return Boolean((event as any)[prop] || game.keyboard?.isModifierActive((MODIFIER_KEY_MAP as Record<string, any>)[prop as string]));
+                const propStr = String(prop);
+                if (propStr in MODIFIER_KEY_MAP) {
+                    const keyProp = propStr as keyof typeof MODIFIER_KEY_MAP;
+                    return Boolean((event as unknown as Record<string, unknown>)[keyProp] || game.keyboard?.isModifierActive(MODIFIER_KEY_MAP[keyProp] as unknown as Parameters<NonNullable<typeof game.keyboard>['isModifierActive']>[0]));
                 }
                 const val = Reflect.get(target, prop);
                 return typeof val === 'function' ? val.bind(target) : val;
@@ -187,6 +189,16 @@ export class BaseSystemAdapter {
      * @returns {boolean} True if the item should be extracted
      */
     shouldExtractItem(item: Item): boolean {
+        return true;
+    }
+
+    /**
+     * Determine whether an item is currently equipped.
+     * Overridden by system adapters to query system-specific equip data structures.
+     * @param {Item} item The Foundry Item instance
+     * @returns {boolean} True if the item is equipped
+     */
+    getItemEquipped(item: Item): boolean {
         return true;
     }
 
@@ -295,13 +307,13 @@ export class BaseSystemAdapter {
      * @param {Action} action The Action instance to edit
      */
     openEditSheet(action: Action): void {
-        const entity = (action as any)?.originalActivity ?? (action as any)?.originalItem;
+        const entity = (action.originalActivity ?? action.originalItem) as { sheet?: { render: (force: boolean) => void }; edit?: () => void } | null;
         if (entity?.sheet?.render) {
             entity.sheet.render(true);
         } else if (entity?.edit) {
             entity.edit();
-        } else if ((action as any)?.originalItem?.sheet?.render) {
-            (action as any).originalItem.sheet.render(true);
+        } else if (action.originalItem?.sheet?.render) {
+            action.originalItem.sheet.render(true);
         }
     }
 
@@ -343,14 +355,14 @@ export class BaseSystemAdapter {
      * @param {Token|null} [options.token] Token document
      * @param {User|null} [options.user] User document
      */
-    formatCategorizedLayout(context: Record<string, any>, { categories = null, catchAllLabel = null, actor = null, token = null, user = null }: { categories?: Record<string, any>[] | null; catchAllLabel?: string | null; actor?: Actor | null; token?: Token | null; user?: User | null } = {}): void {
+    formatCategorizedLayout(context: Record<string, unknown>, { categories = null, catchAllLabel = null, actor = null, token = null, user = null }: { categories?: Record<string, unknown>[] | null; catchAllLabel?: string | null; actor?: Actor | null; token?: Token | null; user?: User | null } = {}): void {
         context.layout = 'categorized';
         const rawCats = categories ?? this.getDefaultCategories();
         const cats = (rawCats ?? []).map(cat => (categories ? cat : { ...cat, subcategories: [] }));
         const others = catchAllLabel ?? localize('BAD.categorization.others', 'Other Actions');
-        const categorized = categorizeActions(context.items ?? [], { enabled: true, categories: cats }, others, {
-            actor: actor ?? context.actor,
-            token: token ?? context.token,
+        const categorized = categorizeActions((context.items as Action[]) ?? [], { enabled: true, categories: cats }, others, {
+            actor: actor ?? (context.actor as Actor | null),
+            token: token ?? (context.token as Token | null),
             user: user ?? game.user
         });
         context.isCategorized = true;
@@ -359,11 +371,11 @@ export class BaseSystemAdapter {
 
     /**
      * Apply a token information layout template to the HUD context.
-     * @param {Record<string, any>} context The Handlebars render context
+     * @param {Record<string, unknown>} context The Handlebars render context
      * @param {Actor|null} [actor]
      * @param {Token|null} [token]
      */
-    async formatTokenInfoLayout(context: Record<string, any>, actor: Actor | null = null, token: Token | null = null): Promise<void> {
+    async formatTokenInfoLayout(context: Record<string, unknown>, actor: Actor | null = null, token: Token | null = null): Promise<void> {
         context.layout = 'tokenInfo';
         context.isCategorized = false;
         context.itemTypes = [];
@@ -383,18 +395,18 @@ export class BaseSystemAdapter {
      * - 'intersection' (AND): Action must match all active intersection sub-tabs.
      * 
      * @param {Action} action Action instance to evaluate
-     * @param {Object} filterContext Current HUD filter context { left, right, filterNoResources }
+     * @param {FilterContext} filterContext Current HUD filter context { left, right, filterNoResources }
      * @returns {boolean} True if the action matches current filter selection
      */
-    matchesEconomyTabs(action: Action, filterContext: any): boolean {
+    matchesEconomyTabs(action: Action, filterContext: FilterContext): boolean {
         return this.filterManager.matchesEconomyTabs(action, filterContext);
     }
 
-    getActiveExclusionSubs(filterContext: any): string[] {
+    getActiveExclusionSubs(filterContext: FilterContext): string[] {
         return this.filterManager.getActiveExclusionSubs(filterContext);
     }
 
-    filterSubactions(subactions: Action[], filterContext: any, itemLeft?: any): Action[] {
+    filterSubactions(subactions: Action[], filterContext: FilterContext, itemLeft?: string[]): Action[] {
         return this.filterManager.filterSubactions(subactions, filterContext, itemLeft);
     }
 
@@ -421,11 +433,11 @@ export class BaseSystemAdapter {
     /**
      * Modify the UI context object before template rendering.
      * Overridable by system adapters to augment context or apply custom page layouts.
-     * @param {Record<string, any>} context The Handlebars render context
-     * @param {ActionDisplayApp} app The UI application instance
-     * @returns {Promise<Record<string, any>>|Record<string, any>} The modified context
+     * @param {Record<string, unknown>} context The Handlebars render context
+     * @param {{ activePage?: number; actor?: Actor | null; token?: Token | null; [key: string]: unknown }} app The UI application instance
+     * @returns {Promise<Record<string, unknown>>|Record<string, unknown>} The modified context
      */
-    modifyContext(context: Record<string, any>, app: any): Promise<Record<string, any>> | Record<string, any> {
+    modifyContext(context: Record<string, unknown>, app: { activePage?: number; actor?: Actor | null; token?: Token | null; [key: string]: unknown }): Promise<Record<string, unknown>> | Record<string, unknown> {
         const activePage = Number(app?.activePage ?? 1);
         const pageConfig = this.getPageConfig(activePage, app?.actor);
 
@@ -441,7 +453,11 @@ export class BaseSystemAdapter {
             this.formatFlatLayout(context);
         }
 
-        return this.contextModifier.modifyContext(context, app) ?? context;
+        const res = this.contextModifier.modifyContext(context, app);
+        if (res instanceof Promise) {
+            return res.then(() => context);
+        }
+        return context;
     }
 
     getItemTypeSortOrder(parentId: string): number {
@@ -589,14 +605,14 @@ export class BaseSystemAdapter {
         const activeTypes = new Set<string>();
         if (action.subactions?.length) {
             for (const sub of action.subactions) {
-                const econRef = sub.right?.find((r: any) => r?.root === 'economy');
+                const econRef = sub.right?.find(r => r?.root === 'economy');
                 const subType = econRef?.label;
                 if (subType && !EXCLUDED_ECONOMY_LABELS.has(subType)) {
                     activeTypes.add(subType);
                 }
             }
         } else if (action.right?.length) {
-            const econRef = action.right.find((r: any) => r?.root === 'economy');
+            const econRef = action.right.find(r => r?.root === 'economy');
             const subType = econRef?.label;
             if (subType && !EXCLUDED_ECONOMY_LABELS.has(subType)) {
                 activeTypes.add(subType);
@@ -648,7 +664,7 @@ export class BaseSystemAdapter {
      * Get the default HUD categorization structure for this system.
      * @returns {Object[]} Array of category definition objects
      */
-    getDefaultCategories(): Record<string, any>[] {
+    getDefaultCategories(): Record<string, unknown>[] {
         return [
             {
                 id: 'cat_favorites',
@@ -723,13 +739,14 @@ export class BaseSystemAdapter {
      * @param {Actor|null} [actor] The owning actor document
      * @returns {{title: string, subtitle?: string, img?: string, properties?: Array<string|{label?: string, value: string}>, description?: string}|null}
      */
-    async getItemSummary(action: Action, item: Item | null = (action as any)?.originalItem, actor: Actor | null = null): Promise<ItemSummary | null> {
+    async getItemSummary(action: Action, item: Item | null = action?.originalItem ?? null, actor: Actor | null = null): Promise<ItemSummary | null> {
         if (!action && !item) return null;
-        const targetItem = item ?? (action as any)?.originalItem ?? action;
+        const targetItem = (item ?? action?.originalItem ?? action);
         const title = action?.name ?? targetItem?.name ?? '';
         const img = (action?.img && action.img.length > 0) ? action.img : (targetItem?.img ?? '');
-        const type = targetItem?.type ? (targetItem.type.charAt(0).toUpperCase() + targetItem.type.slice(1)) : '';
-        const properties: any[] = [];
+        const itemType = targetItem?.type;
+        const type = itemType ? (itemType.charAt(0).toUpperCase() + itemType.slice(1)) : '';
+        const properties: Array<string | ItemSummaryProperty> = [];
 
         const range = targetItem?.system?.range?.value
             ? `${targetItem.system.range.value} ${targetItem.system.range.units ?? ''}`.trim()
@@ -796,7 +813,7 @@ export class BaseSystemAdapter {
      * @param {Array<Object|string>|Record<string, Array<Object|string>>} reasons
      * @returns {Promise<string>}
      */
-    async formatAutoBanTooltip(comp: string, reasons: any): Promise<string> {
+    async formatAutoBanTooltip(comp: string, reasons: unknown): Promise<string> {
         return '';
     }
 

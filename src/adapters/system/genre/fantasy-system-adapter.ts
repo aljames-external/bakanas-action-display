@@ -142,11 +142,11 @@ export class FantasySystemAdapter extends BaseSystemAdapter {
      * @param {Record<string, any>} [overrides={}] Generic category overrides
      * @returns {Object[]} Array of category definition objects
      */
-    override getDefaultCategories(overrides: Record<string, any> = {}): Record<string, any>[] {
+    override getDefaultCategories(overrides: Record<string, unknown> = {}): Record<string, unknown>[] {
         return DEFAULT_CATEGORIES.map(defaultCat => {
             const key = defaultCat.id.replace('cat_', '').replace(/s$/, ''); // e.g. 'weapon', 'spell', 'feature'
-            const catOverride = overrides[defaultCat.id] ?? overrides[key] ?? {};
-            return this.mergeObject(defaultCat, catOverride, { inplace: false, overwrite: true });
+            const catOverride = (overrides[defaultCat.id] ?? overrides[key] ?? {}) as Record<string, unknown>;
+            return this.mergeObject(defaultCat, catOverride, { inplace: false, overwrite: true }) as Record<string, unknown>;
         });
     }
 }

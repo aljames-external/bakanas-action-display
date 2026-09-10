@@ -1,16 +1,36 @@
 import { log } from "../../../lib/logger.js";
 import { hasIntersection } from "../../../lib/utils.js";
+import type { Action } from "../../../ui/action.js";
+import type { TabRef } from "../../../ui/tab-ref.js";
+import type { HUDTab } from "../../../ui/hud-tab.js";
+import type { BaseSystemAdapter } from "../base-system-adapter.js";
+
+export interface TabSideFilterContext {
+    activeParents?: Set<string>;
+    activeSubTypes?: Set<string>;
+    groups?: Record<string, HUDTab>;
+}
+
+export interface FilterContext {
+    actor?: Actor | null;
+    token?: Token | null;
+    left?: TabSideFilterContext;
+    right?: TabSideFilterContext;
+    showDepleted?: boolean;
+    _inFilterSubactions?: boolean;
+    [key: string]: unknown;
+}
 
 /**
  * Helper to check if a tab or any of its ancestors under a root tab matches a predicate.
- * @param {Object} tab Action tab descriptor { root, label, parent }
+ * @param {TabRef} tab Action tab descriptor { root, label, parent }
  * @param {string} rootId Root parent tab ID
  * @param {(label: string) => boolean} predicate
  * @returns {boolean}
  */
-function hasTabInPath(tab: any, rootId: any, predicate: any) {
+function hasTabInPath(tab: TabRef, rootId: string, predicate: (label: string) => boolean): boolean {
     if (tab.root !== rootId) return false;
-    for (let cur = tab; cur && cur.label !== rootId; cur = cur.parent) {
+    for (let cur: TabRef | null = tab; cur && cur.label !== rootId; cur = cur.parent) {
         if (predicate(cur.label)) return true;
     }
     return false;
@@ -21,22 +41,22 @@ function hasTabInPath(tab: any, rootId: any, predicate: any) {
  * and resource depletion checks for a system adapter.
  */
 export class BaseSystemTabFilterManager {
-    adapter: any;
+    adapter: BaseSystemAdapter;
 
     /**
      * @param {BaseSystemAdapter} adapter Owning system adapter instance
      */
-    constructor(adapter: any) {
+    constructor(adapter: BaseSystemAdapter) {
         this.adapter = adapter;
     }
 
     /**
      * Check if an action's uses resource is completely depleted.
-     * @param {Object} action The action or subaction item
+     * @param {Action} action The action or subaction item
      * @returns {boolean} True if available uses is 0 or less
      */
-    isResourceDepleted(action: any) {
-        return action.uses?.available != null && action.uses.available <= 0;
+    isResourceDepleted(action: Action): boolean {
+        return action.uses?.available != null && (action.uses.available as number) <= 0;
     }
 
     /**
@@ -77,15 +97,15 @@ export class BaseSystemTabFilterManager {
 
     /**
      * Set-algebraic filter tree evaluator.
-     * @param {Object} action Action card to evaluate
-     * @param {Object} filterContext Active filter state
+     * @param {Action} action Action card to evaluate
+     * @param {FilterContext} filterContext Active filter state
      * @returns {boolean} True if action matches active right-side tab filters
      */
-    matchesEconomyTabs(action: any, filterContext: any) {
+    matchesEconomyTabs(action: Action, filterContext: FilterContext): boolean {
         if (!action) return false;
         const rightContext = filterContext?.right ?? {};
-        const activeParents = rightContext.activeParents ?? new Set();
-        const activeSubs = rightContext.activeSubTypes ?? new Set();
+        const activeParents = rightContext.activeParents ?? new Set<string>();
+        const activeSubs = rightContext.activeSubTypes ?? new Set<string>();
         const parentGroups = rightContext.groups;
 
         if (action.subactions?.length) {
@@ -100,10 +120,10 @@ export class BaseSystemTabFilterManager {
             if (!this.isExclusionTab(parentId)) continue;
 
             const group = parentGroups?.[parentId];
-            const validSubIds = group?.getAllSubTabIds?.() ?? new Set();
+            const validSubIds = group?.getAllSubTabIds?.() ?? new Set<string>();
 
             const hasExcludedTab = right.some(
-                (tab: any) => tab.root === parentId && (activeSubs.has(tab.label) || (tab.parent && activeSubs.has(tab.parent.label))) && validSubIds.has(tab.label)
+                (tab: TabRef) => tab.root === parentId && (activeSubs.has(tab.label) || Boolean(tab.parent && activeSubs.has(tab.parent.label))) && validSubIds.has(tab.label)
             );
             if (hasExcludedTab) return false;
         }
@@ -123,48 +143,48 @@ export class BaseSystemTabFilterManager {
 
         if (showAllCategory) return true;
 
-        return right.some((tab: any) => {
+        return right.some((tab: TabRef) => {
             const actionParentId = tab.root;
             if (!activeParents.has(actionParentId)) return false;
             if (this.isExclusionTab(actionParentId)) return false;
 
             const parentGroup = parentGroups?.[actionParentId];
-            const validSubIds = parentGroup?.getAllSubTabIds?.() ?? new Set();
+            const validSubIds = parentGroup?.getAllSubTabIds?.() ?? new Set<string>();
 
             if (this.isIntersectionTab(actionParentId)) {
-                const activeSubsForParent: any[] = [];
+                const activeSubsForParent: string[] = [];
                 for (const id of activeSubs) {
                     if (validSubIds.has(id)) activeSubsForParent.push(id);
                 }
                 if (activeSubsForParent.length === 0) return true;
                 return activeSubsForParent.every(subId =>
-                    right.some((t: any) => hasTabInPath(t, actionParentId,(label: any) => label === subId))
+                    right.some((t: TabRef) => hasTabInPath(t, actionParentId, (label: string) => label === subId))
                 );
             }
 
             if (!hasIntersection(activeSubs, validSubIds)) return true;
 
-            return right.some((t: any) => hasTabInPath(t, actionParentId,(label: any) => activeSubs.has(label)));
+            return right.some((t: TabRef) => hasTabInPath(t, actionParentId, (label: string) => activeSubs.has(label)));
         });
     }
 
     /**
      * Collect currently active sub-tabs under difference / exclusion parent tabs.
-     * @param {Object} filterContext Active filter state
+     * @param {FilterContext} filterContext Active filter state
      * @returns {string[]} Array of active exclusion sub-tab IDs
      */
-    getActiveExclusionSubs(filterContext: any) {
+    getActiveExclusionSubs(filterContext: FilterContext): string[] {
         const rightContext = filterContext?.right ?? {};
-        const activeParents = rightContext.activeParents ?? new Set();
-        const activeSubs = rightContext.activeSubTypes ?? new Set();
+        const activeParents = rightContext.activeParents ?? new Set<string>();
+        const activeSubs = rightContext.activeSubTypes ?? new Set<string>();
         const parentGroups = rightContext.groups;
-        const activeExclusionSubs: any[] = [];
+        const activeExclusionSubs: string[] = [];
 
         for (const parentId of activeParents) {
             if (!this.isExclusionTab(parentId)) continue;
 
             const group = parentGroups?.[parentId];
-            const validSubIds = group?.getAllSubTabIds?.() ?? new Set();
+            const validSubIds = group?.getAllSubTabIds?.() ?? new Set<string>();
 
             if (validSubIds.size === 0) {
                 activeExclusionSubs.push(...activeSubs);
@@ -180,19 +200,20 @@ export class BaseSystemTabFilterManager {
 
     /**
      * Filter subactions/activities based on active left/right tabs and resource availability.
-     * @param {Object[]} subactions Array of subaction items
-     * @param {Object} filterContext Active filter state
-     * @returns {Object[]} Qualifying subactions
+     * @param {Action[]} subactions Array of subaction items
+     * @param {FilterContext} filterContext Active filter state
+     * @param {string[]} [itemLeft] Optional left tab array of parent item
+     * @returns {Action[]} Qualifying subactions
      */
-    filterSubactions(subactions: any, filterContext: any, itemLeft?: any) {
+    filterSubactions(subactions: Action[], filterContext: FilterContext, itemLeft?: string[]): Action[] {
         if (!subactions?.length) return [];
         const { showDepleted, left } = filterContext;
 
-        return subactions.filter((sub: any) => {
+        return subactions.filter((sub: Action) => {
             if (left && sub.left?.length > 0) {
                 const activeLeft = left.activeParents;
                 if (activeLeft && !activeLeft.has('all')) {
-                    if (!sub.left.some((type: any) => activeLeft.has(type))) {
+                    if (!sub.left.some((type: string) => activeLeft.has(type))) {
                         log.debug(`BaseSystemTabFilterManager.filterSubactions | Skipping subaction "${sub.name}" (${sub.id}) — does not match active left tabs:`, { sub, left: activeLeft });
                         return false;
                     }

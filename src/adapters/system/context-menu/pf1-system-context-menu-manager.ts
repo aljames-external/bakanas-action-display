@@ -1,5 +1,6 @@
 import { BaseSystemContextMenuManager } from './base-system-context-menu-manager.js';
 import type { Pf1SystemAdapter } from '../pf1-system-adapter.js';
+import type { ItemPF } from '../../../types/systems.js';
 import { MODULE_ID } from '../../../constants.js';
 import { deepFreeze } from '../../../lib/utils.js';
 
@@ -54,12 +55,14 @@ export class Pf1SystemContextMenuManager extends BaseSystemContextMenuManager {
                 icon: '<i class="fas fa-shield-halved"></i>',
                 condition: (el: HTMLElement): boolean => {
                     const item = this.#getOwnerItem(app, el);
-                    return Boolean(item && EQUIPPABLE_ITEM_TYPES.has(item.type as string) && (item.system as Record<string, unknown>)?.equipped !== undefined && !this.adapter.getItemEquipped(item));
+                    if (!item || !EQUIPPABLE_ITEM_TYPES.has(item.type as string)) return false;
+                    const itemPF = item as ItemPF;
+                    return itemPF.system?.equipped !== undefined && !this.adapter.getItemEquipped(item);
                 },
                 callback: async (el: HTMLElement): Promise<void> => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
-                        await (item as any).update({ "system.equipped": true });
+                        await item.update({ "system.equipped": true } as Record<string, unknown>);
                     }
                 }
             },
@@ -68,12 +71,14 @@ export class Pf1SystemContextMenuManager extends BaseSystemContextMenuManager {
                 icon: '<i class="fas fa-shield-slash"></i>',
                 condition: (el: HTMLElement): boolean => {
                     const item = this.#getOwnerItem(app, el);
-                    return Boolean(item && EQUIPPABLE_ITEM_TYPES.has(item.type as string) && (item.system as Record<string, unknown>)?.equipped !== undefined && this.adapter.getItemEquipped(item));
+                    if (!item || !EQUIPPABLE_ITEM_TYPES.has(item.type as string)) return false;
+                    const itemPF = item as ItemPF;
+                    return itemPF.system?.equipped !== undefined && this.adapter.getItemEquipped(item);
                 },
                 callback: async (el: HTMLElement): Promise<void> => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
-                        await (item as any).update({ "system.equipped": false });
+                        await item.update({ "system.equipped": false } as Record<string, unknown>);
                     }
                 }
             }

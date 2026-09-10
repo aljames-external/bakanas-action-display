@@ -1,5 +1,6 @@
 import { BaseSystemContextMenuManager } from './base-system-context-menu-manager.js';
 import type { Dnd5eSystemAdapter } from '../dnd5e-system-adapter.js';
+import type { Item5e } from '../../../types/systems.js';
 import { log } from '../../../lib/logger.js';
 import { MODULE_ID } from '../../../constants.js';
 import { deepFreeze } from '../../../lib/utils.js';
@@ -25,11 +26,20 @@ const DND5E_TAB_FLAG_MAP = deepFreeze({
     loot: 'showUnequipped_loot'
 });
 
-const INNATE_OR_PACT_METHODS = new Set(['innate', 'atwill', 'pact']);
-const EQUIPPABLE_ITEM_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot']);
+const EQUIPPABLE_ITEM_TYPES = deepFreeze(new Set([
+    'weapon',
+    'equipment',
+    'tool',
+    'consumable',
+    'backpack',
+    'loot'
+]));
+
+const INNATE_OR_PACT_METHODS = deepFreeze(new Set(['innate', 'pact', 'atwill', 'always']));
 
 /**
- * Manages D&D 5e-specific context menu options (Equip/Unequip, Prepare/Unprepare).
+ * Manages D&D 5e-specific context menu options (Prepare/Unprepare, Equip/Unequip)
+ * and tab right-click filters (showUnprepared, showUnequipped_*).
  */
 export class Dnd5eSystemContextMenuManager extends BaseSystemContextMenuManager {
     declare adapter: Dnd5eSystemAdapter;
@@ -62,62 +72,68 @@ export class Dnd5eSystemContextMenuManager extends BaseSystemContextMenuManager 
             {
                 name: "BAD.common.prepareSpell",
                 icon: '<i class="fas fa-book"></i>',
-                condition: (el: HTMLElement) => {
+                condition: (el: HTMLElement): boolean => {
                     const item = this.#getOwnerItem(app, el);
                     if (!item || (item.type as string) !== 'spell') return false;
-                    const method = (item.system as Record<string, unknown>)?.method ?? 'prepared';
-                    const prepared = Boolean((item.system as Record<string, unknown>)?.prepared);
-                    return !INNATE_OR_PACT_METHODS.has(String(method)) && !prepared;
+                    const item5e = item as Item5e;
+                    const method = item5e.system?.method ?? 'prepared';
+                    const prepared = Boolean(item5e.system?.prepared);
+                    return !INNATE_OR_PACT_METHODS.has(method) && !prepared;
                 },
-                callback: async (el: HTMLElement) => {
+                callback: async (el: HTMLElement): Promise<void> => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
-                        await (item as any).update({ "system.prepared": 1 });
+                        await item.update({ "system.prepared": 1 } as Record<string, unknown>);
                     }
                 }
             },
             {
                 name: "BAD.common.unprepareSpell",
                 icon: '<i class="fas fa-book-dead"></i>',
-                condition: (el: HTMLElement) => {
+                condition: (el: HTMLElement): boolean => {
                     const item = this.#getOwnerItem(app, el);
                     if (!item || (item.type as string) !== 'spell') return false;
-                    const method = (item.system as Record<string, unknown>)?.method ?? 'prepared';
-                    const prepared = Boolean((item.system as Record<string, unknown>)?.prepared);
-                    return !INNATE_OR_PACT_METHODS.has(String(method)) && prepared;
+                    const item5e = item as Item5e;
+                    const method = item5e.system?.method ?? 'prepared';
+                    const prepared = Boolean(item5e.system?.prepared);
+                    return !INNATE_OR_PACT_METHODS.has(method) && prepared;
                 },
-                callback: async (el: HTMLElement) => {
+                callback: async (el: HTMLElement): Promise<void> => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
-                        await (item as any).update({ "system.prepared": 0 });
+                        await item.update({ "system.prepared": 0 } as Record<string, unknown>);
                     }
                 }
             },
             {
                 name: "BAD.common.equipItem",
                 icon: '<i class="fas fa-shield-halved"></i>',
-                condition: (el: HTMLElement) => {
+                condition: (el: HTMLElement): boolean => {
                     const item = this.#getOwnerItem(app, el);
-                    return Boolean(item && EQUIPPABLE_ITEM_TYPES.has(item.type as string) && (item.system as Record<string, unknown>)?.equipped !== undefined && !this.adapter.getItemEquipped(item));
+                    if (!item || !EQUIPPABLE_ITEM_TYPES.has(item.type as string)) return false;
+                    const item5e = item as Item5e;
+                    return item5e.system?.equipped !== undefined && !this.adapter.getItemEquipped(item);
                 },
-                callback: async (el: HTMLElement) => {
+                callback: async (el: HTMLElement): Promise<void> => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
-                        await (item as any).update({ "system.equipped": true });
+                        await item.update({ "system.equipped": true } as Record<string, unknown>);
                     }
                 }
             },
             {
                 name: "BAD.common.unequipItem",
                 icon: '<i class="fas fa-shield-slash"></i>',
-                condition: (el: HTMLElement) => {
+                condition: (el: HTMLElement): boolean => {
                     const item = this.#getOwnerItem(app, el);
-                    return Boolean(item && EQUIPPABLE_ITEM_TYPES.has(item.type as string) && (item.system as Record<string, unknown>)?.equipped !== undefined && this.adapter.getItemEquipped(item));
+                    if (!item || !EQUIPPABLE_ITEM_TYPES.has(item.type as string)) return false;
+                    const item5e = item as Item5e;
+                    return item5e.system?.equipped !== undefined && this.adapter.getItemEquipped(item);
                 },
-                callback: async (el: HTMLElement) => {
+                callback: async (el: HTMLElement): Promise<void> => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
-                        await (item as any).update({ "system.equipped": false });
+                        await item.update({ "system.equipped": false } as Record<string, unknown>);
                     }
                 }
             }
