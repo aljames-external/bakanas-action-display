@@ -551,7 +551,7 @@ class Adapter {
      * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {foundry.abstract.Document.Any | null}
      */
-    fromUuidSync(uuid: string, options: FromUuidOptions = {}): foundry.abstract.Document.Any | null {
+    fromUuidSync(uuid: string, options: FromUuidOptions = {}): ReturnType<typeof fromUuidSync> {
         return this.foundry.fromUuidSync(uuid, options);
     }
 
@@ -561,7 +561,7 @@ class Adapter {
      * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Promise<foundry.abstract.Document.Any | null>}
      */
-    async fromUuid(uuid: string, options: FromUuidOptions = {}): Promise<foundry.abstract.Document.Any | null> {
+    async fromUuid(uuid: string, options: FromUuidOptions = {}): ReturnType<typeof fromUuid> {
         return this.foundry.fromUuid(uuid, options);
     }
 

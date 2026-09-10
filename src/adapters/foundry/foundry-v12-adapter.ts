@@ -1,4 +1,4 @@
-import { BaseFoundryAdapter } from './base-foundry-adapter.js';
+import { BaseFoundryAdapter, type ContextMenuConstructor, type KeyboardManagerClass } from './base-foundry-adapter.js';
 
 /**
  * Foundry VTT V12 platform baseline adapter.
@@ -8,15 +8,15 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
     /**
      * The active ContextMenu constructor in v12.
      */
-    override get ContextMenu(): typeof ContextMenu {
-        return ContextMenu;
+    override get ContextMenu(): ContextMenuConstructor {
+        return ContextMenu as unknown as ContextMenuConstructor;
     }
 
     /**
      * The active KeyboardManager constructor in v12.
      */
-    override get KeyboardManager(): typeof KeyboardManager {
-        return KeyboardManager;
+    override get KeyboardManager(): KeyboardManagerClass {
+        return KeyboardManager as unknown as KeyboardManagerClass;
     }
 
     /**
@@ -45,8 +45,8 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
      * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Document|null}
      */
-    override fromUuidSync(uuid: string, options: FromUuidOptions = {}): foundry.abstract.Document.Any | null {
-        return fromUuidSync(uuid, options) as foundry.abstract.Document.Any | null;
+    override fromUuidSync(uuid: string, options: FromUuidOptions = {}): ReturnType<typeof fromUuidSync> {
+        return fromUuidSync(uuid, options);
     }
 
     /**
@@ -55,7 +55,7 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
      * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    override async fromUuid(uuid: string, options: FromUuidOptions = {}): Promise<foundry.abstract.Document.Any | null> {
+    override async fromUuid(uuid: string, options: FromUuidOptions = {}): ReturnType<typeof fromUuid> {
         return fromUuid(uuid, options);
     }
 
@@ -91,7 +91,7 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
     override isTeleport(options: Record<string, unknown> = {}): boolean {
         if (options.movement !== undefined) {
             if (options.movement === false) return true;
-            return Boolean((options.movement as any)?.teleport);
+            return Boolean((options.movement as { teleport?: boolean } | undefined)?.teleport);
         }
         return Boolean(options.teleport || options.animate === false);
     }

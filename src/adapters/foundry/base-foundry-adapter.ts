@@ -13,6 +13,43 @@ export const USER_PERMISSION_TIERS = deepFreeze({
     GM: 3
 });
 
+export interface ContextMenuItemConfig {
+    name?: string;
+    label?: string;
+    icon?: string;
+    classes?: string;
+    condition?: ((target: JQuery | HTMLElement) => boolean) | (() => boolean);
+    callback?: ((target: JQuery | HTMLElement) => void | Promise<void>) | (() => void | Promise<void>);
+    children?: ContextMenuItemConfig[];
+    [key: string]: unknown;
+}
+
+export interface ContextMenuInstance {
+    bind: () => void;
+    close: (options?: { force?: boolean; [key: string]: unknown }) => Promise<void>;
+    render: (target: unknown) => Promise<void>;
+    menu?: HTMLElement | JQuery | null;
+    [key: string]: unknown;
+}
+
+export type ContextMenuConstructor = new (
+    element: HTMLElement | JQuery,
+    selector: string,
+    menuItems: ContextMenuItemConfig[] | unknown[],
+    options?: Record<string, unknown>
+) => ContextMenuInstance;
+
+export interface KeyboardManagerClass {
+    MODIFIER_KEYS: {
+        ALT: "Alt";
+        CONTROL: "Control";
+        SHIFT: "Shift";
+        [key: string]: string;
+    };
+    [key: string]: unknown;
+}
+
+
 /**
  * Base abstract class for all Foundry platform adapters.
  * Encapsulates version-agnostic Foundry Application, ContextMenu, interaction, and utility operations.
@@ -23,40 +60,41 @@ export class BaseFoundryAdapter {
      * @returns {number}
      */
     get generation(): number {
-        return (game as any)?.release?.generation ?? 12;
+        return (game as unknown as { release?: { generation?: number } })?.release?.generation ?? 12;
     }
 
     /**
      * The active ContextMenu constructor.
      */
-    get ContextMenu(): any {
+    get ContextMenu(): ContextMenuConstructor {
         throw new Error('BaseFoundryAdapter.ContextMenu must be implemented by version subclass');
     }
 
     /**
      * The active KeyboardManager constructor.
      */
-    get KeyboardManager(): any {
+    get KeyboardManager(): KeyboardManagerClass {
         throw new Error('BaseFoundryAdapter.KeyboardManager must be implemented by version subclass');
     }
 
     /**
      * The active Token placeable constructor.
      */
-    get Token(): any {
+    get Token(): typeof Token {
         throw new Error('BaseFoundryAdapter.Token must be implemented by version subclass');
     }
 
     /**
      * The active TokenHUD constructor / class.
      */
-    get TokenHUD(): any {
-        return (CONFIG as any)?.Token?.hudClass;
+    get TokenHUD(): typeof TokenHUD {
+        return (CONFIG as unknown as { Token?: { hudClass?: typeof TokenHUD } })?.Token?.hudClass ?? (TokenHUD as unknown as typeof TokenHUD);
     }
 
     /**
      * The active ApplicationV2 constructor.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get ApplicationV2(): any {
         return (foundry as any)?.applications?.api?.ApplicationV2;
     }
@@ -64,6 +102,7 @@ export class BaseFoundryAdapter {
     /**
      * The active HandlebarsApplicationMixin wrapper.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get HandlebarsApplicationMixin(): any {
         return (foundry as any)?.applications?.api?.HandlebarsApplicationMixin;
     }
@@ -71,14 +110,14 @@ export class BaseFoundryAdapter {
     /**
      * The active FilePicker constructor / implementation.
      */
-    get FilePicker(): any {
+    get FilePicker(): typeof FilePicker {
         throw new Error('BaseFoundryAdapter.FilePicker must be implemented by version subclass');
     }
 
     /**
      * The active TextEditor constructor / implementation.
      */
-    get TextEditor(): any {
+    get TextEditor(): typeof TextEditor {
         throw new Error('BaseFoundryAdapter.TextEditor must be implemented by version subclass');
     }
 
@@ -106,10 +145,10 @@ export class BaseFoundryAdapter {
     /**
      * Safely resolve a document from UUID synchronously.
      * @param {string} uuid Document UUID
-     * @param {Record<string, unknown>} [options={}] Resolution options
+     * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Document|null}
      */
-    fromUuidSync(uuid: string, options: FromUuidOptions = {}): any {
+    fromUuidSync(uuid: string, options: FromUuidOptions = {}): ReturnType<typeof fromUuidSync> {
         throw new Error('BaseFoundryAdapter.fromUuidSync must be implemented by version subclass');
     }
 
@@ -119,7 +158,7 @@ export class BaseFoundryAdapter {
      * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    async fromUuid(uuid: string, options: FromUuidOptions = {}): Promise<any> {
+    async fromUuid(uuid: string, options: FromUuidOptions = {}): ReturnType<typeof fromUuid> {
         throw new Error('BaseFoundryAdapter.fromUuid must be implemented by version subclass');
     }
 
@@ -211,7 +250,7 @@ export class BaseFoundryAdapter {
      */
     async enrichHTML(content: string, options: Record<string, unknown> = {}): Promise<string> {
         if (!content) return '';
-        return this.TextEditor.enrichHTML(content, { secrets: false, async: true, ...options });
+        return this.TextEditor.enrichHTML(content, { secrets: false, async: true, ...options } as unknown as Parameters<typeof TextEditor.enrichHTML>[1]);
     }
 
     /**
@@ -285,10 +324,10 @@ export class BaseFoundryAdapter {
         if (userRole != null && userRole >= assistantRole) {
             return USER_PERMISSION_TIERS.GM;
         }
-        if (userRole === trustedRole || Boolean((user as any).isTrusted)) {
+        if (userRole === trustedRole || Boolean((user as unknown as { isTrusted?: boolean }).isTrusted)) {
             return USER_PERMISSION_TIERS.TRUSTED;
         }
-        if (userRole === playerRole || !(user as any).isTrusted) {
+        if (userRole === playerRole || !(user as unknown as { isTrusted?: boolean }).isTrusted) {
             return USER_PERMISSION_TIERS.PLAYER;
         }
         return null;
@@ -300,7 +339,7 @@ export class BaseFoundryAdapter {
      * @param {Actor|TokenDocument|Document|null} doc Concrete Document (Actor or TokenDocument)
      * @returns {boolean} True if the user has an ownership role
      */
-    isUserDocumentOwner(user: User | null | undefined, doc: any): boolean {
+    isUserDocumentOwner(user: User | null | undefined, doc: foundry.abstract.Document.Any | null | undefined): boolean {
         if (!user || !doc) return false;
 
         // GM / Co-GM always has ownership over all documents in Foundry
@@ -309,17 +348,23 @@ export class BaseFoundryAdapter {
         }
 
         const ownerLevel = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
-        if (doc.testUserPermission) {
-            return Boolean(doc.testUserPermission(user, 'OWNER'));
+        const docObj = doc as unknown as {
+            testUserPermission?: (u: User, p: string) => boolean;
+            getUserLevel?: (u: User) => number;
+            ownership?: Record<string, number> & { default?: number };
+            isOwner?: boolean;
+        };
+        if (typeof docObj.testUserPermission === 'function') {
+            return Boolean(docObj.testUserPermission(user, 'OWNER'));
         }
-        if (doc.getUserLevel) {
-            return doc.getUserLevel(user) >= ownerLevel;
+        if (typeof docObj.getUserLevel === 'function') {
+            return docObj.getUserLevel(user) >= ownerLevel;
         }
-        if (doc.ownership) {
-            const level = (user.id ? doc.ownership[user.id] : undefined) ?? doc.ownership.default ?? 0;
+        if (docObj.ownership) {
+            const level = (user.id ? docObj.ownership[user.id] : undefined) ?? docObj.ownership.default ?? 0;
             return level >= ownerLevel;
         }
-        return (user.id === game.user?.id || user === game.user) && Boolean(doc.isOwner);
+        return (user.id === game.user?.id || user === game.user) && Boolean(docObj.isOwner);
     }
 
     /**

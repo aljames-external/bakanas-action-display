@@ -1,4 +1,5 @@
 import { FoundryV12Adapter } from './foundry-v12-adapter.js';
+import type { ContextMenuConstructor, KeyboardManagerClass } from './base-foundry-adapter.js';
 
 /**
  * Foundry VTT V13 platform adapter.
@@ -8,46 +9,46 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
     /**
      * The active ContextMenu constructor in v13+.
      */
-    override get ContextMenu(): any {
-        return (foundry as any).applications?.ux?.ContextMenu?.implementation;
+    override get ContextMenu(): ContextMenuConstructor {
+        return (foundry as unknown as { applications?: { ux?: { ContextMenu?: { implementation: ContextMenuConstructor } } } }).applications?.ux?.ContextMenu?.implementation ?? super.ContextMenu;
     }
 
     /**
      * The active KeyboardManager constructor in v13+.
      */
-    override get KeyboardManager(): any {
-        return (foundry as any).helpers?.interaction?.KeyboardManager;
+    override get KeyboardManager(): KeyboardManagerClass {
+        return (foundry as unknown as { helpers?: { interaction?: { KeyboardManager?: KeyboardManagerClass } } }).helpers?.interaction?.KeyboardManager ?? super.KeyboardManager;
     }
 
     /**
      * The active Token placeable constructor in v13+.
      */
-    override get Token(): any {
-        return (foundry as any).canvas?.placeables?.Token;
+    override get Token(): typeof Token {
+        return (foundry as unknown as { canvas?: { placeables?: { Token?: typeof Token } } }).canvas?.placeables?.Token ?? super.Token;
     }
 
     /**
      * The active FilePicker constructor / implementation in v13+.
      */
-    override get FilePicker(): any {
-        return (foundry as any).applications?.apps?.FilePicker?.implementation;
+    override get FilePicker(): typeof FilePicker {
+        return (foundry as unknown as { applications?: { apps?: { FilePicker?: { implementation: typeof FilePicker } } } }).applications?.apps?.FilePicker?.implementation ?? super.FilePicker;
     }
 
     /**
      * The active TextEditor constructor / implementation in v13+.
      */
-    override get TextEditor(): any {
-        return (foundry as any).applications?.ux?.TextEditor?.implementation;
+    override get TextEditor(): typeof TextEditor {
+        return (foundry as unknown as { applications?: { ux?: { TextEditor?: { implementation: typeof TextEditor } } } }).applications?.ux?.TextEditor?.implementation ?? super.TextEditor;
     }
 
     /**
      * Safely resolve a document from UUID synchronously using standard V13+ foundry.utils.fromUuidSync.
      * @param {string} uuid Document UUID
-     * @param {Record<string, unknown>} [options={}] Resolution options
+     * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Document|null}
      */
-    override fromUuidSync(uuid: string, options: FromUuidOptions = {}): any {
-        return (foundry.utils as any).fromUuidSync(uuid, options);
+    override fromUuidSync(uuid: string, options: FromUuidOptions = {}): ReturnType<typeof fromUuidSync> {
+        return (foundry.utils as unknown as { fromUuidSync: typeof fromUuidSync }).fromUuidSync(uuid, options);
     }
 
     /**
@@ -56,8 +57,8 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
      * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    override async fromUuid(uuid: string, options: FromUuidOptions = {}): Promise<any> {
-        return (foundry.utils as any).fromUuid(uuid, options);
+    override async fromUuid(uuid: string, options: FromUuidOptions = {}): ReturnType<typeof fromUuid> {
+        return (foundry.utils as unknown as { fromUuid: typeof fromUuid }).fromUuid(uuid, options);
     }
 
     /**
@@ -68,7 +69,7 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
      */
     override getCombatantsByToken(combat: Combat, token: Token): Combatant[] {
         if (!combat || !token) return [];
-        return (combat as any).getCombatantsByToken(token);
+        return (combat as unknown as { getCombatantsByToken?: (t: Token) => Combatant[] }).getCombatantsByToken?.(token) ?? [];
     }
 
     /**
@@ -78,7 +79,7 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
      * @returns {Promise<Function[]>}
      */
     override async loadTemplates(paths: string[]): Promise<Function[]> {
-        return (foundry as any).applications?.handlebars?.loadTemplates(paths);
+        return (foundry as unknown as { applications?: { handlebars?: { loadTemplates?: (p: string[]) => Promise<Function[]> } } }).applications?.handlebars?.loadTemplates?.(paths) ?? super.loadTemplates(paths);
     }
 
     /**
@@ -89,7 +90,7 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
      * @returns {boolean}
      */
     override isTeleport(options: Record<string, unknown> = {}): boolean {
-        if ((options as any).movement === false) return true;
-        return Boolean((options as any).movement?.teleport);
+        if (options.movement === false) return true;
+        return Boolean((options.movement as { teleport?: boolean } | undefined)?.teleport);
     }
 }
