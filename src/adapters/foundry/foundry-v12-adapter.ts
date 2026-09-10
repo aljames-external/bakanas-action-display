@@ -74,12 +74,11 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
     /**
      * Preload Handlebars templates in Foundry V12 using global loadTemplates.
      * @override
-     * @param {string|string[]} paths Array of template paths
+     * @param {string[]} paths Array of template paths
      * @returns {Promise<Function[]>}
      */
-    override async loadTemplates(paths: string | string[]): Promise<Function[]> {
-        const pathList = Array.isArray(paths) ? paths : [paths];
-        return loadTemplates(pathList);
+    override async loadTemplates(paths: string[]): Promise<Function[]> {
+        return loadTemplates(paths);
     }
 
     /**

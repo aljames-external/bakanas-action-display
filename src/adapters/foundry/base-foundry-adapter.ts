@@ -96,10 +96,10 @@ export class BaseFoundryAdapter {
     /**
      * Preload Handlebars templates across Foundry generations.
      * @abstract
-     * @param {string|string[]} paths Array of template paths
+     * @param {string[]} paths Array of template paths
      * @returns {Promise<Function[]>}
      */
-    async loadTemplates(paths: string | string[]): Promise<Function[]> {
+    async loadTemplates(paths: string[]): Promise<Function[]> {
         throw new Error('BaseFoundryAdapter.loadTemplates must be implemented by version subclass');
     }
 
