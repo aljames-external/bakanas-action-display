@@ -51,7 +51,7 @@ export interface Actor5e extends Omit<Actor, "system"> {
             [key: string]: unknown;
         };
         spells?: Record<string, { value?: number; max?: number; [key: string]: unknown }>;
-        favorites?: Array<{ id?: string; [key: string]: unknown }> | { some?: (fn: (f: any) => boolean) => boolean; [key: string]: unknown };
+        favorites?: Array<{ id?: string; type?: string; sort?: number; [key: string]: unknown }>;
         addFavorite?(data: { id: string; type: string }): Promise<unknown>;
         removeFavorite?(id: string): Promise<unknown>;
         [key: string]: unknown;

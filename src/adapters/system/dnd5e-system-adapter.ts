@@ -1721,15 +1721,11 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             return Boolean(item.flags.dnd5e.favorite);
         }
 
-        // 3. Actor system.favorites set/array (dnd5e 3.x+ actor favorites collection)
-        if (act?.system?.favorites) {
+        // 3. Actor system.favorites collection (dnd5e 3.x+)
+        const favorites = act?.system?.favorites;
+        if (Array.isArray(favorites)) {
             const relUuid = item.getRelativeUUID?.(actor) ?? null;
-            const favorites = act.system.favorites;
-            if (Array.isArray(favorites)) {
-                return favorites.some((f: any) => f?.id === item.id || (relUuid && f?.id === relUuid) || f?.id === item.uuid);
-            } else if (typeof favorites.some === 'function') {
-                return favorites.some((f: any) => f?.id === item.id || (relUuid && f?.id === relUuid) || f?.id === item.uuid);
-            }
+            return favorites.some((f) => f?.id === item.id || (relUuid && f?.id === relUuid) || f?.id === item.uuid);
         }
 
         return false;
