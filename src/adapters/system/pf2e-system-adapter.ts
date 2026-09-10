@@ -113,7 +113,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         if (item.category === 'unarmed' || item.system.category?.value === 'unarmed') return true;
 
         const traits = item.system.traits?.value;
-        const hasTrait = (trait: any) => Boolean(traits instanceof Set ? traits.has(trait) : traits?.includes?.(trait));
+        const hasTrait = (trait: any) => Boolean(traits?.has?.(trait) ?? traits?.includes?.(trait));
         if (hasTrait('unarmed') || hasTrait('natural')) {
             return true;
         }
@@ -291,7 +291,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
 
         // 2. Skills
         const actorSkills = act.skills ?? act.system?.skills ?? {};
-        const skillEntries = actorSkills instanceof Map ? Array.from(actorSkills.entries()) : Object.entries(actorSkills);
+        const skillEntries = typeof actorSkills?.entries === 'function' ? Array.from(actorSkills.entries()) : Object.entries(actorSkills);
 
         for (const [key, rawSkill] of skillEntries) {
             const skill = rawSkill as Pf2eStatistic;

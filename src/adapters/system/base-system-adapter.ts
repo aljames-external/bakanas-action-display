@@ -538,10 +538,12 @@ export class BaseSystemAdapter {
         if (!type?.id || type.id === 'none' || type.id === 'all') return false;
 
         const disabled = userColors.disabled;
-        if (disabled instanceof Set ? disabled.has(type.id) : (Array.isArray(disabled) ? disabled.includes(type.id) : Boolean(disabled?.[type.id]))) return false;
+        const isDisabled = Boolean(disabled?.has?.(type.id) ?? disabled?.includes?.(type.id) ?? disabled?.[type.id]);
+        if (isDisabled) return false;
 
         const enabled = userColors.enabled;
-        if (enabled instanceof Set ? enabled.has(type.id) : (Array.isArray(enabled) ? enabled.includes(type.id) : Boolean(enabled?.[type.id]))) return true;
+        const isEnabled = Boolean(enabled?.has?.(type.id) ?? enabled?.includes?.(type.id) ?? enabled?.[type.id]);
+        if (isEnabled) return true;
 
         return Boolean(type.defaultEnabled);
     }

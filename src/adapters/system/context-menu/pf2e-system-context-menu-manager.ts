@@ -51,8 +51,8 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
         if (!item?.system) return false;
         if (app?.actor?.items && item.id && !app.actor.items.has(item.id)) return false;
         const traits = (item.system as Record<string, unknown>).traits as { value?: unknown } | undefined;
-        const traitValue = traits?.value;
-        if (traitValue instanceof Set ? traitValue.has('unarmed') : (Array.isArray(traitValue) ? traitValue.includes('unarmed') : false)) return false;
+        const traitValue = traits?.value as any;
+        if (Boolean(traitValue?.has?.('unarmed') ?? traitValue?.includes?.('unarmed'))) return false;
         const equipped = (item.system as Record<string, unknown>).equipped as { carryType?: string } | undefined;
         return Boolean(equipped?.carryType);
     }

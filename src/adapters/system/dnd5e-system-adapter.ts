@@ -1306,13 +1306,13 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @returns {Activities[]}
      */
     getItemActivities(item: any) {
-        const activities = item.system?.activities;
+        const activities = item?.system?.activities;
         if (!activities) return [];
-        if (activities.values) {
-            return Array.from(activities.values());
-        }
         if (Array.isArray(activities)) {
             return activities;
+        }
+        if (typeof activities.values === 'function') {
+            return Array.from(activities.values());
         }
         return Object.entries(activities as Record<string, any>).map(([id, act]: [string, any]) => {
             if (act && !act.id) act.id = id;
