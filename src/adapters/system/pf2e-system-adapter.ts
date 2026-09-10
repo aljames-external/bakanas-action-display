@@ -917,7 +917,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             available: true,
             uses: this.#getStrikeAmmoUses(strike, ammoQuantities),
             roll: (event: unknown) => this.#executeStrikeRoll(strike, event),
-            originalItem: strike.item,
+            originalItem: (strike.item as unknown as Item) ?? null,
             extra: { pf2eStrike: strike }
         });
     }

@@ -2,9 +2,9 @@ export {};
 
 declare global {
   interface SettingConfig {
-    "bakana-action-display.categorizationConfig": Record<string, any>;
+    "bakana-action-display.categorizationConfig": import('../categorization/categorization-manager.js').CategorizationConfig | Record<string, unknown>;
     "bakana-action-display.midiQolFilterAutomationOnly": boolean;
-    "bakana-action-display.dnd5eAutoBanConditions": Record<string, any>;
+    "bakana-action-display.dnd5eAutoBanConditions": import('../ui/dnd5e-autoban-config-app.js').Dnd5eAutoBanConfig | Record<string, unknown>;
     "bakana-action-display.enableCenterOnToken": boolean;
     "bakana-action-display.enableItemSummaryButton": boolean;
     "bakana-action-display.enableToggleHotkey": boolean;
@@ -14,7 +14,7 @@ declare global {
     "bakana-action-display.autoToggleCombat": boolean;
     "bakana-action-display.autoCenterOnToken": boolean;
     "bakana-action-display.enableEconomyIndicators": boolean;
-    "bakana-action-display.economyColors": Record<string, any>;
+    "bakana-action-display.economyColors": Record<string, { enabled?: boolean; color?: string; [key: string]: unknown }>;
     "bakana-action-display.hudOpacity": number;
     "bakana-action-display.hudScale": number;
     "bakana-action-display.fontSize": number;
@@ -29,12 +29,16 @@ declare global {
     "bakana-action-display.showItemSummaries": boolean;
     "bakana-action-display.isAttached": boolean;
     "bakana-action-display.persistHUD": boolean;
-    "bakana-action-display.hudDetachedPosition": Record<string, any> | null;
-    "bakana-action-display.hudTabStates": Record<string, any>;
+    "bakana-action-display.hudDetachedPosition": { top?: number; left?: number; [key: string]: unknown } | null;
+    "bakana-action-display.hudTabStates": Record<string, import('../ui/action-display-app.js').ActiveTabState>;
   }
 
   interface ModuleConfig {
-    [key: string]: any;
+    "bakana-action-display": {
+      path?: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
   }
 
   interface FlagConfig {
@@ -42,18 +46,12 @@ declare global {
   }
 
   interface CONFIG {
-    DND5E?: {
-      weaponTypes?: Record<string, string>;
-      equipmentTypes?: Record<string, string>;
-      activityActivationCategories?: Record<string, { label?: string; name?: string } | string>;
-      activityActivationTypes?: Record<string, { label?: string; name?: string } | string>;
-      [key: string]: any;
-    };
-    PF1?: any;
-    PF2E?: any;
+    DND5E?: import('./systems.js').Dnd5eConfig;
+    PF1?: Record<string, unknown>;
+    PF2E?: Record<string, unknown>;
     Item?: {
       typeLabels?: Record<string, string>;
-      [key: string]: any;
+      [key: string]: unknown;
     };
   }
 
@@ -67,23 +65,29 @@ declare global {
 
   namespace foundry.helpers.interaction.KeyboardManager {
     interface ModifierKeys {
-      Alt: any;
-      Control: any;
-      Shift: any;
+      Alt: boolean;
+      Control: boolean;
+      Shift: boolean;
     }
   }
 
-  var Sequencer: any;
-  var Sequence: any;
-  var Tagger: any;
-  var socketlib: any;
-  var dnd5e: any;
-  var KeyboardManager: any;
+  var Sequencer: unknown;
+  var Sequence: unknown;
+  var Tagger: unknown;
+  var socketlib: unknown;
+  var dnd5e: {
+    documents?: {
+      Trait?: {
+        keyLabel?: (key: string, options?: { trait?: string }) => string | null | undefined;
+      };
+    };
+    [key: string]: unknown;
+  };
+  var KeyboardManager: unknown;
 
   namespace Hooks {
     interface HookConfig {
       'closeTokenHUD': (tokenHUD: TokenHUD | null | undefined, html: unknown) => void;
-      [key: string]: (...args: any[]) => any;
     }
   }
 
@@ -135,10 +139,18 @@ declare module 'fvtt-types/configuration' {
     ready: true;
   }
 
+  interface ModuleConfig {
+    "bakana-action-display": {
+      path?: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }
+
   interface SettingConfig {
-    "bakana-action-display.categorizationConfig": Record<string, any>;
+    "bakana-action-display.categorizationConfig": import('../categorization/categorization-manager.js').CategorizationConfig | Record<string, unknown>;
     "bakana-action-display.midiQolFilterAutomationOnly": boolean;
-    "bakana-action-display.dnd5eAutoBanConditions": Record<string, any>;
+    "bakana-action-display.dnd5eAutoBanConditions": import('../ui/dnd5e-autoban-config-app.js').Dnd5eAutoBanConfig | Record<string, unknown>;
     "bakana-action-display.enableCenterOnToken": boolean;
     "bakana-action-display.enableItemSummaryButton": boolean;
     "bakana-action-display.enableToggleHotkey": boolean;
@@ -148,7 +160,7 @@ declare module 'fvtt-types/configuration' {
     "bakana-action-display.autoToggleCombat": boolean;
     "bakana-action-display.autoCenterOnToken": boolean;
     "bakana-action-display.enableEconomyIndicators": boolean;
-    "bakana-action-display.economyColors": Record<string, any>;
+    "bakana-action-display.economyColors": Record<string, { enabled?: boolean; color?: string; [key: string]: unknown }>;
     "bakana-action-display.hudOpacity": number;
     "bakana-action-display.hudScale": number;
     "bakana-action-display.fontSize": number;
@@ -163,14 +175,13 @@ declare module 'fvtt-types/configuration' {
     "bakana-action-display.showItemSummaries": boolean;
     "bakana-action-display.isAttached": boolean;
     "bakana-action-display.persistHUD": boolean;
-    "bakana-action-display.hudDetachedPosition": Record<string, unknown> | null;
-    "bakana-action-display.hudTabStates": Record<string, unknown>;
+    "bakana-action-display.hudDetachedPosition": { top?: number; left?: number; [key: string]: unknown } | null;
+    "bakana-action-display.hudTabStates": Record<string, import('../ui/action-display-app.js').ActiveTabState>;
   }
 
   namespace Hooks {
     interface HookConfig {
       'closeTokenHUD': (tokenHUD: TokenHUD | null | undefined, html: unknown) => void;
-      [key: string]: (...args: any[]) => any;
     }
   }
 }

@@ -40,6 +40,20 @@ export interface Dnd5eActivity {
     item?: Item5e;
     parent?: Item5e;
     spell?: Item5e | string | { uuid?: string; [key: string]: unknown } | null;
+    sheet?: { render?(force?: boolean, options?: unknown): void };
+    labels?: Record<string, string | undefined>;
+    activation?: { type?: string; [key: string]: unknown };
+    toHit?: unknown;
+    damage?: unknown;
+    range?: unknown;
+    save?: unknown;
+    duration?: unknown;
+    recharge?: unknown;
+    consumption?: unknown;
+    cachedSpell?: Item5e | Item | null;
+    system?: Record<string, unknown>;
+    description?: unknown;
+    getRollData?: () => unknown;
     use?(usage?: unknown, dialog?: unknown): Promise<unknown>;
     [key: string]: unknown;
 }
@@ -69,6 +83,36 @@ export interface Dnd5eAbility {
     checkProf?: { hasProficiency?: boolean };
     check?: { proficient?: boolean };
     saveProf?: { hasProficiency?: boolean };
+    [key: string]: unknown;
+}
+
+export interface Dnd5eConfig {
+    actorSizes?: Record<string, string | { label?: string }>;
+    alignments?: Record<string, string>;
+    creatureTypes?: Record<string, string | { label?: string }>;
+    armorClasses?: Record<string, string | { label?: string }>;
+    damageTypes?: Record<string, string | { label?: string; icon?: string }>;
+    physicalWeaponBypasses?: Record<string, string | { label?: string }>;
+    itemProperties?: Record<string, string | { label?: string }>;
+    weaponTypes?: Record<string, string>;
+    equipmentTypes?: Record<string, string>;
+    activityActivationCategories?: Record<string, { label?: string; name?: string } | string>;
+    activityActivationTypes?: Record<string, { label?: string; name?: string } | string>;
+    skills?: Record<string, { label?: string; ability?: string }>;
+    tools?: Record<string, { label?: string; id?: string; ability?: string; icon?: string }>;
+    toolIds?: Record<string, string>;
+    toolProficiencies?: Record<string, string>;
+    toolTypes?: Record<string, string>;
+    vehicleTypes?: Record<string, string>;
+    conditionTypes?: Record<string, { label?: string; icon?: string; name?: string; reference?: string } | string>;
+    languages?: Record<string, string>;
+    communication?: Record<string, string>;
+    senses?: Record<string, string>;
+    movementTypes?: Record<string, string>;
+    movementUnits?: Record<string, string>;
+    abilities?: Record<string, { label?: string }>;
+    spellLevels?: Record<string | number, string>;
+    spellSchools?: Record<string, { label?: string } | string>;
     [key: string]: unknown;
 }
 
@@ -118,6 +162,17 @@ export interface Actor5e extends Omit<Actor, "system"> {
 
 export interface Item5e extends Omit<Item, "system" | "type"> {
     type: string;
+    labels?: {
+        activation?: string;
+        toHit?: string;
+        damage?: string;
+        range?: string;
+        save?: string;
+        duration?: string;
+        recharge?: string;
+        components?: { vsm?: string; all?: string; [key: string]: unknown };
+        [key: string]: unknown;
+    };
     system: {
         activities?: {
             get?(id: string): Dnd5eActivity | undefined;
@@ -130,10 +185,12 @@ export interface Item5e extends Omit<Item, "system" | "type"> {
         equipped?: boolean;
         level?: number;
         method?: string;
+        school?: string;
+        description?: { value?: string; chatFlavor?: string; chat?: string; [key: string]: unknown };
         quantity?: number;
         properties?: Set<string> | string[];
         components?: Record<string, boolean>;
-        type?: { value?: string; [key: string]: unknown };
+        type?: { value?: string; label?: string; [key: string]: unknown };
         ammunition?: { type?: string; [key: string]: unknown };
         activation?: { type?: string; [key: string]: unknown };
         uses?: {
@@ -143,6 +200,7 @@ export interface Item5e extends Omit<Item, "system" | "type"> {
             [key: string]: unknown;
         };
     };
+    getRollData?(): unknown;
 }
 
 /* -------------------------------------------- */

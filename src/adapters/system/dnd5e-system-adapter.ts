@@ -1175,10 +1175,15 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item|null} [parentItem] Parent item document
      * @returns {Item|null}
      */
-    resolveRootSpellDocument(sub: { linkedAction?: Item | null; originalActivity?: Dnd5eActivity | null; originalItem?: Item | null } | null, parentItem: Item | null = null): Item | null {
+    resolveRootSpellDocument(sub: { linkedAction?: Action | Item | null; originalActivity?: Dnd5eActivity | null; originalItem?: Item | null } | null, parentItem: Item | null = null): Item | null {
         if (!sub) return null;
 
-        let doc = sub.linkedAction;
+        let doc: Item | null = null;
+        if (sub.linkedAction) {
+            doc = sub.linkedAction instanceof Action
+                ? sub.linkedAction.originalItem
+                : (sub.linkedAction as Item);
+        }
         const activity = sub.originalActivity;
         if (!doc && activity && activity.type === 'cast') {
             const actId = activity.id;
@@ -1189,7 +1194,8 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                     ?? this.#actor?.items?.find?.((i: Item) => {
                         const cf = i.flags?.dnd5e?.cachedFor ?? (i as Item).getFlag?.('dnd5e', 'cachedFor');
                         return this.#normalizeCachedForKey(cf) === fullKey;
-                    });
+                    })
+                    ?? null;
             }
             if (!doc) {
                 doc = this.#extractItemSpell(activity);
@@ -1214,7 +1220,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             }
         }
 
-        if (doc && ((doc.type as string) === 'spell' || (doc.type as string) === 'cast' || (doc as any).spell)) return doc as Item;
+        if (doc && ((doc.type as string) === 'spell' || (doc.type as string) === 'cast' || Boolean((doc as unknown as { spell?: unknown }).spell))) return doc as Item;
 
         if (activity?.type === 'cast') {
             if (activity.spell && !this.#isItemDocument(activity.spell)) {
@@ -1700,22 +1706,24 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @returns {string}
      */
     #getActivityActivationType(activity: Dnd5eActivity, item: Item, linkedAction: Action | Item | null = null): string | null {
-        const actOverride = Boolean((activity.activation as any)?.override ?? (activity as any).system?.activation?.override);
+        const actActivation = activity.activation as { override?: boolean; type?: string } | undefined;
+        const sysActivation = (activity.system as { activation?: { override?: boolean; type?: string } } | undefined)?.activation;
+        const actOverride = Boolean(actActivation?.override ?? sysActivation?.override);
         if (actOverride) {
-            const overrideType = this.#normalizeActivationType((activity.activation as any)?.type ?? (activity as any).system?.activation?.type);
+            const overrideType = this.#normalizeActivationType(actActivation?.type ?? sysActivation?.type);
             if (overrideType) return overrideType;
         }
 
-        const spellDoc = linkedAction ?? this.resolveRootSpellDocument({ originalActivity: activity, linkedAction: (activity as any).spell });
+        const spellDoc = linkedAction ?? this.resolveRootSpellDocument({ originalActivity: activity, linkedAction: (activity.spell as unknown as Item | null) ?? null });
         if (spellDoc) {
-            const rawType = (spellDoc as any).system?.activation?.type ?? (spellDoc as any).activation?.type;
+            const rawType = (spellDoc as Item5e).system?.activation?.type ?? (spellDoc as unknown as { activation?: { type?: string } }).activation?.type;
             const spellType = this.#normalizeActivationType(rawType);
             if (spellType) return spellType;
         }
 
         const item5e = item as Item5e;
         return this.#normalizeActivationType(item5e.system?.activation?.type)
-            ?? this.#normalizeActivationType((activity.activation as any)?.type ?? (activity as any).system?.activation?.type)
+            ?? this.#normalizeActivationType(actActivation?.type ?? sysActivation?.type)
             ?? 'none';
     }
 
@@ -1732,7 +1740,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 return;
             }
             if (activity.item?.sheet?.render) {
-                activity.item.sheet.render(true, { subtab: "activities", activityId: activity.id });
+                (activity.item.sheet as unknown as { render(force: boolean, options?: unknown): void }).render(true, { subtab: "activities", activityId: activity.id });
                 return;
             }
         }
@@ -1940,15 +1948,19 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             return this.#getCheckSummary(action, actor);
         }
 
-        const targetItem = item ?? action?.originalItem ?? action;
+        const targetItem = (item ?? action?.originalItem ?? (action as unknown as Item)) as Item5e | null;
         const activity = action?.originalActivity;
-        const linkedItem = action?.linkedAction
-            ?? this.resolveRootSpellDocument(action, targetItem)
-            ?? activity?.cachedSpell
+        const rawLinked = action?.linkedAction;
+        const linkedFromAction = rawLinked instanceof Action
+            ? ((rawLinked.originalItem as unknown as Item5e) ?? null)
+            : ((rawLinked as unknown as Item5e) ?? null);
+        const linkedItem = linkedFromAction
+            ?? (this.resolveRootSpellDocument(action, targetItem as unknown as Item) as Item5e | null)
+            ?? (activity?.cachedSpell as Item5e | null)
             ?? null;
         const effectiveItem = linkedItem ?? targetItem;
-        const effectiveSystem = effectiveItem?.system ?? {};
-        const system = targetItem?.system ?? {};
+        const effectiveSystem = (effectiveItem?.system ?? {}) as Item5e['system'];
+        const system = (targetItem?.system ?? {}) as Item5e['system'];
 
         const title = action?.name ?? effectiveItem?.name ?? '';
         const img = (action?.img && action.img.length > 0) ? action.img : (effectiveItem?.img ?? '');
@@ -1960,11 +1972,12 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         const activation = activity?.labels?.activation ?? effectiveItem?.labels?.activation ?? '';
 
         if (type === 'weapon') {
-            const weaponType = effectiveSystem.type?.label ?? CONFIG?.DND5E?.weaponTypes?.[effectiveSystem.type?.value] ?? 'Weapon';
+            const weaponType = effectiveSystem.type?.label ?? (effectiveSystem.type?.value ? CONFIG?.DND5E?.weaponTypes?.[effectiveSystem.type.value] : null) ?? 'Weapon';
             subtitle = `${weaponType}${activation ? ' • ' + activation : ''}`;
         } else if (type === 'spell') {
-            const levelLabel = effectiveSystem.level === 0 ? localize('DND5E.SpellCantrip', 'Cantrip') : (CONFIG?.DND5E?.spellLevels?.[effectiveSystem.level] ?? `${effectiveSystem.level}th Level`);
-            const schoolLabel = CONFIG?.DND5E?.spellSchools?.[effectiveSystem.school]?.label ?? effectiveSystem.school ?? '';
+            const levelLabel = effectiveSystem.level === 0 ? localize('DND5E.SpellCantrip', 'Cantrip') : ((effectiveSystem.level != null && CONFIG?.DND5E?.spellLevels?.[effectiveSystem.level]) ? CONFIG.DND5E.spellLevels[effectiveSystem.level] : `${effectiveSystem.level}th Level`);
+            const schoolEntry = effectiveSystem.school ? CONFIG?.DND5E?.spellSchools?.[effectiveSystem.school] : null;
+            const schoolLabel = (typeof schoolEntry === 'string' ? schoolEntry : schoolEntry?.label) ?? effectiveSystem.school ?? '';
             subtitle = `${levelLabel} ${schoolLabel}${activation ? ' • ' + activation : ''}`.trim();
         } else if (type === 'feat') {
             const featType = effectiveSystem.type?.label ?? 'Feature';
@@ -2006,12 +2019,13 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         if (duration) {
             properties.push({ label: 'Duration', value: duration });
         }
-        if (effectiveSystem.properties?.has?.('concentration') || system.properties?.has?.('concentration')) {
+        const itemProps = toSet(effectiveSystem.properties ?? system.properties);
+        if (itemProps.has('concentration')) {
             properties.push({ value: 'Concentration' });
         }
 
         // 7. Ritual & Components (Spells)
-        if (effectiveSystem.properties?.has?.('ritual') || system.properties?.has?.('ritual')) {
+        if (itemProps.has('ritual')) {
             properties.push({ value: 'Ritual' });
         }
         const components = effectiveItem?.labels?.components?.vsm ?? effectiveItem?.labels?.components?.all;
@@ -2020,10 +2034,10 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         // 8. Physical Item Properties (e.g. Versatile, Finesse, Thrown)
-        const itemProps = toSet(effectiveSystem.properties ?? system.properties);
         for (const prop of itemProps) {
             if (EXCLUDED_SUMMARY_PROPERTIES.has(prop)) continue;
-            const propLabel = CONFIG?.DND5E?.itemProperties?.[prop]?.label ?? prop;
+            const propEntry = CONFIG?.DND5E?.itemProperties?.[prop];
+            const propLabel = (typeof propEntry === 'string' ? propEntry : propEntry?.label) ?? prop;
             properties.push({ value: propLabel });
         }
 
@@ -2265,7 +2279,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         const isInitialTabSync = Boolean(tabColumn && !tabColumn.autoBanInitialized);
         let changed = false;
 
-        for (const comp of ['vocal', 'somatic']) {
+        for (const comp of ['vocal', 'somatic'] as const) {
             const conditionList = Array.isArray(config[comp]) ? config[comp] : [];
             const currentConditions = conditionList.filter((condId: string) => activeStatuses.has(condId));
             const previousConditions = Array.isArray(previousConditionsMap[comp]) ? previousConditionsMap[comp] : [];

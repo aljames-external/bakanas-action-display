@@ -465,7 +465,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         if (!cached && game.settings.get(MODULE_ID, 'persistTabState')) {
             const rawStates = game.settings.get(MODULE_ID, 'hudTabStates');
             const allStates = rawStates ?? {};
-            cached = (actorKey ? allStates[actorKey] : null) ?? (lastActiveTabState ? { ...lastActiveTabState } : null);
+            cached = (actorKey ? allStates[actorKey] : undefined) ?? (lastActiveTabState ? { ...lastActiveTabState } : undefined);
             if (cached && actorKey) {
                 activeTabCache.set(actorKey, cached);
             }

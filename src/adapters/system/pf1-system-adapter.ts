@@ -143,14 +143,16 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
         try {
             for (const action of actions) {
                 const item = action.originalItem;
-                const type = item.type;
+                if (!item) continue;
+                const itemPF = item as unknown as ItemPF;
+                const type = item.type as string;
 
                 let isUnequipped = false;
-                if (EQUIPPABLE_TYPES.has(type) && item.system?.equipped !== undefined) {
+                if (EQUIPPABLE_TYPES.has(type) && itemPF.system?.equipped !== undefined) {
                     if (!this.getItemEquipped(item)) {
                         isUnequipped = true;
                         const showUnequipped = Boolean(actor?.getFlag?.(MODULE_ID, `showUnequipped_${type}`) || showAll);
-                        const isUserHidden = Boolean(actor?.getFlag?.(MODULE_ID, 'hiddenItems')?.[item.id]);
+                        const isUserHidden = Boolean(actor?.getFlag?.(MODULE_ID, 'hiddenItems')?.[item.id ?? '']);
                         if (!showUnequipped && !isUserHidden) {
                             log.debug(`Pf1SystemAdapter.modifyActions | Filtering out unequipped ${type} "${item.name}" (ID: ${item.id}) — item.system.equipped is falsy and showUnequipped_${type} / showAll flag is not set`);
                             continue;
@@ -158,9 +160,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                     }
                 }
 
-                if (item.type === 'spell') {
+                if (type === 'spell') {
                     // 1. Spells in PF1e
-                    const spellbookId = item.system.spellbook ?? 'primary';
+                    const spellbookId = itemPF.system.spellbook ?? 'primary';
                     const spellbook = this.#getSpellbook(actor, spellbookId);
                     if (!spellbook) {
                         log.debug(`Pf1SystemAdapter.modifyActions | Filtering out spell "${item.name}" (ID: ${item.id}) — no spellbook found for spellbook ID "${spellbookId}" (item.system.spellbook)`);
@@ -170,7 +172,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                     action.right = [TabRef.from('economy', 'action')];
                     action.activationType = 'action';
 
-                    const level = item.system.level ?? 0;
+                    const level = itemPF.system.level ?? 0;
                     const subTab = this.#getSpellSubTab(spellbookId, spellbook, level);
                     action.left = ['spell', subTab];
 
@@ -181,9 +183,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                     action.roll = (event: unknown) => this.#executeItemRoll(item, null, event);
 
                     modified.push(action);
-                } else if (item.type === 'attack') {
+                } else if (type === 'attack') {
                     // 2. Attacks in PF1e (if not linked to a weapon)
-                    if (attackToWeaponMap.has(item.id)) {
+                    if (attackToWeaponMap.has(item.id ?? '')) {
                         log.debug(`Pf1SystemAdapter.modifyActions | Skipping attack "${item.name}" (${item.id}) because it is linked to a weapon.`);
                         continue;
                     }
@@ -206,10 +208,10 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                     if (isUnequipped) action.available = false;
                     modified.push(action);
 
-                } else if (item.type === 'weapon') {
+                } else if (type === 'weapon') {
                     // 3. Weapons (with ammo resolution and linked attacks merging)
                     const uses = this.#calculateUses(item, actor);
-                    const linkedAttacks = weaponLinkedAttacks.get(item.id) ?? [];
+                    const linkedAttacks = weaponLinkedAttacks.get(item.id ?? '') ?? [];
 
                     const itemActionsList = linkedAttacks.length > 0
                         ? this.#buildLinkedAttackSubactions(linkedAttacks, item, uses)
@@ -251,11 +253,11 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                         continue;
                     }
 
-                    this.#promoteFirstSubaction(action, subactions, [(item.type as string)], uses);
+                    this.#promoteFirstSubaction(action, subactions, [type], uses);
                     if (isUnequipped) action.available = false;
                     modified.push(action);
 
-                } else if (item.type === 'buff') {
+                } else if (type === 'buff') {
                     // 5. Buffs
                     action.right = [TabRef.from('economy', 'other')];
                     action.activationType = 'other';

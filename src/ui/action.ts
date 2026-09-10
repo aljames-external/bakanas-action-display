@@ -14,10 +14,10 @@ export interface ActionOptions {
     available?: boolean;
     uses?: { available?: number | string | null; max?: number | string | null; isUpcast?: boolean; [key: string]: unknown };
     roll?: ((event?: Event | MouseEvent) => unknown) | null;
-    originalItem?: any;
+    originalItem?: Item | null;
     subactions?: Action[];
-    originalActivity?: any;
-    linkedAction?: any;
+    originalActivity?: Dnd5eActivity | null;
+    linkedAction?: Action | Item | null;
     collapseDropdownIfSingle?: boolean;
     extra?: Record<string, unknown>;
     economyIndicators?: unknown[];
@@ -43,10 +43,10 @@ export class Action {
     available: boolean;
     uses: { available?: number | string | null; max?: number | string | null; isUpcast?: boolean; [key: string]: unknown };
     roll: ((event?: Event | MouseEvent) => unknown) | null;
-    originalItem: any;
+    originalItem: Item | null;
     subactions: Action[];
-    originalActivity: any;
-    linkedAction: any;
+    originalActivity: Dnd5eActivity | null;
+    linkedAction: Action | Item | null;
     collapseDropdownIfSingle: boolean;
     extra: Record<string, unknown>;
     economyIndicators?: unknown[];
