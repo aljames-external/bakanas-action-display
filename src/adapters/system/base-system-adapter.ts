@@ -185,7 +185,7 @@ export class BaseSystemAdapter {
                 const val = Reflect.get(target, prop);
                 return typeof val === 'function' ? val.bind(target) : val;
             }
-        });
+        }) as Event | Record<string, unknown>;
     }
 
     // #endregion
