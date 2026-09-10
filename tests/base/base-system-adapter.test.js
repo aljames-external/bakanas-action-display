@@ -313,3 +313,44 @@ test('BaseSystemAdapter getInspiration and toggleInspiration return legacy NOP c
     assert.deepEqual(adapter.getInspiration({}), { supported: false, value: false });
     assert.equal(await adapter.toggleInspiration({}, true), false);
 });
+
+test('BaseSystemAdapter _createRollEvent safely proxies modifier keys to Foundry KeyboardManager', () => {
+    const adapter = new BaseSystemAdapter('test-system', false, new FoundryV12Adapter());
+
+    // 1. Empty / null event handling
+    assert.deepEqual(adapter._createRollEvent(null), {});
+    assert.deepEqual(adapter._createRollEvent(undefined), {});
+
+    // 2. Normal properties pass through
+    const originalEvent = { target: 'btn', preventDefault() { this.prevented = true; } };
+    const proxied = adapter._createRollEvent(originalEvent);
+    assert.equal(proxied.target, 'btn');
+    proxied.preventDefault();
+    assert.equal(originalEvent.prevented, true);
+
+    // 3. Modifier queries when keys are not pressed (must not throw TypeError: cannot read some)
+    assert.equal(proxied.shiftKey, false);
+    assert.equal(proxied.altKey, false);
+    assert.equal(proxied.ctrlKey, false);
+    assert.equal(proxied.metaKey, false);
+
+    // 4. Modifier queries when keys ARE pressed in game.keyboard
+    game.keyboard.downKeys.add('ShiftLeft');
+    assert.equal(proxied.shiftKey, true);
+    assert.equal(proxied.altKey, false);
+    game.keyboard.downKeys.delete('ShiftLeft');
+
+    game.keyboard.downKeys.add('AltRight');
+    assert.equal(proxied.altKey, true);
+    assert.equal(proxied.ctrlKey, false);
+    game.keyboard.downKeys.delete('AltRight');
+
+    game.keyboard.downKeys.add('ControlLeft');
+    assert.equal(proxied.ctrlKey, true);
+    assert.equal(proxied.metaKey, true);
+    game.keyboard.downKeys.delete('ControlLeft');
+
+    // 5. Short-circuit: When the event object itself already has the modifier set
+    const shiftEvent = adapter._createRollEvent({ shiftKey: true });
+    assert.equal(shiftEvent.shiftKey, true);
+});

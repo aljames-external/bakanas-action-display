@@ -9,9 +9,10 @@ import { BaseSystemContextModifier } from './context-modifier/base-system-contex
 import { categorizeActions } from '../../categorization/categorization-manager.js';
 
 const MODIFIER_KEY_MAP = {
-    altKey: 'Alt',
-    ctrlKey: 'Control',
-    shiftKey: 'Shift'
+    altKey: 'ALT',
+    ctrlKey: 'CONTROL',
+    shiftKey: 'SHIFT',
+    metaKey: 'CONTROL'
 } as const;
 
 const EXCLUDED_ECONOMY_LABELS = new Set(['economy', 'none', 'all']);
@@ -169,9 +170,15 @@ export class BaseSystemAdapter {
                 const propStr = String(prop);
                 if (propStr in MODIFIER_KEY_MAP) {
                     const keyProp = propStr as keyof typeof MODIFIER_KEY_MAP;
-                    const eventVal = (target as Record<string, unknown>)[keyProp];
-                    const isDown = game.keyboard?.isModifierActive(MODIFIER_KEY_MAP[keyProp]);
-                    return Boolean(eventVal || isDown);
+                    const eventVal = Boolean((target as Record<string, unknown>)[keyProp]);
+                    if (eventVal) return true;
+
+                    try {
+                        const isDown = game.keyboard?.isModifierActive?.(MODIFIER_KEY_MAP[keyProp]);
+                        return Boolean(isDown);
+                    } catch {
+                        return false;
+                    }
                 }
                 const val = Reflect.get(target, prop);
                 return typeof val === 'function' ? val.bind(target) : val;

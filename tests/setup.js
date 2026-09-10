@@ -604,7 +604,21 @@ globalThis.game = {
         }
     },
     keyboard: {
-        isModifierActive(mod) { return false; }
+        downKeys: new Set(),
+        isModifierActive(mod) {
+            const MODIFIER_KEYS = {
+                CONTROL: 'Control',
+                SHIFT: 'Shift',
+                ALT: 'Alt'
+            };
+            const MODIFIER_CODES = {
+                Control: ['ControlLeft', 'ControlRight', 'MetaLeft', 'MetaRight', 'Meta'],
+                Shift: ['ShiftLeft', 'ShiftRight'],
+                Alt: ['AltLeft', 'AltRight']
+            };
+            const code = MODIFIER_KEYS[mod];
+            return MODIFIER_CODES[code].some(k => this.downKeys.has(k));
+        }
     },
     tooltip: {
         element: null,
