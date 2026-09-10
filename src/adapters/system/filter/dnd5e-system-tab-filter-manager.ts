@@ -97,16 +97,10 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
             return rootDoc;
         }
 
-        // 4. Linked action item or subaction
-        const linked = action.linkedAction;
-        if (linked) {
-            if ('system' in linked && (linked as Item5e).type === 'spell') {
-                return linked as Item5e;
-            }
-            const linkedOrigItem = (linked as Action).originalItem as Item5e | null;
-            if (linkedOrigItem?.type === 'spell') {
-                return linkedOrigItem;
-            }
+        // 4. Linked action item
+        const linked = action.linkedAction as Item5e | null;
+        if (linked && (linked.type === 'spell' || Boolean(linked.system?.properties))) {
+            return linked;
         }
 
         return null;

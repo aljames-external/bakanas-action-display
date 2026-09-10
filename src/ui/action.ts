@@ -17,7 +17,7 @@ export interface ActionOptions {
     originalItem?: Item | null;
     subactions?: Action[];
     originalActivity?: Dnd5eActivity | null;
-    linkedAction?: Action | Item | null;
+    linkedAction?: Item | null;
     collapseDropdownIfSingle?: boolean;
     extra?: Record<string, unknown>;
     economyIndicators?: unknown[];
@@ -48,7 +48,7 @@ export class Action {
     originalItem: Item | null;
     subactions: Action[];
     originalActivity: Dnd5eActivity | null;
-    linkedAction: Action | Item | null;
+    linkedAction: Item | null;
     collapseDropdownIfSingle: boolean;
     extra: Record<string, unknown>;
     economyIndicators?: unknown[];

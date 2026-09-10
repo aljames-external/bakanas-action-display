@@ -1175,15 +1175,10 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item|null} [parentItem] Parent item document
      * @returns {Item|null}
      */
-    resolveRootSpellDocument(sub: { linkedAction?: Action | Item | null; originalActivity?: Dnd5eActivity | null; originalItem?: Item | null } | null, parentItem: Item | Item5e | null = null): Item | null {
+    resolveRootSpellDocument(sub: { linkedAction?: Item | null; originalActivity?: Dnd5eActivity | null; originalItem?: Item | null } | null, parentItem: Item | Item5e | null = null): Item | null {
         if (!sub) return null;
 
-        let doc: Item | null = null;
-        if (sub.linkedAction) {
-            doc = sub.linkedAction instanceof Action
-                ? sub.linkedAction.originalItem
-                : (sub.linkedAction as Item);
-        }
+        let doc: Item | null = sub.linkedAction ?? null;
         const activity = sub.originalActivity;
         if (!doc && activity && activity.type === 'cast') {
             const actId = activity.id;
@@ -1702,10 +1697,10 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * Extract activation type for a D&D 5e activity.
      * @param {Dnd5eActivity} activity
      * @param {Item} item
-     * @param {Action|Item|null} [linkedAction=null]
+     * @param {Item|null} [linkedAction=null]
      * @returns {string}
      */
-    #getActivityActivationType(activity: Dnd5eActivity, item: Item, linkedAction: Action | Item | null = null): string | null {
+    #getActivityActivationType(activity: Dnd5eActivity, item: Item, linkedAction: Item | null = null): string | null {
         const actActivation = activity.activation as { override?: boolean; type?: string } | undefined;
         const sysActivation = (activity.system as { activation?: { override?: boolean; type?: string } } | undefined)?.activation;
         const actOverride = Boolean(actActivation?.override ?? sysActivation?.override);

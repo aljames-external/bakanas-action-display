@@ -19,7 +19,7 @@ export interface HUDTabOptions {
     activeParent?: boolean;
     excluded?: boolean;
     showUnprepared?: boolean;
-    subTabs?: Array<HUDTab | HUDTabOptions>;
+    subTabs?: HUDTabOptions[];
     tooltip?: string;
     onLeftClick?: HUDTabClickCallback | null;
     onRightClick?: HUDTabClickCallback | null;
@@ -141,15 +141,24 @@ export class HUDTab {
     }
 
     /**
-     * Add a child sub-tab under this tab.
+     * Add a child sub-tab under this tab from configuration options.
      * Automatically establishes parent link and derives child depth level.
-     * @param {HUDTab|HUDTabOptions} subTabConfig Sub-tab configuration or instance
-     * @returns {HUDTab} The created or added child HUDTab instance
+     * @param {HUDTabOptions} subTabConfig Sub-tab configuration
+     * @returns {HUDTab} The created child HUDTab instance
      */
-    addSubTab(subTabConfig: HUDTab | HUDTabOptions): HUDTab {
-        const subTab: HUDTab = subTabConfig instanceof HUDTab
-            ? subTabConfig
-            : new HUDTab(subTabConfig);
+    addSubTab(subTabConfig: HUDTabOptions): HUDTab {
+        const subTab = new HUDTab(subTabConfig);
+        subTab.parent = this;
+        this.subTabs.push(subTab);
+        return subTab;
+    }
+
+    /**
+     * Attach an existing child HUDTab instance under this tab.
+     * @param {HUDTab} subTab Child HUDTab instance
+     * @returns {HUDTab} The attached child HUDTab instance
+     */
+    attachSubTab(subTab: HUDTab): HUDTab {
         subTab.parent = this;
         this.subTabs.push(subTab);
         return subTab;
