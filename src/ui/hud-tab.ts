@@ -212,29 +212,26 @@ export class HUDTab {
         app: ActionDisplayApp,
         tabColumn: HUDTabColumn,
         groups: Record<string, HUDTab>,
-        event?: MouseEvent | PointerEvent | Event
+        event?: any
     ): void {
         if (this.customOnLeftClick) {
             const handled = this.customOnLeftClick(app, tabColumn, groups, event);
             if (handled) return;
         }
-        const hasShift = Boolean((event as MouseEvent | undefined)?.shiftKey);
-        if (hasShift || game.settings.get(MODULE_ID, 'toggleTabSelection')) {
+        if (event?.shiftKey || game.settings.get(MODULE_ID, 'toggleTabSelection')) {
             if (this.isTopLevel) {
                 tabColumn.toggleParent(this.id, groups);
             } else {
-                const rootId = this.rootParent?.id ?? this.parent?.id ?? this.id;
-                const isExclusion = adapter.isExclusionTab(rootId);
-                tabColumn.toggleSub(rootId, this.id, groups, isExclusion);
+                const isExclusion = adapter.isExclusionTab(this.rootParent.id);
+                tabColumn.toggleSub(this.rootParent.id, this.id, groups, isExclusion);
             }
             return;
         }
         if (this.isTopLevel) {
             tabColumn.selectParent(this.id, groups);
         } else {
-            const rootId = this.rootParent?.id ?? this.parent?.id ?? this.id;
-            const isExclusion = adapter.isExclusionTab(rootId);
-            tabColumn.selectSub(rootId, this.id, groups, isExclusion);
+            const isExclusion = adapter.isExclusionTab(this.rootParent.id);
+            tabColumn.selectSub(this.rootParent.id, this.id, groups, isExclusion);
         }
     }
 
@@ -249,7 +246,7 @@ export class HUDTab {
         app: ActionDisplayApp,
         tabColumn: HUDTabColumn,
         groups: Record<string, HUDTab>,
-        event?: MouseEvent | PointerEvent | Event
+        event?: any
     ): void {
         if (this.customOnRightClick) {
             const handled = this.customOnRightClick(app, tabColumn, groups, event);
@@ -258,9 +255,8 @@ export class HUDTab {
         if (this.isTopLevel) {
             tabColumn.toggleParent(this.id, groups);
         } else {
-            const rootId = this.rootParent?.id ?? this.parent?.id ?? this.id;
-            const isExclusion = adapter.isExclusionTab(rootId);
-            tabColumn.toggleSub(rootId, this.id, groups, isExclusion);
+            const isExclusion = adapter.isExclusionTab(this.rootParent.id);
+            tabColumn.toggleSub(this.rootParent.id, this.id, groups, isExclusion);
         }
     }
 }
