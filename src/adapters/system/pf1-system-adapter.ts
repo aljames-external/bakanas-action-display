@@ -299,7 +299,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                     right: [TabRef.from('ability', abl)],
                     left: ['savingThrow'],
                     available: true,
-                    roll: async (event?: Event | MouseEvent) => {
+                    roll: async (event?: Event) => {
                         const rollEvent = this._createRollEvent(event);
                         return act.rollSavingThrow?.(saveKey, { event: rollEvent }) ??
                             act.rollSave?.(saveKey, { event: rollEvent });
@@ -316,7 +316,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                 right: [TabRef.from('ability', abl)],
                 left: ['abilityCheck'],
                 available: true,
-                roll: async (event?: Event | MouseEvent) => {
+                roll: async (event?: Event) => {
                     const rollEvent = this._createRollEvent(event);
                     return act.rollAbilityTest?.(abl, { event: rollEvent }) ??
                         act.rollAbilityCheck?.(abl, { event: rollEvent }) ??
@@ -363,7 +363,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                 left: ['abilityCheck'],
                 available: true,
                 uses: { available: null, max: null },
-                roll: async (event?: Event | MouseEvent) => {
+                roll: async (event?: Event) => {
                     const rollEvent = this._createRollEvent(event);
                     return act.rollSkill?.(skillId, { event: rollEvent });
                 },
@@ -386,7 +386,7 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
                         left: ['abilityCheck'],
                         available: true,
                         uses: { available: null, max: null },
-                        roll: async (event?: Event | MouseEvent) => {
+                        roll: async (event?: Event) => {
                             const rollEvent = this._createRollEvent(event);
                             return act.rollSkill?.(`${skillId}.subSkills.${subId}`, { event: rollEvent });
                         },
@@ -1224,9 +1224,9 @@ export class BasePf1SystemAdapter extends FantasySystemAdapter {
      * @param {Object} [actor] The owning actor document
      * @returns {{title: string, subtitle?: string, img?: string, properties?: Array<string|{label?: string, value: string}>, description?: string}|null}
      */
-    override async getItemSummary(action: Action, item: Item | null = (action?.originalItem as Item | null) ?? null, actor: Actor | null = null): Promise<ItemSummary | null> {
+    override async getItemSummary(action: Action, item: Item | null = action?.originalItem ?? null, actor: Actor | null = null): Promise<ItemSummary | null> {
         if (!action && !item) return null;
-        const targetItem = item ?? (action?.originalItem as Item | null);
+        const targetItem = item ?? action?.originalItem ?? null;
         const title = action?.name ?? targetItem?.name ?? '';
         const img = (action?.img && action.img.length > 0) ? action.img : (targetItem?.img ?? '');
         const itemPF = targetItem as ItemPF | null;

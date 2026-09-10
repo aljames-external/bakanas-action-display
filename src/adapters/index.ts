@@ -205,7 +205,7 @@ class Adapter {
      * @param {Event|MouseEvent} event
      * @returns {boolean}
      */
-    onTabRightClick(app: unknown, tab: HTMLElement, event: Event | MouseEvent): boolean {
+    onTabRightClick(app: unknown, tab: HTMLElement, event: MouseEvent): boolean {
         return this.system?.onTabRightClick?.(app, tab, event) ?? false;
     }
 
@@ -500,7 +500,7 @@ class Adapter {
      * @param {Actor} actor
      * @returns {Record<'vocal'|'somatic', string[]>}
      */
-    getAutoBanEffectReasons(actor: Actor): Record<'vocal' | 'somatic', AutoBanEffectReason[] | string[]> {
+    getAutoBanEffectReasons(actor: Actor): Record<'vocal' | 'somatic', AutoBanEffectReason[]> {
         return this.system?.getAutoBanEffectReasons?.(actor) ?? { vocal: [], somatic: [] };
     }
 

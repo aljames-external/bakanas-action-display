@@ -1,4 +1,5 @@
 import { BaseSystemTabFilterManager } from './base-system-tab-filter-manager.js';
+import type { AutoBanEffectReason } from '../base-system-adapter.js';
 import { TabRef } from '../../../ui/tab-ref.js';
 import { Action } from '../../../ui/action.js';
 import { log } from '../../../lib/logger.js';
@@ -17,12 +18,6 @@ const COMPONENT_SHORT_KEYS = deepFreeze({
 });
 
 const SPELL_COMPONENTS = deepFreeze(['vocal', 'somatic', 'material']);
-
-interface ReasonObject {
-    name?: string;
-    isDirectStatus?: boolean;
-    statuses?: string[];
-}
 
 /**
  * Check if a spell item document requires a given spell component.
@@ -151,23 +146,20 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
     }
 
     /**
-     * Format an array of reason objects or strings into a readable text list.
-     * @param {Array<ReasonObject|string>} reasons
+     * Format an array of reason objects into a readable text list.
+     * @param {AutoBanEffectReason[]} reasons
      * @returns {string}
      * @private
      */
-    #formatReasonsText(reasons: (ReasonObject | string)[]): string {
+    #formatReasonsText(reasons: AutoBanEffectReason[]): string {
         if (!Array.isArray(reasons)) return '';
         return reasons.map(r => {
             if (!r) return '';
-            if (typeof r !== 'string') {
-                if (r.isDirectStatus) return r.name ?? '';
-                if (r.statuses?.length) {
-                    return `${r.name ?? ''} (${r.statuses.join(', ')})`;
-                }
-                return String(r.name ?? '');
+            if (r.isDirectStatus) return r.name ?? '';
+            if (r.statuses?.length) {
+                return `${r.name ?? ''} (${r.statuses.join(', ')})`;
             }
-            return String(r);
+            return String(r.name ?? '');
         }).join(', ');
     }
 
@@ -192,7 +184,8 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
             if (!action.subactions?.length) {
                 const matchedBannedComp = activeCompSubs.find(comp => this.requiresComponent(action, comp) || action.right?.some((tab: TabRef) => tab.root === 'components' && tab.label === comp));
                 if (matchedBannedComp) {
-                    const reasons = (effectReasons as Record<string, (ReasonObject | string)[]>)[matchedBannedComp] ?? [];
+                    const rawReasons = (effectReasons as Record<string, Array<AutoBanEffectReason | string>>)[matchedBannedComp] ?? [];
+                    const reasons: AutoBanEffectReason[] = rawReasons.map(r => typeof r === 'string' ? { name: r, statuses: [r], isDirectStatus: true } : r);
                     const reasonsText = this.#formatReasonsText(reasons);
                     log.debug(`Dnd5eSystemTabFilterManager.matchesEconomyTabs | Skipping action "${action.name}" (${action.id}) — requires banned component "${matchedBannedComp}" caused by effect(s): [${reasonsText}] | Current ban lists: [${activeCompSubs.join(', ')}]`, { action, bannedComponent: matchedBannedComp, reasons, activeCompSubs });
                     return false;
@@ -226,7 +219,8 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
         return baseFiltered.filter((sub: Action) => {
             const matchedBannedComp = activeCompSubs.find(comp => this.requiresComponent(sub, comp) || sub.right?.some((tab: TabRef) => tab.root === 'components' && tab.label === comp));
             if (matchedBannedComp) {
-                const reasons = (effectReasons as Record<string, (ReasonObject | string)[]>)[matchedBannedComp] ?? [];
+                const rawReasons = (effectReasons as Record<string, Array<AutoBanEffectReason | string>>)[matchedBannedComp] ?? [];
+                const reasons: AutoBanEffectReason[] = rawReasons.map(r => typeof r === 'string' ? { name: r, statuses: [r], isDirectStatus: true } : r);
                 const reasonsText = this.#formatReasonsText(reasons);
                 log.debug(`Dnd5eSystemTabFilterManager.filterSubactions | Filtering out "${sub.name}" (${sub.id}) — requires banned component "${matchedBannedComp}" caused by effect(s): [${reasonsText}] | Current ban lists: [${activeCompSubs.join(', ')}]`, { sub, bannedComponent: matchedBannedComp, reasons, activeCompSubs });
                 return false;

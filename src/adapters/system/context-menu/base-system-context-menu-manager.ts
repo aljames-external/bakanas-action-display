@@ -112,7 +112,7 @@ export class BaseSystemContextMenuManager {
      * @param {Event | MouseEvent} event The trigger event
      * @returns {boolean} True if handled by the system context manager
      */
-    onTabRightClick(app: unknown, el: HTMLElement, event: Event | MouseEvent): boolean {
+    onTabRightClick(app: unknown, el: HTMLElement, event: MouseEvent): boolean {
         return false;
     }
 

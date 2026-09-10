@@ -13,7 +13,7 @@ export interface ActionOptions {
     isHidden?: boolean;
     available?: boolean;
     uses?: { available?: number | string | null; max?: number | string | null; isUpcast?: boolean; [key: string]: unknown };
-    roll?: ((event?: Event | MouseEvent) => unknown) | null;
+    roll?: ((event?: Event) => unknown) | null;
     originalItem?: Item | null;
     subactions?: Action[];
     originalActivity?: Dnd5eActivity | null;
@@ -44,7 +44,7 @@ export class Action {
     isHidden: boolean;
     available: boolean;
     uses: { available?: number | string | null; max?: number | string | null; isUpcast?: boolean; [key: string]: unknown };
-    roll: ((event?: Event | MouseEvent) => unknown) | null;
+    roll: ((event?: Event) => unknown) | null;
     originalItem: Item | null;
     subactions: Action[];
     originalActivity: Dnd5eActivity | null;

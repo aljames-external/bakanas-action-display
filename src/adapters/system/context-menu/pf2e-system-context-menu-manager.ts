@@ -160,7 +160,7 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
      * @param {Event | MouseEvent} [_event] Triggering event
      * @returns {boolean} True if handled
      */
-    override onTabRightClick(app: { actor?: Actor }, el: HTMLElement, _event?: Event | MouseEvent): boolean {
+    override onTabRightClick(app: { actor?: Actor }, el: HTMLElement, _event?: MouseEvent): boolean {
         return this.handleFilterTabRightClick(app, el, PF2E_TAB_FLAG_MAP, ALL_FILTER_FLAGS);
     }
 }

@@ -159,7 +159,7 @@ export class BaseSystemAdapter {
         return this.contextMenuManager.getContextMenuItems(app);
     }
 
-    onTabRightClick(app: unknown, el: HTMLElement, event: Event | MouseEvent): boolean {
+    onTabRightClick(app: unknown, el: HTMLElement, event: MouseEvent): boolean {
         return this.contextMenuManager.onTabRightClick(app, el, event);
     }
 
@@ -813,7 +813,7 @@ export class BaseSystemAdapter {
      * @param {Actor} [actor]
      * @returns {Record<'vocal'|'somatic', Array<*>>}
      */
-    getAutoBanEffectReasons(actor?: Actor | null): Record<'vocal'|'somatic', AutoBanEffectReason[] | string[]> {
+    getAutoBanEffectReasons(actor?: Actor | null): Record<'vocal'|'somatic', AutoBanEffectReason[]> {
         return { vocal: [], somatic: [] };
     }
 

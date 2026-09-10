@@ -821,7 +821,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         return act.system?.actions ?? [];
     }
 
-    #getSpellSubTab(entry: Pf2eSpellcastingEntry, spellLevel: number | string): string {
+    #getSpellSubTab(entry: Pf2eSpellcastingEntry, spellLevel: number): string {
         if (entry.isFocusPool) return 'focus';
         if (entry.isInnate) return 'innate';
         if (entry.isRitual) return 'ritual';

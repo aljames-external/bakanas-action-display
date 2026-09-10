@@ -355,7 +355,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 right: [TabRef.from('ability', abl)],
                 left: ['savingThrow'],
                 available: true,
-                roll: async (event?: Event | MouseEvent) => {
+                roll: async (event?: Event) => {
                     const rollEvent = this._createRollEvent(event);
                     return act.rollSavingThrow?.({ ability: abl, event: rollEvent })
                         ?? act.rollAbilitySave?.({ ability: abl, event: rollEvent });
@@ -370,7 +370,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 right: [TabRef.from('ability', abl)],
                 left: ['abilityCheck'],
                 available: true,
-                roll: async (event?: Event | MouseEvent) => {
+                roll: async (event?: Event) => {
                     const rollEvent = this._createRollEvent(event);
                     return act.rollAbilityTest?.({ ability: abl, event: rollEvent })
                         ?? act.rollAbilityCheck?.({ ability: abl, event: rollEvent });
@@ -413,7 +413,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 left: ['abilityCheck'],
                 available: true,
                 uses: { available: null, max: null },
-                roll: async (event?: Event | MouseEvent) => {
+                roll: async (event?: Event) => {
                     const rollEvent = this._createRollEvent(event);
                     return act.rollSkill?.({ skill: skillId, event: rollEvent });
                 },
@@ -440,7 +440,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 left: ['tool'],
                 available: true,
                 uses: { available: null, max: null },
-                roll: async (event?: Event | MouseEvent) => {
+                roll: async (event?: Event) => {
                     const rollEvent = this._createRollEvent(event);
                     return act.rollToolCheck?.({ tool: toolId, event: rollEvent })
                         ?? act.rollTool?.({ tool: toolId, event: rollEvent });
@@ -1175,7 +1175,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item|null} [parentItem] Parent item document
      * @returns {Item|null}
      */
-    resolveRootSpellDocument(sub: { linkedAction?: Item | null; originalActivity?: Dnd5eActivity | null; originalItem?: Item | null } | null, parentItem: Item | Item5e | null = null): Item | null {
+    resolveRootSpellDocument(sub: { linkedAction?: Item | null; originalActivity?: Dnd5eActivity | null; originalItem?: Item | null } | null, parentItem: Item5e | null = null): Item | null {
         if (!sub) return null;
 
         let doc: Item | null = sub.linkedAction ?? null;
