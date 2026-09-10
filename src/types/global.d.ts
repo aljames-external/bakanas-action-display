@@ -82,7 +82,7 @@ declare global {
 
   namespace Hooks {
     interface HookConfig {
-      'closeTokenHUD': (tokenHUD: any, html: any) => void;
+      'closeTokenHUD': (tokenHUD: TokenHUD | null | undefined, html: unknown) => void;
       [key: string]: (...args: any[]) => any;
     }
   }
@@ -159,13 +159,13 @@ declare module 'fvtt-types/configuration' {
     "bakana-action-display.showItemSummaries": boolean;
     "bakana-action-display.isAttached": boolean;
     "bakana-action-display.persistHUD": boolean;
-    "bakana-action-display.hudDetachedPosition": Record<string, any> | null;
-    "bakana-action-display.hudTabStates": Record<string, any>;
+    "bakana-action-display.hudDetachedPosition": Record<string, unknown> | null;
+    "bakana-action-display.hudTabStates": Record<string, unknown>;
   }
 
   namespace Hooks {
     interface HookConfig {
-      'closeTokenHUD': (tokenHUD: any, html: any) => void;
+      'closeTokenHUD': (tokenHUD: TokenHUD | null | undefined, html: unknown) => void;
       [key: string]: (...args: any[]) => any;
     }
   }
