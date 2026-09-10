@@ -8,35 +8,35 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
     /**
      * The active ContextMenu constructor in v12.
      */
-    override get ContextMenu(): any {
+    override get ContextMenu(): typeof ContextMenu {
         return ContextMenu;
     }
 
     /**
      * The active KeyboardManager constructor in v12.
      */
-    override get KeyboardManager(): any {
+    override get KeyboardManager(): typeof KeyboardManager {
         return KeyboardManager;
     }
 
     /**
      * The active Token placeable constructor in v12.
      */
-    override get Token(): any {
+    override get Token(): typeof Token {
         return Token;
     }
 
     /**
      * The active FilePicker constructor / implementation in v12.
      */
-    override get FilePicker(): any {
+    override get FilePicker(): typeof FilePicker {
         return FilePicker;
     }
 
     /**
      * The active TextEditor constructor / implementation in v12.
      */
-    override get TextEditor(): any {
+    override get TextEditor(): typeof TextEditor {
         return TextEditor;
     }
     /**
@@ -45,8 +45,8 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
      * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Document|null}
      */
-    override fromUuidSync(uuid: string, options: FromUuidOptions = {}): any {
-        return fromUuidSync(uuid, options);
+    override fromUuidSync(uuid: string, options: FromUuidOptions = {}): foundry.abstract.Document.Any | null {
+        return fromUuidSync(uuid, options) as foundry.abstract.Document.Any | null;
     }
 
     /**
@@ -55,7 +55,7 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
      * @param {FromUuidOptions} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    override async fromUuid(uuid: string, options: FromUuidOptions = {}): Promise<any> {
+    override async fromUuid(uuid: string, options: FromUuidOptions = {}): Promise<foundry.abstract.Document.Any | null> {
         return fromUuid(uuid, options);
     }
 

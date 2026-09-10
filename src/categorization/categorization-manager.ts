@@ -24,12 +24,12 @@ export interface CategorizationConfig {
 
 export interface CategorizedSubsection {
     name: string;
-    items: any[];
+    items: Action[];
 }
 
 export interface CategorizedSection {
     name: string;
-    items: any[];
+    items: Action[];
     subsections: CategorizedSubsection[];
 }
 
@@ -39,21 +39,22 @@ export interface CategorizedSection {
  * @param {Object} [raw] Raw configuration object from settings or user input
  * @returns {CategorizationConfig} Strict normalized configuration
  */
-export function normalizeCategorizationConfig(raw: any): CategorizationConfig {
-    const enabled = Boolean(raw?.enabled);
-    const rawCategories = raw?.categories ?? [];
+export function normalizeCategorizationConfig(raw: unknown): CategorizationConfig {
+    const rawObj = raw as { enabled?: boolean; categories?: unknown[] } | null | undefined;
+    const enabled = Boolean(rawObj?.enabled);
+    const rawCategories = (rawObj?.categories ?? []) as Array<Record<string, unknown> | null | undefined>;
 
-    const categories: Category[] = rawCategories.map((cat: any, catIndex: number) => {
-        const catId = cat?.id ?? `cat_${Date.now()}_${catIndex}`;
-        const name = cat?.name ?? '';
-        const expression = cat?.expression ?? '';
+    const categories: Category[] = rawCategories.map((cat, catIndex: number) => {
+        const catId = (cat?.id as string | undefined) ?? `cat_${Date.now()}_${catIndex}`;
+        const name = (cat?.name as string | undefined) ?? '';
+        const expression = (cat?.expression as string | undefined) ?? '';
         const fallthrough = Boolean(cat?.fallthrough);
-        const rawSubs = cat?.subcategories ?? [];
+        const rawSubs = (cat?.subcategories ?? []) as Array<Record<string, unknown> | null | undefined>;
 
-        const subcategories: SubCategory[] = rawSubs.map((sub: any, subIndex: number) => {
-            const subId = sub?.id ?? `sub_${Date.now()}_${subIndex}`;
-            const subName = sub?.name ?? '';
-            const subExpr = sub?.expression ?? '';
+        const subcategories: SubCategory[] = rawSubs.map((sub, subIndex: number) => {
+            const subId = (sub?.id as string | undefined) ?? `sub_${Date.now()}_${subIndex}`;
+            const subName = (sub?.name as string | undefined) ?? '';
+            const subExpr = (sub?.expression as string | undefined) ?? '';
             return {
                 id: subId,
                 name: subName,
@@ -110,7 +111,7 @@ export function validateExpression(expression: string | null | undefined): { val
         getCompiledExpression(expr);
         return { valid: true, error: null };
     } catch (err) {
-        return { valid: false, error: (err as any)?.message ?? 'Syntax error' };
+        return { valid: false, error: (err as Error)?.message ?? 'Syntax error' };
     }
 }
 
@@ -122,14 +123,14 @@ export function validateExpression(expression: string | null | undefined): { val
  * @param {Object} [context={}] Additional context such as actor, token, or user documents
  * @returns {boolean} True if expression evaluates to truthy
  */
-export function evaluateBooleanExpression(expression: string, action: any, context: Record<string, any> = {}): boolean {
+export function evaluateBooleanExpression(expression: string, action: Action, context: Record<string, unknown> = {}): boolean {
     const expr = typeof expression === 'string' ? expression.trim() : '';
     if (!expr) return false;
 
     try {
         const item = action?.originalItem ?? action;
-        const actor = context?.actor ?? action?.actor ?? null;
-        const token = context?.token ?? action?.token ?? null;
+        const actor = context?.actor ?? (action as unknown as { actor?: Actor })?.actor ?? null;
+        const token = context?.token ?? (action as unknown as { token?: Token })?.token ?? null;
         const user = context?.user ?? game.user ?? null;
 
         const evaluator = getCompiledExpression(expr);
@@ -138,6 +139,18 @@ export function evaluateBooleanExpression(expression: string, action: any, conte
         log.error(`Failed to evaluate boolean expression: "${expression}"`, err);
         return false;
     }
+}
+
+interface SubBucket {
+    subcategory: SubCategory;
+    items: Action[];
+}
+
+interface CategoryBucket {
+    category: Category;
+    directItems: Action[];
+    subBuckets: Map<string, SubBucket>;
+    othersItems: Action[];
 }
 
 /**
@@ -149,7 +162,7 @@ export function evaluateBooleanExpression(expression: string, action: any, conte
  * @param {Object} [context={}] Additional evaluation context { actor, token, user }
  * @returns {CategorizedSection[]|null} Grouped category sections or null if disabled
  */
-export function categorizeActions(actions: any, config: any, catchAllLabel: any, context: Record<string, any> = {}): CategorizedSection[] | null {
+export function categorizeActions(actions: Action[] | null | undefined, config: unknown, catchAllLabel: string | null | undefined, context: Record<string, unknown> = {}): CategorizedSection[] | null {
     const normalizedConfig = normalizeCategorizationConfig(config);
     if (!normalizedConfig.enabled || normalizedConfig.categories.length === 0) {
         return null;
@@ -159,35 +172,35 @@ export function categorizeActions(actions: any, config: any, catchAllLabel: any,
     const othersLabel = (trimmed && trimmed.length > 0) ? trimmed : 'Other Actions';
 
     // Map each category to an internal bucket structure
-    const categoryMap = new Map();
+    const categoryMap = new Map<string, CategoryBucket>();
     for (const cat of normalizedConfig.categories) {
-        const subMap = new Map();
+        const subMap = new Map<string, SubBucket>();
         for (const sub of cat.subcategories) {
             subMap.set(sub.id, {
                 subcategory: sub,
-                items: [] as any[]
+                items: []
             });
         }
         categoryMap.set(cat.id, {
             category: cat,
-            directItems: [] as any[],
+            directItems: [],
             subBuckets: subMap,
-            othersItems: [] as any[]
+            othersItems: []
         });
     }
 
-    const topLevelOthers: any[] = [];
+    const topLevelOthers: Action[] = [];
 
     // Distribute each action into matching categories / subcategories
     for (const action of (actions ?? [])) {
         let consumed = false;
 
-        for (const [catId, bucket] of categoryMap.entries()) {
+        for (const bucket of categoryMap.values()) {
             if (evaluateBooleanExpression(bucket.category.expression, action, context)) {
                 const hasSubcategories = bucket.category.subcategories.length > 0;
                 if (hasSubcategories) {
-                    let matchedSubBucket: any = null;
-                    for (const [subId, subEntry] of bucket.subBuckets.entries()) {
+                    let matchedSubBucket: SubBucket | null = null;
+                    for (const subEntry of bucket.subBuckets.values()) {
                         if (evaluateBooleanExpression(subEntry.subcategory.expression, action, context)) {
                             matchedSubBucket = subEntry;
                             break;
@@ -219,9 +232,9 @@ export function categorizeActions(actions: any, config: any, catchAllLabel: any,
     }
 
     // Build the final output structure containing only non-empty sections and subsections
-    const categorizedSections: any[] = [];
+    const categorizedSections: CategorizedSection[] = [];
 
-    for (const [catId, bucket] of categoryMap.entries()) {
+    for (const bucket of categoryMap.values()) {
         let subItemsCount = 0;
         for (const s of bucket.subBuckets.values()) {
             subItemsCount += s.items.length;
@@ -230,8 +243,8 @@ export function categorizeActions(actions: any, config: any, catchAllLabel: any,
 
         if (totalItemsInCat === 0) continue;
 
-        const subsections: any[] = [];
-        for (const [subId, subEntry] of bucket.subBuckets.entries()) {
+        const subsections: CategorizedSubsection[] = [];
+        for (const subEntry of bucket.subBuckets.values()) {
             if (subEntry.items.length > 0) {
                 subEntry.items.sort(sortByName);
                 subsections.push({
@@ -302,6 +315,7 @@ export const DEFAULT_CATEGORIES = deepFreeze([
  * @param {Object} [customAdapter=null] Optional adapter override
  * @returns {Category[]} Default category list
  */
-export function getDefaultCategories(customAdapter: any = null): Category[] {
-    return customAdapter?.getDefaultCategories?.() ?? DEFAULT_CATEGORIES;
+export function getDefaultCategories(customAdapter: { getDefaultCategories?: () => unknown[] | null } | null = null): Category[] {
+    const custom = customAdapter?.getDefaultCategories?.();
+    return (custom ? (custom as Category[]) : (DEFAULT_CATEGORIES as unknown as Category[]));
 }
