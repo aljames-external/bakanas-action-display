@@ -80,7 +80,7 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
      * @param {Object} activity The subAction / activity object
      * @returns {boolean} True if the activity should be hidden from player view
      */
-    isAutomationOnly(activity: Action | { originalActivity?: { midiProperties?: { automationOnly?: boolean } } } | null | undefined): boolean {
-        return Boolean((activity as { originalActivity?: { midiProperties?: { automationOnly?: boolean } } } | null | undefined)?.originalActivity?.midiProperties?.automationOnly);
+    isAutomationOnly(activity: Action | null | undefined): boolean {
+        return Boolean(activity?.originalActivity?.midiProperties?.automationOnly);
     }
 }

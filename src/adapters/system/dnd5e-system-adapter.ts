@@ -1175,7 +1175,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
      * @param {Item|null} [parentItem] Parent item document
      * @returns {Item|null}
      */
-    resolveRootSpellDocument(sub: { linkedAction?: Action | Item | null; originalActivity?: Dnd5eActivity | null; originalItem?: Item | null } | null, parentItem: Item | null = null): Item | null {
+    resolveRootSpellDocument(sub: { linkedAction?: Action | Item | null; originalActivity?: Dnd5eActivity | null; originalItem?: Item | null } | null, parentItem: Item | Item5e | null = null): Item | null {
         if (!sub) return null;
 
         let doc: Item | null = null;
@@ -1220,7 +1220,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             }
         }
 
-        if (doc && ((doc.type as string) === 'spell' || (doc.type as string) === 'cast' || Boolean((doc as unknown as { spell?: unknown }).spell))) return doc as Item;
+        if (doc && ((doc.type as string) === 'spell' || (doc.type as string) === 'cast' || Boolean((doc as { spell?: unknown }).spell))) return doc;
 
         if (activity?.type === 'cast') {
             if (activity.spell && !this.#isItemDocument(activity.spell)) {
@@ -1231,7 +1231,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
         const origItem = sub.originalItem ?? parentItem;
         if ((origItem?.type as string) === 'spell') {
-            return origItem;
+            return origItem as Item;
         }
 
         return null;
@@ -1714,9 +1714,9 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             if (overrideType) return overrideType;
         }
 
-        const spellDoc = linkedAction ?? this.resolveRootSpellDocument({ originalActivity: activity, linkedAction: (activity.spell as unknown as Item | null) ?? null });
+        const spellDoc = linkedAction ?? this.resolveRootSpellDocument({ originalActivity: activity, linkedAction: this.#isItemDocument(activity.spell) ? (activity.spell as Item) : null });
         if (spellDoc) {
-            const rawType = (spellDoc as Item5e).system?.activation?.type ?? (spellDoc as unknown as { activation?: { type?: string } }).activation?.type;
+            const rawType = (spellDoc as Item5e).system?.activation?.type ?? (spellDoc as Item5e).activation?.type;
             const spellType = this.#normalizeActivationType(rawType);
             if (spellType) return spellType;
         }
@@ -1740,7 +1740,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 return;
             }
             if (activity.item?.sheet?.render) {
-                (activity.item.sheet as unknown as { render(force: boolean, options?: unknown): void }).render(true, { subtab: "activities", activityId: activity.id });
+                activity.item.sheet.render(true, { subtab: "activities", activityId: activity.id });
                 return;
             }
         }
@@ -1948,14 +1948,14 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             return this.#getCheckSummary(action, actor);
         }
 
-        const targetItem = (item ?? action?.originalItem ?? (action as unknown as Item)) as Item5e | null;
+        const targetItem = (item ?? action?.originalItem ?? null) as Item5e | null;
         const activity = action?.originalActivity;
         const rawLinked = action?.linkedAction;
         const linkedFromAction = rawLinked instanceof Action
-            ? ((rawLinked.originalItem as unknown as Item5e) ?? null)
-            : ((rawLinked as unknown as Item5e) ?? null);
+            ? ((rawLinked.originalItem as Item5e | null) ?? null)
+            : ((rawLinked as Item5e | null) ?? null);
         const linkedItem = linkedFromAction
-            ?? (this.resolveRootSpellDocument(action, targetItem as unknown as Item) as Item5e | null)
+            ?? (this.resolveRootSpellDocument(action, targetItem) as Item5e | null)
             ?? (activity?.cachedSpell as Item5e | null)
             ?? null;
         const effectiveItem = linkedItem ?? targetItem;
@@ -2073,7 +2073,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
         if (description) {
             const descItem = linkedItem ?? targetItem;
-            const rollData = activity?.getRollData?.() ?? (descItem as unknown as { getRollData?: () => unknown })?.getRollData?.() ?? actor?.getRollData?.() ?? {};
+            const rollData = activity?.getRollData?.() ?? descItem?.getRollData?.() ?? actor?.getRollData?.() ?? {};
             description = await this.enrichHTML(description, {
                 rollData,
                 relativeTo: descItem ?? actor,
@@ -2199,17 +2199,17 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         if (!actor) return new Set();
         const statuses = new Set<string>();
 
-        if ((actor as Actor5e).statuses) {
-            for (const s of (actor as Actor5e).statuses!) statuses.add(s);
+        if (actor.statuses) {
+            for (const s of actor.statuses) statuses.add(s);
         }
 
         if (actor.effects) {
             for (const effect of actor.effects) {
-                if (effect.disabled || (effect as unknown as { isSuppressed?: boolean }).isSuppressed) continue;
-                if ((effect as unknown as { statuses?: Iterable<string> }).statuses) {
-                    for (const s of (effect as unknown as { statuses?: Iterable<string> }).statuses!) statuses.add(s);
+                if (effect.disabled || effect.isSuppressed) continue;
+                if (effect.statuses) {
+                    for (const s of effect.statuses) statuses.add(s);
                 }
-                const statusId = (effect as unknown as { getFlag?: (scope: string, key: string) => unknown })?.getFlag?.('core', 'statusId') ?? (effect.flags as { core?: { statusId?: string } } | undefined)?.core?.statusId;
+                const statusId = (effect.getFlag as Function)?.('core', 'statusId') ?? (effect.flags as { core?: { statusId?: string } } | undefined)?.core?.statusId;
                 if (typeof statusId === 'string' && statusId) statuses.add(statusId);
             }
         }
@@ -2246,9 +2246,8 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
 
         manualUnbans[subId] = !isActive;
 
-        const setFlag = (actor as unknown as { setFlag?: (scope: string, key: string, value: unknown, options?: unknown) => Promise<unknown> }).setFlag;
-        if (actor.isOwner && setFlag) {
-            setFlag.call(actor, MODULE_ID, 'autoBanState', {
+        if (actor.isOwner && actor.setFlag) {
+            (actor.setFlag as Function)(MODULE_ID, 'autoBanState', {
                 conditions,
                 manualUnbans
             }, { badInternal: true }).catch((err: unknown) => {
@@ -2330,10 +2329,9 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             tabColumn.autoBanInitialized = true;
         }
 
-        const setFlag = (actor as unknown as { setFlag?: (scope: string, key: string, value: unknown, options?: unknown) => Promise<unknown> }).setFlag;
-        if (changed && actor.isOwner && setFlag) {
+        if (changed && actor.isOwner && actor.setFlag) {
             const effectReasons = this.getAutoBanEffectReasons(actor);
-            setFlag.call(actor, MODULE_ID, 'autoBanState', {
+            (actor.setFlag as Function)(MODULE_ID, 'autoBanState', {
                 conditions: updatedConditions,
                 manualUnbans: updatedManualUnbans,
                 effectReasons
@@ -2374,7 +2372,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         const activeStatuses = this.getActorStatuses(actor);
 
         // Gather all active, non-disabled, non-suppressed effects on actor
-        const activeEffects = Array.from((actor.effects ?? []) as unknown as Iterable<ActiveEffect>).filter(eff => !eff.disabled && !(eff as unknown as { isSuppressed?: boolean }).isSuppressed);
+        const activeEffects = Array.from((actor.effects ?? []) as Iterable<ActiveEffect>).filter(eff => !eff.disabled && !eff.isSuppressed);
 
         for (const comp of ['vocal', 'somatic'] as const) {
             const conditionList = Array.isArray(config[comp]) ? config[comp]! : [];
@@ -2387,11 +2385,11 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
             // 1. Inspect ActiveEffects for matching status subcomponents
             for (const eff of activeEffects) {
                 const matchedStatuses: string[] = [];
-                const effStatuses = (eff as unknown as { statuses?: Set<string> | string[] }).statuses;
+                const effStatuses = eff.statuses;
                 for (const condId of matchingConditions) {
                     const hasStatus = (effStatuses instanceof Set && effStatuses.has(condId)) ||
-                        (Array.isArray(effStatuses) && effStatuses.includes(condId)) ||
-                        (eff as unknown as { getFlag?: (scope: string, key: string) => unknown })?.getFlag?.('core', 'statusId') === condId ||
+                        (Array.isArray(effStatuses) && (effStatuses as string[]).includes(condId)) ||
+                        (eff.getFlag as Function)?.('core', 'statusId') === condId ||
                         (eff.flags as { core?: { statusId?: string } } | undefined)?.core?.statusId === condId;
 
                     if (hasStatus) {
@@ -2401,7 +2399,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
                 }
 
                 if (matchedStatuses.length > 0) {
-                    const effName = eff.name ?? (eff as unknown as { label?: string }).label ?? '';
+                    const effName = eff.name ?? eff.label ?? '';
                     const condLabel = this.#getConditionLabel(matchedStatuses[0]!);
                     const isDirect = matchedStatuses.length === 1 && (
                         effName.toLowerCase() === matchedStatuses[0]?.toLowerCase() ||
@@ -2455,7 +2453,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         const condConfig = CONFIG?.DND5E?.conditionTypes?.[condId];
         const fallbackStatus = CONFIG?.statusEffects?.find?.(e => e.id === condId);
         const ref = (typeof condConfig === 'object' && condConfig !== null ? condConfig.reference : null)
-            ?? (fallbackStatus as unknown as { reference?: string })?.reference
+            ?? fallbackStatus?.reference
             ?? null;
         const label = customLabel ?? this.#getConditionLabel(condId);
 
@@ -2469,7 +2467,7 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         }
 
         const icon = (typeof condConfig === 'object' && condConfig !== null ? condConfig.icon : null)
-            ?? (fallbackStatus as unknown as { icon?: string })?.icon
+            ?? fallbackStatus?.icon
             ?? null;
         const iconHtml = icon ? `<img src="${icon}" alt="${label}"/>` : '<i class="fas fa-file-lines"></i>';
         return `<a class="content-link" data-link data-type="Condition" data-condition="${condId}">${iconHtml}${label}</a>`;
@@ -2492,9 +2490,12 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
         const causingStr = localize('BAD.dnd5eAutoBan.causingEffects', 'Causing Effect(s):');
         const formatEffectHtml = async (r: AutoBanEffectReason | string | null | undefined): Promise<string> => {
             if (!r) return '';
-            const effectName = typeof r === 'object' ? (r.name ?? '') : String(r);
-            const rawStatuses = (typeof r === 'object' && Array.isArray(r.statuses) && r.statuses.length > 0)
-                ? r.statuses
+            const reason: AutoBanEffectReason = typeof r === 'string'
+                ? { name: r, statuses: [r], isDirectStatus: true }
+                : r;
+            const effectName = reason.name ?? '';
+            const rawStatuses = (Array.isArray(reason.statuses) && reason.statuses.length > 0)
+                ? reason.statuses
                 : [effectName];
 
             const statusLinks = await Promise.all(rawStatuses.map((st: string) => this.enrichCondition(st, st)));

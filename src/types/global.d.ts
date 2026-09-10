@@ -45,14 +45,40 @@ declare global {
     [key: string]: any;
   }
 
+  interface StatusEffectConfig {
+    id?: string;
+    name?: string;
+    icon?: string;
+    img?: string;
+    reference?: string;
+    [key: string]: unknown;
+  }
+
   interface CONFIG {
     DND5E?: import('./systems.js').Dnd5eConfig;
     PF1?: import('./systems.js').Pf1Config;
     PF2E?: import('./systems.js').Pf2eConfig;
+    statusEffects?: StatusEffectConfig[];
     Item?: {
       typeLabels?: Record<string, string>;
       [key: string]: unknown;
     };
+  }
+
+  interface Game {
+    release?: {
+      generation?: number;
+      [key: string]: unknown;
+    };
+  }
+
+  interface User {
+    isTrusted?: boolean;
+  }
+
+  interface GridLayer {
+    measurePath?: (waypoints: Array<{ x: number; y: number; elevation?: number }>) => { distance?: number };
+    measureDistance?: (p0: { x: number; y: number; elevation?: number }, p1: { x: number; y: number; elevation?: number }, options?: { gridSpaces?: boolean }) => number;
   }
 
   namespace foundry.helpers.interaction {
@@ -100,6 +126,17 @@ declare global {
 
   interface Actor {
     combatant?: Combatant | null;
+    statuses?: Set<string>;
+  }
+
+  interface ActiveEffect {
+    isSuppressed?: boolean;
+    statuses?: Set<string>;
+    label?: string;
+  }
+
+  interface Item {
+    getRollData?(): Record<string, unknown>;
   }
 
   type Dnd5eSkill = import('./systems.js').Dnd5eSkill;

@@ -43,6 +43,10 @@ export interface Dnd5eActivity {
     sheet?: { render?(force?: boolean, options?: unknown): void };
     labels?: Record<string, string | undefined>;
     activation?: { type?: string; [key: string]: unknown };
+    midiProperties?: {
+        automationOnly?: boolean;
+        [key: string]: unknown;
+    };
     toHit?: unknown;
     damage?: unknown;
     range?: unknown;
@@ -160,7 +164,7 @@ export interface Actor5e extends Omit<Actor, "system"> {
     rollTool?(options: { tool: string; event?: unknown }): Promise<unknown>;
 }
 
-export interface Item5e extends Omit<Item, "system" | "type"> {
+export interface Item5e extends Omit<Item, "system" | "type" | "sheet"> {
     type: string;
     labels?: {
         activation?: string;
@@ -200,6 +204,10 @@ export interface Item5e extends Omit<Item, "system" | "type"> {
             [key: string]: unknown;
         };
     };
+    activation?: { type?: string; [key: string]: unknown };
+    sheet?: {
+        render?(force?: boolean, options?: unknown): void;
+    } | null;
     getRollData?(): unknown;
 }
 
@@ -245,6 +253,10 @@ export interface ActorPF extends Omit<Actor, "system"> {
             hp?: { value?: number; max?: number };
             speed?: { land?: { total?: number }; [key: string]: unknown };
             ac?: { normal?: { total?: number }; [key: string]: unknown };
+            spells?: {
+                spellbooks?: Record<string, Pf1Spellbook>;
+                [key: string]: unknown;
+            };
             [key: string]: unknown;
         };
         details?: {
@@ -273,13 +285,38 @@ export interface ActorPF extends Omit<Actor, "system"> {
     rollSkill?(skill: string, options?: { event?: unknown }): Promise<unknown>;
 }
 
+export interface Pf1WeaponLink {
+    id?: string;
+    [key: string]: unknown;
+}
+
+export interface Pf1ItemAction {
+    id?: string;
+    name?: string;
+    activation?: { type?: string; [key: string]: unknown };
+    [key: string]: unknown;
+}
+
+export interface Pf1Spellbook {
+    kind?: string;
+    [key: string]: unknown;
+}
+
 export interface ItemPF extends Omit<Item, "system"> {
+    labels?: {
+        toHit?: string;
+        damage?: string;
+        range?: string;
+        save?: string;
+        [key: string]: unknown;
+    };
     system: {
         equipped?: boolean;
         quantity?: number;
         spellbook?: string;
         level?: number;
-        actions?: unknown[];
+        actions?: Pf1ItemAction[];
+        links?: { children?: Pf1WeaponLink[] };
         active?: boolean;
         weaponSubtype?: string;
         ammo?: {
@@ -292,7 +329,10 @@ export interface ItemPF extends Omit<Item, "system"> {
             value?: number;
             [key: string]: unknown;
         };
+        [key: string]: unknown;
     };
+    use?(options?: unknown): unknown;
+    roll?(options?: unknown): unknown;
 }
 
 /* -------------------------------------------- */
@@ -322,7 +362,36 @@ export interface Pf2eStatistic {
     [key: string]: unknown;
 }
 
+export interface Pf2eStrikeVariant {
+    roll?: (options?: unknown) => unknown;
+    [key: string]: unknown;
+}
+
+export interface Pf2eStrike {
+    slug?: string;
+    label: string;
+    item?: (Item & { system?: { ammo?: { baseType?: string } } }) | null;
+    variants?: Pf2eStrikeVariant[];
+    roll?: (options?: unknown) => unknown;
+    [key: string]: unknown;
+}
+
+export interface Pf2eSpellcastingEntry {
+    id: string;
+    name?: string;
+    isFocusPool?: boolean;
+    isInnate?: boolean;
+    isRitual?: boolean;
+    isSpontaneous?: boolean;
+    actor?: { system?: { resources?: { focus?: { value?: number; max?: number } } } } | null;
+    system?: { slots?: Record<string, { value?: number; max?: number }> };
+    spells?: Array<{ id: string; [key: string]: unknown }>;
+    cast?: (spell: Item, options?: unknown) => unknown;
+    [key: string]: unknown;
+}
+
 export interface ActorPF2e extends Omit<Actor, "system"> {
+    spellcasting?: Pf2eSpellcastingEntry[];
     saves?: {
         fortitude?: Pf2eStatistic;
         reflex?: Pf2eStatistic;
@@ -332,6 +401,7 @@ export interface ActorPF2e extends Omit<Actor, "system"> {
     perception?: Pf2eStatistic;
     skills?: Record<string, Pf2eStatistic> | Map<string, Pf2eStatistic>;
     system: {
+        actions?: Pf2eStrike[];
         saves?: {
             fortitude?: Pf2eStatistic;
             reflex?: Pf2eStatistic;
@@ -362,6 +432,10 @@ export interface ActorPF2e extends Omit<Actor, "system"> {
 }
 
 export interface ItemPF2e extends Omit<Item, "system"> {
+    rank?: number;
+    consume?(): unknown;
+    toMessage?(): unknown;
+    use?(options?: { event?: unknown }): unknown;
     system: {
         equipped?: {
             carryType?: string;
