@@ -1,4 +1,5 @@
 import { localize, deepFreeze } from '../../../lib/utils.js';
+import type { BaseSystemAdapter } from '../base-system-adapter.js';
 
 const ICONS = deepFreeze({
     item_type: {
@@ -60,28 +61,28 @@ const ABILITY_LABEL_CONFIGS = deepFreeze({
  * for a system adapter.
  */
 export class BaseSystemContextModifier {
-    adapter: any;
+    adapter: BaseSystemAdapter;
 
     /**
      * @param {BaseSystemAdapter} adapter Owning system adapter instance
      */
-    constructor(adapter: any) {
+    constructor(adapter: BaseSystemAdapter) {
         this.adapter = adapter;
     }
 
     /**
      * Hook to modify the rendering context before template rendering.
-     * @param {Object} context The Handlebars rendering context
-     * @param {ApplicationV2} app Active HUD application
+     * @param {Record<string, unknown>} context The Handlebars rendering context
+     * @param {unknown} app Active HUD application
      */
-    modifyContext(context: any, app: any) {}
+    modifyContext(context: Record<string, unknown>, app: unknown): Promise<void> | void {}
 
     /**
      * Get the sort priority order for a left-side parent item tab.
      * @param {string} parentId
      * @returns {number}
      */
-    getItemTypeSortOrder(parentId: any) {
+    getItemTypeSortOrder(parentId: string): number {
         return (SORT_ORDERS.item_type as Record<string, number>)[parentId] ?? 999;
     }
 
@@ -91,7 +92,7 @@ export class BaseSystemContextModifier {
      * @param {string} subId
      * @returns {number}
      */
-    getItemSubTabSortOrder(parentId: any, subId: any) {
+    getItemSubTabSortOrder(parentId: string, subId: string): number {
         if (subId === 'all') return 0;
         if (subId === 'itemCharges') return 99;
         const num = Number.parseInt(subId, 10);
@@ -103,7 +104,7 @@ export class BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {number}
      */
-    getActionTypeSortOrder(parentId: any) {
+    getActionTypeSortOrder(parentId: string): number {
         return (SORT_ORDERS.action_type as Record<string, number>)[parentId] ?? 999;
     }
 
@@ -113,7 +114,7 @@ export class BaseSystemContextModifier {
      * @param {string} subId
      * @returns {number}
      */
-    getActionSubTabSortOrder(parentId: any, subId: any) {
+    getActionSubTabSortOrder(parentId: string, subId: string): number {
         return subId === 'all' ? 0 : 999;
     }
 
@@ -122,7 +123,7 @@ export class BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getItemTypeLabel(parentId: any) {
+    getItemTypeLabel(parentId: string): string {
         switch (parentId) {
             case 'all': return localize('BAD.core.allItems', 'All Items');
             case 'other': return localize('BAD.core.other', 'Other');
@@ -148,7 +149,7 @@ export class BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getItemTypeIcon(parentId: any) {
+    getItemTypeIcon(parentId: string): string {
         return (ICONS.item_type as Record<string, string>)[parentId] ?? 'fas fa-question';
     }
 
@@ -158,7 +159,7 @@ export class BaseSystemContextModifier {
      * @param {string} subId
      * @returns {string}
      */
-    getItemSubTabLabel(parentId: any, subId: any) {
+    getItemSubTabLabel(parentId: string, subId: string): string {
         return subId.toUpperCase();
     }
 
@@ -167,7 +168,7 @@ export class BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getActionTypeLabel(parentId: any) {
+    getActionTypeLabel(parentId: string): string {
         switch (parentId) {
             case 'all': return localize('BAD.core.allActions', 'All Actions');
             case 'none': return localize('BAD.core.none', 'None');
@@ -181,7 +182,7 @@ export class BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getActionTypeIcon(parentId: any) {
+    getActionTypeIcon(parentId: string): string {
         return (ICONS.action_type as Record<string, string>)[parentId] ?? 'fas fa-question';
     }
 
@@ -190,7 +191,7 @@ export class BaseSystemContextModifier {
      * @param {string} subId
      * @returns {string}
      */
-    getActionSubTabLabel(subId: any) {
+    getActionSubTabLabel(subId: string): string {
         const config = (ABILITY_LABEL_CONFIGS as Record<string, { key: string; fallback: string }>)[subId];
         return config ? localize(config.key, config.fallback) : subId.toUpperCase();
     }

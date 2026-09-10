@@ -1,11 +1,13 @@
 import { initializeFoundryAdapter, BaseFoundryAdapter } from './foundry/index.js';
 import { FoundryV13Adapter } from './foundry/foundry-v13-adapter.js';
 import { initializeSystemAdapter, BaseSystemAdapter } from './system/index.js';
+import type { ItemSummary, ItemSummaryProperty } from './system/index.js';
 import { initializeModuleAdapters, BaseModuleAdapter } from './module/index.js';
 import { MODULE_ID } from '../constants.js';
 import { log } from '../lib/logger.js';
 import { Action } from '../ui/action.js';
 import { CombatMovementTracker } from '../combat/combat-movement-tracker.js';
+import type { HUDTabColumn } from '../ui/hud-tab-column.js';
 
 /**
  * Unified Adapter Singleton for Bakana's Action Display.
@@ -88,13 +90,13 @@ class Adapter {
         // 4. Hidden items filtering
         const rawHidden = actor.getFlag?.(MODULE_ID, 'hiddenItems');
         const hiddenMap = Array.isArray(rawHidden)
-            ? rawHidden.reduce((acc, id) => { acc[id] = true; return acc; }, {})
-            : (rawHidden ?? {});
-        const filtered: any[] = [];
+            ? rawHidden.reduce((acc: Record<string, boolean>, id: string) => { acc[id] = true; return acc; }, {})
+            : ((rawHidden as Record<string, boolean>) ?? {});
+        const filtered: Action[] = [];
 
         log.group(`Adapter.getActions | Processing hidden items for "${actor.name ?? 'Actor'}"`, 'debug');
         try {
-            for (const action of (actions as any[])) {
+            for (const action of actions) {
                 if (action.hidden) {
                     log.debug(`Adapter.getActions | Skipping "${action.name}" (ID: ${action.id}) — action.hidden === true`);
                     continue;
@@ -127,10 +129,10 @@ class Adapter {
      * @private
      */
     _extractBaseActions(actor: Actor): Action[] {
-        const actions: any[] = [];
+        const actions: Action[] = [];
         if (!actor?.items) return actions;
 
-        const items = Array.from(actor.items.values()) as any[];
+        const items = Array.from(actor.items.values()) as Item[];
         log.group(`Adapter._extractBaseActions | Extracting base actions for "${actor.name ?? 'Actor'}"`, 'debug');
         try {
             for (const item of items) {
@@ -142,13 +144,13 @@ class Adapter {
                     continue;
                 }
                 actions.push(new Action({
-                    id: item.id,
+                    id: item.id ?? '',
                     name: item.name,
-                    img: item.img,
+                    img: item.img ?? undefined,
                     type: item.type,
                     originalItem: item,
                     left: item.type ? [item.type] : ['other'],
-                    roll: (event) => item.use?.({}, { event }) ?? item.roll?.({ event }) ?? item.sheet?.render(true)
+                    roll: (event) => (item as any).use?.({}, { event }) ?? (item as any).roll?.({ event }) ?? item.sheet?.render(true)
                 }));
             }
         } finally {
@@ -163,19 +165,19 @@ class Adapter {
 
     /**
      * Open the sheet for an item or activity.
-     * @param {Object} action
+     * @param {Action|Record<string, any>} action
      * @returns {void}
      */
-    openEditSheet(action: any) {
+    openEditSheet(action: Action | Record<string, any>): void {
         return this.system?.openEditSheet?.(action);
     }
 
     /**
      * Retrieve system-specific context menu items.
-     * @param {ApplicationV2} app Active HUD application
+     * @param {unknown} app Active HUD application
      * @returns {Object[]}
      */
-    getContextMenuItems(app: any) {
+    getContextMenuItems(app: unknown): any[] {
         return this.system?.getContextMenuItems?.(app) ?? [];
     }
 
@@ -184,7 +186,7 @@ class Adapter {
      * @param {string} parentId
      * @returns {boolean}
      */
-    isExclusionTab(parentId: any) {
+    isExclusionTab(parentId: string): boolean {
         return this.system?.isExclusionTab?.(parentId) ?? false;
     }
 
@@ -193,18 +195,18 @@ class Adapter {
      * @param {string} parentId
      * @returns {string[]}
      */
-    getExclusionSubTabs(parentId: any) {
+    getExclusionSubTabs(parentId: string): string[] {
         return this.system?.getExclusionSubTabs?.(parentId) ?? [];
     }
 
     /**
      * Delegate tab right-click handling to the system adapter.
-     * @param {ApplicationV2} app
+     * @param {unknown} app
      * @param {HTMLElement} tab
-     * @param {Event} event
+     * @param {Event|MouseEvent} event
      * @returns {boolean}
      */
-    onTabRightClick(app: any, tab: any, event: any) {
+    onTabRightClick(app: unknown, tab: HTMLElement, event: Event | MouseEvent): boolean {
         return this.system?.onTabRightClick?.(app, tab, event) ?? false;
     }
 
@@ -213,7 +215,7 @@ class Adapter {
      * @param {string} id
      * @returns {string}
      */
-    getItemTypeLabel(id: any) {
+    getItemTypeLabel(id: string): string {
         return this.system?.getItemTypeLabel?.(id) ?? id;
     }
 
@@ -222,7 +224,7 @@ class Adapter {
      * @param {string} id
      * @returns {string}
      */
-    getItemTypeIcon(id: any) {
+    getItemTypeIcon(id: string): string {
         return this.system?.getItemTypeIcon?.(id) ?? '';
     }
 
@@ -231,7 +233,7 @@ class Adapter {
      * @param {string} id
      * @returns {number}
      */
-    getItemTypeSortOrder(id: any) {
+    getItemTypeSortOrder(id: string): number {
         return this.system?.getItemTypeSortOrder?.(id) ?? 999;
     }
 
@@ -241,7 +243,7 @@ class Adapter {
      * @param {string} subId
      * @returns {string}
      */
-    getItemSubTabLabel(parentId: any, subId: any) {
+    getItemSubTabLabel(parentId: string, subId: string): string {
         return this.system?.getItemSubTabLabel?.(parentId, subId) ?? subId;
     }
 
@@ -251,7 +253,7 @@ class Adapter {
      * @param {string} subId
      * @returns {number}
      */
-    getItemSubTabSortOrder(parentId: any, subId: any) {
+    getItemSubTabSortOrder(parentId: string, subId: string): number {
         return this.system?.getItemSubTabSortOrder?.(parentId, subId) ?? 999;
     }
 
@@ -260,7 +262,7 @@ class Adapter {
      * @param {string} id
      * @returns {string}
      */
-    getActionTypeLabel(id: any) {
+    getActionTypeLabel(id: string): string {
         return this.system?.getActionTypeLabel?.(id) ?? id;
     }
 
@@ -269,7 +271,7 @@ class Adapter {
      * @param {string} id
      * @returns {string}
      */
-    getActionTypeIcon(id: any) {
+    getActionTypeIcon(id: string): string {
         return this.system?.getActionTypeIcon?.(id) ?? '';
     }
 
@@ -278,7 +280,7 @@ class Adapter {
      * @param {string} id
      * @returns {number}
      */
-    getActionTypeSortOrder(id: any) {
+    getActionTypeSortOrder(id: string): number {
         return this.system?.getActionTypeSortOrder?.(id) ?? 999;
     }
 
@@ -287,7 +289,7 @@ class Adapter {
      * @param {string} subId
      * @returns {string}
      */
-    getActionSubTabLabel(subId: any) {
+    getActionSubTabLabel(subId: string): string {
         return this.system?.getActionSubTabLabel?.(subId) ?? subId;
     }
 
@@ -297,7 +299,7 @@ class Adapter {
      * @param {string} subId
      * @returns {number}
      */
-    getActionSubTabSortOrder(parentId: any, subId: any) {
+    getActionSubTabSortOrder(parentId: string, subId: string): number {
         return this.system?.getActionSubTabSortOrder?.(parentId, subId) ?? 999;
     }
 
@@ -305,7 +307,7 @@ class Adapter {
      * Get default active left-side sub-tab IDs for initial HUD column state.
      * @returns {string[]}
      */
-    getDefaultActiveLeftSubTypes() {
+    getDefaultActiveLeftSubTypes(): string[] {
         return this.system?.getDefaultActiveLeftSubTypes?.() ?? [];
     }
 
@@ -313,16 +315,16 @@ class Adapter {
      * Get default active right-side sub-tab IDs for initial HUD column state.
      * @returns {string[]}
      */
-    getDefaultActiveSubTypes() {
+    getDefaultActiveSubTypes(): string[] {
         return this.system?.getDefaultActiveSubTypes?.() ?? [];
     }
 
     /**
      * Update active tabs and filter state on actor changes via the active system adapter.
      * @param {Actor} actor
-     * @param {HUDTabColumn} [tabColumn]
+     * @param {HUDTabColumn | null} [tabColumn]
      */
-    updateTabs(actor: Actor, tabColumn: any = null) {
+    updateTabs(actor: Actor, tabColumn: HUDTabColumn | null = null): void {
         this.system?.updateTabs?.(actor, tabColumn);
     }
 
@@ -333,49 +335,49 @@ class Adapter {
      * @param {string} subId
      * @param {boolean} isActive
      */
-    recordManualTabToggle(actor: Actor, parentId: string, subId: string, isActive: boolean) {
+    recordManualTabToggle(actor: Actor, parentId: string, subId: string, isActive: boolean): void {
         this.system?.recordManualTabToggle?.(actor, parentId, subId, isActive);
     }
 
     /**
      * Filter subactions through the system adapter.
      * @param {Actor} actor
-     * @param {Object[]} subactions
-     * @param {string[]} leftTab
-     * @param {string[]} rightTab
-     * @returns {Object[]}
+     * @param {Action[]} subactions
+     * @param {string[]} [leftTab]
+     * @param {string[]} [rightTab]
+     * @returns {Action[]}
      */
-    filterSubactions(actor: Actor, subactions: any[], leftTab?: any, rightTab?: any): any[] {
-        return (this.system as any)?.filterSubactions?.(subactions, { actor, leftTab, rightTab }) ?? subactions;
+    filterSubactions(actor: Actor, subactions: Action[], leftTab?: string[], rightTab?: string[]): Action[] {
+        return this.system?.filterSubactions?.(subactions, { actor, leftTab, rightTab }) ?? subactions;
     }
 
     /**
      * Evaluate if an action matches active right-side economy/action tabs.
-     * @param {Object} action
-     * @param {Object} filterContext
+     * @param {Action} action
+     * @param {Record<string, unknown>} filterContext
      * @returns {boolean}
      */
-    matchesEconomyTabs(action: any, filterContext: any) {
+    matchesEconomyTabs(action: Action, filterContext: Record<string, unknown>): boolean {
         return this.system?.matchesEconomyTabs?.(action, filterContext) ?? true;
     }
 
     /**
      * Allow system adapter to modify Handlebars context before rendering.
-     * @param {Object} context
-     * @param {Object} options
+     * @param {Record<string, unknown>} context
+     * @param {Record<string, unknown>} [options]
      * @returns {Promise<void>}
      */
-    async modifyContext(context: any, options: any) {
-        return (await this.system?.modifyContext?.(context, options));
+    async modifyContext(context: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<void> {
+        await this.system?.modifyContext?.(context, options);
     }
 
     /**
      * Extract structured token information for showcase display.
      * @param {Actor} actor
-     * @param {Token} [token]
-     * @returns {Promise<Object|null>}
+     * @param {Token | null} [token]
+     * @returns {Promise<Record<string, unknown> | null>}
      */
-    async getTokenInfo(actor: any, token: Token | null = null) {
+    async getTokenInfo(actor: Actor, token: Token | null = null): Promise<Record<string, unknown> | null> {
         return (await this.system?.getTokenInfo?.(actor, token)) ?? null;
     }
 
@@ -384,7 +386,7 @@ class Adapter {
      * @param {Actor} actor
      * @returns {{ supported: boolean, value: boolean }}
      */
-    getInspiration(actor: any) {
+    getInspiration(actor: Actor): { supported: boolean; value: boolean } {
         return this.system?.getInspiration?.(actor) ?? { supported: false, value: false };
     }
 
@@ -394,16 +396,16 @@ class Adapter {
      * @param {boolean} [force]
      * @returns {Promise<boolean>}
      */
-    async toggleInspiration(actor: any, force?: boolean) {
+    async toggleInspiration(actor: Actor, force?: boolean): Promise<boolean> {
         return (await this.system?.toggleInspiration?.(actor, force)) ?? false;
     }
 
     /**
      * Determine whether a document update operation represents a teleportation.
-     * @param {Object} [options={}] Operation options or DatabaseUpdateOperation
+     * @param {Record<string, unknown>} [options={}] Operation options or DatabaseUpdateOperation
      * @returns {boolean}
      */
-    isTeleport(options = {}) {
+    isTeleport(options: Record<string, unknown> = {}): boolean {
         return this.foundry.isTeleport(options);
     }
 
@@ -413,84 +415,84 @@ class Adapter {
      * @param {Actor|null} [actor=null]
      * @returns {{ inCombat: boolean, distance: number, units: string }}
      */
-    getTurnMovement(token = null, actor = null) {
+    getTurnMovement(token: Token | null = null, actor: Actor | null = null): { inCombat: boolean; distance: number; units: string } {
         return CombatMovementTracker.getMovementThisTurn(token, actor);
     }
 
     /**
      * Get system-specific page definition configuration.
      * @param {number} [page=1]
-     * @param {Actor} [actor=null]
-     * @returns {{ page: number, defaultLayout: string, categories: Object[]|null }}
+     * @param {Actor | null} [actor=null]
+     * @returns {{ page: number, defaultLayout: string, categories: unknown[] | null }}
      */
-    getPageConfig(page = 1, actor = null) {
+    getPageConfig(page: number = 1, actor: Actor | null = null): { page: number; defaultLayout: string; categories: Record<string, unknown>[] | null } {
         const parsed = Number(page);
         const pageNum = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-        return this.system?.getPageConfig?.(page, actor) ?? { page: pageNum, defaultLayout: 'flat', categories: null };
+        return (this.system?.getPageConfig?.(page, actor) as { page: number; defaultLayout: string; categories: Record<string, unknown>[] | null }) ?? { page: pageNum, defaultLayout: 'flat', categories: null };
     }
 
     /**
      * Apply a categorized section layout to the HUD context.
-     * @param {Object} context
-     * @param {Object} [options]
+     * @param {Record<string, unknown>} context
+     * @param {Record<string, unknown>} [options]
      */
-    formatCategorizedLayout(context: any, options: any) {
+    formatCategorizedLayout(context: Record<string, unknown>, options?: Record<string, unknown>): void {
         this.system?.formatCategorizedLayout?.(context, options);
     }
 
     /**
      * Get system-specific default preset categories.
-     * @returns {Object[]|null}
+     * @returns {Record<string, unknown>[] | null}
      */
-    getDefaultCategories() {
-        return this.system?.getDefaultCategories?.() ?? null;
+    getDefaultCategories(): Record<string, unknown>[] | null {
+        return (this.system?.getDefaultCategories?.() as Record<string, unknown>[] | null) ?? null;
     }
 
     /**
      * Get system-specific configurable action economy types and default colors.
      * @returns {{ id: string, label: string, defaultColor: string }[]}
      */
-    getEconomyTypes() {
+    getEconomyTypes(): { id: string; label: string; defaultColor: string }[] {
         return this.system?.getEconomyTypes?.() ?? [];
     }
 
     /**
      * Determine if an economy type is enabled.
-     * @param {Object} type
-     * @param {Record<string, any>} [userColors]
+     * @param {object} type
+     * @param {Record<string, unknown>} [userColors]
      * @returns {boolean}
      */
-    isEconomyTypeEnabled(type: any, userColors: any) {
+    isEconomyTypeEnabled(type: { id: string }, userColors?: Record<string, unknown>): boolean {
         return this.system?.isEconomyTypeEnabled?.(type, userColors) ?? false;
     }
 
     /**
      * Get mapped color for an economy type.
      * @param {string} type
-     * @param {Record<string, any>} [userColors]
+     * @param {Record<string, unknown>} [userColors]
      * @returns {string|null}
      */
-    getEconomyColor(type: any, userColors: any) {
+    getEconomyColor(type: string, userColors?: Record<string, unknown>): string | null {
         return this.system?.getEconomyColor?.(type, userColors) ?? null;
     }
 
     /**
      * Extract economy indicators for a given action.
-     * @param {Object} action
-     * @param {Record<string, any>} [userColors]
-     * @returns {{ type: string, label: string, active: boolean, color: string|null }[]}
+     * @param {Action} action
+     * @param {Record<string, unknown>} [userColors]
+     * @returns {{ type: string, label: string, active: boolean, color: string|null, tooltip: string }[]}
      */
-    extractEconomyIndicators(action: any, userColors: any) {
+    extractEconomyIndicators(action: Action, userColors?: Record<string, unknown>): { type: string; label: string; active: boolean; color: string | null; tooltip: string }[] {
         return this.system?.extractEconomyIndicators?.(action, userColors) ?? [];
     }
 
     /**
      * Format a stylized HTML tooltip for an action economy reminder bar.
-     * @param {Object} sysType
+     * @param {{ id?: string, label?: string, defaultColor?: string }} sysType
      * @param {string|null} [color]
      * @returns {string}
      */
-    formatEconomyTooltip(sysType: any, color: any) {
+    formatEconomyTooltip(sysType: { id?: string; label?: string; defaultColor?: string }, color?: string | null): string {
         return this.system?.formatEconomyTooltip?.(sysType, color) ?? '';
     }
 
@@ -499,109 +501,109 @@ class Adapter {
      * @param {Actor} actor
      * @returns {Record<'vocal'|'somatic', string[]>}
      */
-    getAutoBanEffectReasons(actor: any) {
+    getAutoBanEffectReasons(actor: Actor): Record<'vocal' | 'somatic', string[]> {
         return this.system?.getAutoBanEffectReasons?.(actor) ?? { vocal: [], somatic: [] };
     }
 
     /**
      * Get the enriched HTML content-link for a status condition ID.
      * @param {string} condId
-     * @param {string} [customLabel]
+     * @param {string | null} [customLabel=null]
      * @returns {Promise<string>}
      */
-    async enrichCondition(condId: any, customLabel = null) {
+    async enrichCondition(condId: string, customLabel: string | null = null): Promise<string> {
         return (await this.system?.enrichCondition?.(condId, customLabel)) ?? '';
     }
 
     /**
      * Format a stylized HTML tooltip for automatically added verbal/somatic bans.
      * @param {string} comp
-     * @param {Array<Object|string>|Record<string, Array<Object|string>>} reasons
+     * @param {Array<unknown> | Record<string, Array<unknown>>} reasons
      * @returns {Promise<string>}
      */
-    async formatAutoBanTooltip(comp: any, reasons: any) {
+    async formatAutoBanTooltip(comp: string, reasons: Array<unknown> | Record<string, Array<unknown>>): Promise<string> {
         return (await this.system?.formatAutoBanTooltip?.(comp, reasons)) ?? '';
     }
 
     /**
      * Get item summary data for rich tooltips.
-     * @param {Object} action
-     * @param {Object} [item]
-     * @param {Object} [actor]
-     * @returns {Promise<Object|null>}
+     * @param {Action} action
+     * @param {Item | null} [item=null]
+     * @param {Actor | null} [actor=null]
+     * @returns {Promise<ItemSummary | null>}
      */
-    async getItemSummary(action: any, item: any, actor: any) {
+    async getItemSummary(action: Action, item: Item | null = null, actor: Actor | null = null): Promise<ItemSummary | null> {
         return this.system?.getItemSummary?.(action, item, actor) ?? null;
     }
 
     /**
      * Enrich an HTML string with Foundry enrichers, roll data, and document links.
      * @param {string} content HTML string to enrich
-     * @param {Object} [options={}] Enrichment options (rollData, secrets, relativeTo, etc.)
+     * @param {Record<string, unknown>} [options={}] Enrichment options (rollData, secrets, relativeTo, etc.)
      * @returns {Promise<string>}
      */
-    async enrichHTML(content: any, options = {}) {
+    async enrichHTML(content: string, options: Record<string, unknown> = {}): Promise<string> {
         return this.foundry.enrichHTML(content, options);
     }
 
     /**
      * Safely resolve a document from UUID synchronously via the active Foundry adapter.
      * @param {string} uuid Document UUID
-     * @param {Object} [options={}] Resolution options
-     * @returns {Document|null}
+     * @param {Record<string, unknown>} [options={}] Resolution options
+     * @returns {foundry.abstract.Document.Any | null}
      */
-    fromUuidSync(uuid: any, options = {}) {
+    fromUuidSync(uuid: string, options: Record<string, unknown> = {}): foundry.abstract.Document.Any | null {
         return this.foundry.fromUuidSync(uuid, options);
     }
 
     /**
      * Safely resolve a document from UUID asynchronously via the active Foundry adapter.
      * @param {string} uuid Document UUID
-     * @param {Object} [options={}] Resolution options
-     * @returns {Promise<Document|null>}
+     * @param {Record<string, unknown>} [options={}] Resolution options
+     * @returns {Promise<foundry.abstract.Document.Any | null>}
      */
-    async fromUuid(uuid: any, options = {}) {
+    async fromUuid(uuid: string, options: Record<string, unknown> = {}): Promise<foundry.abstract.Document.Any | null> {
         return this.foundry.fromUuid(uuid, options);
     }
 
     /**
      * Merge two objects recursively via the active Foundry adapter.
-     * @param {Object} original Target object
-     * @param {Object} [other={}] Source object
-     * @param {Object} [options={}] Merge options
-     * @returns {Object}
+     * @param {object} original Target object
+     * @param {object} [other={}] Source object
+     * @param {Record<string, unknown>} [options={}] Merge options
+     * @returns {object}
      */
-    mergeObject(original: any, other = {}, options = {}) {
+    mergeObject<T extends object, U extends object>(original: T, other: U = {} as U, options: Record<string, unknown> = {}): T & U {
         return this.foundry.mergeObject(original, other, options);
     }
 
     /**
      * Deep duplicate an object via the active Foundry adapter.
-     * @param {Object} obj Target object
-     * @returns {Object}
+     * @param {T} obj Target object
+     * @returns {T}
      */
-    duplicate(obj: any) {
+    duplicate<T>(obj: T): T {
         return this.foundry.duplicate(obj);
     }
 
     /**
      * Retrieve a property from an object by dot path via the active Foundry adapter.
-     * @param {Object} obj Target object
+     * @param {object} obj Target object
      * @param {string} path Dot path
-     * @returns {*}
+     * @returns {unknown}
      */
-    getProperty(obj: any, path: any) {
+    getProperty(obj: object, path: string): unknown {
         return this.foundry.getProperty(obj, path);
     }
 
     /**
      * Set a property on an object by dot path via the active Foundry adapter.
-     * @param {Object} obj Target object
+     * @param {object} obj Target object
      * @param {string} path Dot path
-     * @param {*} value Property value
+     * @param {unknown} value Property value
      * @returns {boolean}
      */
-    setProperty(obj: any, path: any, value: any) {
+    setProperty(obj: object, path: string, value: unknown): boolean {
         return this.foundry.setProperty(obj, path, value);
     }
 
@@ -610,16 +612,16 @@ class Adapter {
      * @param {number} [length=16] Length of the identifier
      * @returns {string}
      */
-    randomID(length = 16) {
+    randomID(length: number = 16): string {
         return this.foundry.randomID(length);
     }
 
     /**
      * Test whether an object is empty via the active Foundry adapter.
-     * @param {Object} obj Target object
+     * @param {object} obj Target object
      * @returns {boolean}
      */
-    isEmpty(obj: any) {
+    isEmpty(obj: object): boolean {
         return this.foundry.isEmpty(obj);
     }
 
@@ -639,10 +641,48 @@ class Adapter {
      * @param {string[]} paths Array of template paths
      * @returns {Promise<Function[]>}
      */
-    async loadTemplates(paths: any) {
+    async loadTemplates(paths: string[]): Promise<Function[]> {
         return this.foundry.loadTemplates(paths);
+    }
+
+    /**
+     * Determine if the active user has execution/update authority over a document.
+     * @param {Token} token
+     * @param {User} [user]
+     * @returns {boolean}
+     */
+    isUserInCharge(token: Token, user: User = game.user): boolean {
+        return this.foundry.isUserInCharge(token, user);
+    }
+
+    /**
+     * Test whether a token is visible to a user.
+     * @param {Token} token
+     * @param {User} [user]
+     * @returns {boolean}
+     */
+    isTokenVisible(token: Token, user: User = game.user): boolean {
+        return this.foundry.isTokenVisible(token, user);
+    }
+
+    /**
+     * Select a token on canvas.
+     * @param {Token} token
+     */
+    selectToken(token: Token): void {
+        this.foundry.selectToken(token);
+    }
+
+    /**
+     * Pan canvas center to token.
+     * @param {Token} token
+     * @returns {Promise<void>}
+     */
+    async centerCanvasOnToken(token: Token): Promise<void> {
+        return this.foundry.centerCanvasOnToken(token);
     }
 }
 
 export const adapter = new Adapter();
 export { Adapter, BaseFoundryAdapter, BaseSystemAdapter, BaseModuleAdapter };
+export type { ItemSummary, ItemSummaryProperty };

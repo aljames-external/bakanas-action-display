@@ -42,20 +42,20 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
     /**
      * Safely resolve a document from UUID synchronously in Foundry V12.
      * @param {string} uuid Document UUID
-     * @param {Object} [options={}] Resolution options
+     * @param {Record<string, unknown>} [options={}] Resolution options
      * @returns {Document|null}
      */
-    override fromUuidSync(uuid: string, options: any = {}): any {
+    override fromUuidSync(uuid: string, options: Record<string, unknown> = {}): any {
         return fromUuidSync(uuid, options);
     }
 
     /**
      * Safely resolve a document from UUID asynchronously in Foundry V12.
      * @param {string} uuid Document UUID
-     * @param {Object} [options={}] Resolution options
+     * @param {Record<string, unknown>} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    override async fromUuid(uuid: string, options: any = {}): Promise<any> {
+    override async fromUuid(uuid: string, options: Record<string, unknown> = {}): Promise<any> {
         return fromUuid(uuid, options);
     }
 
@@ -74,24 +74,25 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
     /**
      * Preload Handlebars templates in Foundry V12 using global loadTemplates.
      * @override
-     * @param {string[]} paths Array of template paths
+     * @param {string|string[]} paths Array of template paths
      * @returns {Promise<Function[]>}
      */
-    override async loadTemplates(paths: string[]): Promise<any> {
-        return loadTemplates(paths);
+    override async loadTemplates(paths: string | string[]): Promise<Function[]> {
+        const pathList = Array.isArray(paths) ? paths : [paths];
+        return loadTemplates(pathList);
     }
 
     /**
      * Determine whether an update operation represents a teleportation in Foundry V12.
      * Evaluates modern movement options when present, falling back to legacy V12 options.teleport and options.animate.
      * @override
-     * @param {Object} [options={}] Operation options
+     * @param {Record<string, unknown>} [options={}] Operation options
      * @returns {boolean}
      */
-    override isTeleport(options: any = {}): boolean {
+    override isTeleport(options: Record<string, unknown> = {}): boolean {
         if (options.movement !== undefined) {
             if (options.movement === false) return true;
-            return Boolean(options.movement?.teleport);
+            return Boolean((options.movement as any)?.teleport);
         }
         return Boolean(options.teleport || options.animate === false);
     }

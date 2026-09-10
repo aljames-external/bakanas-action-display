@@ -7,6 +7,7 @@ import { BaseSystemContextMenuManager } from './context-menu/base-system-context
 import { BaseSystemTabFilterManager } from './filter/base-system-tab-filter-manager.js';
 import { BaseSystemContextModifier } from './context-modifier/base-system-context-modifier.js';
 import { categorizeActions } from '../../categorization/categorization-manager.js';
+import type { HUDTabColumn } from '../../ui/hud-tab-column.js';
 
 const MODIFIER_KEY_MAP = {
     altKey: 'Alt',
@@ -16,6 +17,20 @@ const MODIFIER_KEY_MAP = {
 
 const EXCLUDED_ECONOMY_LABELS = new Set(['economy', 'none', 'all']);
 const DEFAULT_ECONOMY_OTHER = deepFreeze({ id: 'other', defaultColor: '#64748b', defaultEnabled: false });
+
+export interface ItemSummaryProperty {
+    label?: string;
+    value: string;
+}
+
+export interface ItemSummary {
+    title: string;
+    subtitle?: string;
+    img?: string;
+    properties?: Array<string | ItemSummaryProperty>;
+    description?: string;
+    [key: string]: unknown;
+}
 
 /**
  * Base class for all system-specific adapters.
@@ -62,30 +77,30 @@ export class BaseSystemAdapter {
     /**
      * Enrich an HTML string using the Foundry platform adapter.
      * @param {string} content HTML string to enrich
-     * @param {Object} [options={}] Enrichment options
+     * @param {Record<string, unknown>} [options={}] Enrichment options
      * @returns {Promise<string>}
      */
-    async enrichHTML(content: any, options = {}) {
+    async enrichHTML(content: string, options: Record<string, unknown> = {}): Promise<string> {
         return this.foundry.enrichHTML(content, options);
     }
 
     /**
      * Safely resolve a document from UUID synchronously using the Foundry platform adapter.
      * @param {string} uuid Document UUID
-     * @param {Object} [options={}] Resolution options
+     * @param {Record<string, unknown>} [options={}] Resolution options
      * @returns {Document|null}
      */
-    fromUuidSync(uuid: any, options = {}) {
+    fromUuidSync(uuid: string, options: Record<string, unknown> = {}): any {
         return this.foundry.fromUuidSync(uuid, options);
     }
 
     /**
      * Safely resolve a document from UUID asynchronously using the Foundry platform adapter.
      * @param {string} uuid Document UUID
-     * @param {Object} [options={}] Resolution options
+     * @param {Record<string, unknown>} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    async fromUuid(uuid: any, options = {}) {
+    async fromUuid(uuid: string, options: Record<string, unknown> = {}): Promise<any> {
         return this.foundry.fromUuid(uuid, options);
     }
 
@@ -93,48 +108,48 @@ export class BaseSystemAdapter {
      * Merge two objects recursively using the Foundry platform adapter.
      * @param {Object} original Target object
      * @param {Object} [other={}] Source object
-     * @param {Object} [options={}] Merge options
+     * @param {Record<string, unknown>} [options={}] Merge options
      * @returns {Object}
      */
-    mergeObject(original: any, other = {}, options = {}) {
+    mergeObject<T extends object, U extends object>(original: T, other: U = {} as U, options: Record<string, unknown> = {}): T & U {
         return this.foundry.mergeObject(original, other, options);
     }
 
     /**
      * Deep duplicate an object using the Foundry platform adapter.
-     * @param {Object} obj Target object
-     * @returns {Object}
+     * @param {*} obj Target object
+     * @returns {*}
      */
-    duplicate(obj: any) {
+    duplicate<T>(obj: T): T {
         return this.foundry.duplicate(obj);
     }
 
     /**
      * Retrieve a property from an object by dot path using the Foundry platform adapter.
-     * @param {Object} obj Target object
+     * @param {object} obj Target object
      * @param {string} path Dot path
      * @returns {*}
      */
-    getProperty(obj: any, path: any) {
+    getProperty(obj: object, path: string): unknown {
         return this.foundry.getProperty(obj, path);
     }
 
     /**
      * Set a property on an object by dot path using the Foundry platform adapter.
-     * @param {Object} obj Target object
+     * @param {object} obj Target object
      * @param {string} path Dot path
      * @param {*} value Property value
      * @returns {boolean}
      */
-    setProperty(obj: any, path: any, value: any) {
+    setProperty(obj: object, path: string, value: unknown): boolean {
         return this.foundry.setProperty(obj, path, value);
     }
 
-    getContextMenuItems(app: any) {
+    getContextMenuItems(app: unknown): any[] {
         return this.contextMenuManager.getContextMenuItems(app);
     }
 
-    onTabRightClick(app: any, el: any, event: any) {
+    onTabRightClick(app: unknown, el: HTMLElement, event: Event | MouseEvent): boolean {
         return this.contextMenuManager.onTabRightClick(app, el, event);
     }
 
@@ -171,32 +186,32 @@ export class BaseSystemAdapter {
      * @param {Item} item The Foundry Item instance
      * @returns {boolean} True if the item should be extracted
      */
-    shouldExtractItem(item: any) {
+    shouldExtractItem(item: Item): boolean {
         return true;
     }
 
     /**
      * Check if an action's uses resource is completely depleted.
-     * @param {Object} action The action or subaction item
+     * @param {Action} action The action or subaction item
      * @returns {boolean} True if available uses is 0 or less
      * @protected
      */
-    _isResourceDepleted(action: any) {
+    _isResourceDepleted(action: Action): boolean {
         return this.filterManager.isResourceDepleted(action);
     }
 
     /**
      * Modify the base list of actions.
-     * @param {Object[]} actions Base actions extracted by the core
+     * @param {Action[]} actions Base actions extracted by the core
      * @param {Actor} actor The actor these actions belong to
-     * @returns {Object[]} The modified/filtered/sorted actions list
+     * @returns {Promise<Action[]>} The modified/filtered/sorted actions list
      */
-    async modifyActions(actions: any, actor: any) {
+    async modifyActions(actions: Action[], actor: Actor): Promise<Action[]> {
         if (Boolean(game?.settings?.get(MODULE_ID, 'showDepleted'))) return actions;
 
         log.group(`BaseSystemAdapter.modifyActions | Filtering depleted actions for "${actor?.name ?? 'Actor'}"`, 'debug');
         try {
-            return actions.filter((action: any) => {
+            return actions.filter((action: Action) => {
                 // Never hide weapons, even if they are out of ammo or charges
                 if (action.originalItem?.type === 'weapon') return true;
                 if (this._isResourceDepleted(action)) {
@@ -210,16 +225,16 @@ export class BaseSystemAdapter {
         }
     }
 
-    extractCheckActions(actor?: any): any[] {
+    extractCheckActions(actor?: Actor): Action[] {
         return [];
     }
 
     /**
      * Extract token information showcase actions for Page 3.
-     * @param {Actor} actor
+     * @param {Actor} [actor]
      * @returns {Action[]}
      */
-    extractInfoActions(actor?: any): any[] {
+    extractInfoActions(actor?: Actor): Action[] {
         if (!actor) return [];
         const infoAction = new Action({
             id: `token-info-${actor.id ?? 'actor'}`,
@@ -235,11 +250,11 @@ export class BaseSystemAdapter {
 
     /**
      * Extract structured token information for showcase display.
-     * @param {Actor} actor
-     * @param {Token} [token]
+     * @param {Actor|null} actor
+     * @param {Token|null} [token]
      * @returns {Promise<Object|null>}
      */
-    async getTokenInfo(actor: any, token: Token | null = null): Promise<any> {
+    async getTokenInfo(actor: Actor | null, token: Token | null = null): Promise<any> {
         return null;
     }
 
@@ -249,7 +264,7 @@ export class BaseSystemAdapter {
      * @param {Actor} actor Target actor document
      * @returns {{ supported: boolean, value: boolean }}
      */
-    getInspiration(actor: any) {
+    getInspiration(actor: Actor): { supported: boolean; value: boolean } {
         return { supported: false, value: false };
     }
 
@@ -260,7 +275,7 @@ export class BaseSystemAdapter {
      * @param {boolean} [force] Optional explicit state to set
      * @returns {Promise<boolean>} Resulting inspiration state
      */
-    async toggleInspiration(actor: any, force: any) {
+    async toggleInspiration(actor: Actor, force?: boolean): Promise<boolean> {
         return false;
     }
 
@@ -271,22 +286,22 @@ export class BaseSystemAdapter {
      * @param {Actor|null} [actor=null]
      * @returns {{ inCombat: boolean, distance: number, units: string }}
      */
-    getTurnMovement(token = null, actor = null) {
+    getTurnMovement(token: Token | null = null, actor: Actor | null = null): { inCombat: boolean; distance: number; units: string } {
         return { inCombat: false, distance: 0, units: 'ft' };
     }
 
     /**
      * Open the sheet or edit dialog for an action or its underlying item/activity.
-     * @param {Object} action The Action instance to edit
+     * @param {Action|Record<string, any>} action The Action instance to edit
      */
-    openEditSheet(action: any) {
-        const entity = action?.originalActivity ?? action?.originalItem;
+    openEditSheet(action: Action | Record<string, any>): void {
+        const entity = (action as any)?.originalActivity ?? (action as any)?.originalItem;
         if (entity?.sheet?.render) {
             entity.sheet.render(true);
         } else if (entity?.edit) {
             entity.edit();
-        } else if (action?.originalItem?.sheet?.render) {
-            action.originalItem.sheet.render(true);
+        } else if ((action as any)?.originalItem?.sheet?.render) {
+            (action as any).originalItem.sheet.render(true);
         }
     }
 
@@ -295,11 +310,11 @@ export class BaseSystemAdapter {
      * Overridable by system adapters to specify whether a page defaults to flat, categorized, or info showcase.
      * By default, returns a flat layout for all pages.
      *
-     * @param {number} [page=1] Page number (1-indexed)
-     * @param {Actor} [actor=null] Target actor document
+     * @param {number|string} [page=1] Page number (1-indexed)
+     * @param {Actor|null} [actor=null] Target actor document
      * @returns {{ page: number, defaultLayout: string, categories: Object[]|null }}
      */
-    getPageConfig(page = 1, actor = null) {
+    getPageConfig(page: number | string = 1, actor: Actor | null = null): { page: number; defaultLayout: string; categories: Record<string, any>[] | null } {
         const parsed = Number(page);
         const pageNum = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
         return {
@@ -311,9 +326,9 @@ export class BaseSystemAdapter {
 
     /**
      * Apply a flat layout template to the HUD context.
-     * @param {Object} context The Handlebars render context
+     * @param {Record<string, any>} context The Handlebars render context
      */
-    formatFlatLayout(context: any) {
+    formatFlatLayout(context: Record<string, any>): void {
         context.layout = 'flat';
     }
 
@@ -321,15 +336,15 @@ export class BaseSystemAdapter {
      * Apply a categorized section layout template to the HUD context using default or provided categories.
      * Removes subcategories from default categories so it only displays the main categorization sections.
      *
-     * @param {Object} context The Handlebars render context
+     * @param {Record<string, any>} context The Handlebars render context
      * @param {Object} [options]
-     * @param {Object[]} [options.categories] Category definitions to apply (defaults to getDefaultCategories() without subcategories)
-     * @param {string} [options.catchAllLabel] Localized label for uncategorized items
-     * @param {Actor} [options.actor] Actor document
-     * @param {Token} [options.token] Token document
-     * @param {User} [options.user] User document
+     * @param {Record<string, any>[]|null} [options.categories] Category definitions to apply (defaults to getDefaultCategories() without subcategories)
+     * @param {string|null} [options.catchAllLabel] Localized label for uncategorized items
+     * @param {Actor|null} [options.actor] Actor document
+     * @param {Token|null} [options.token] Token document
+     * @param {User|null} [options.user] User document
      */
-    formatCategorizedLayout(context: any, { categories = null, catchAllLabel = null, actor = null, token = null, user = null } = {}) {
+    formatCategorizedLayout(context: Record<string, any>, { categories = null, catchAllLabel = null, actor = null, token = null, user = null }: { categories?: Record<string, any>[] | null; catchAllLabel?: string | null; actor?: Actor | null; token?: Token | null; user?: User | null } = {}): void {
         context.layout = 'categorized';
         const rawCats = categories ?? this.getDefaultCategories();
         const cats = (rawCats ?? []).map(cat => (categories ? cat : { ...cat, subcategories: [] }));
@@ -345,11 +360,11 @@ export class BaseSystemAdapter {
 
     /**
      * Apply a token information layout template to the HUD context.
-     * @param {Object} context The Handlebars render context
-     * @param {Actor} [actor]
-     * @param {Token} [token]
+     * @param {Record<string, any>} context The Handlebars render context
+     * @param {Actor|null} [actor]
+     * @param {Token|null} [token]
      */
-    async formatTokenInfoLayout(context: any, actor = null, token: Token | null = null) {
+    async formatTokenInfoLayout(context: Record<string, any>, actor: Actor | null = null, token: Token | null = null): Promise<void> {
         context.layout = 'tokenInfo';
         context.isCategorized = false;
         context.itemTypes = [];
@@ -372,31 +387,31 @@ export class BaseSystemAdapter {
      * @param {Object} filterContext Current HUD filter context { left, right, filterNoResources }
      * @returns {boolean} True if the action matches current filter selection
      */
-    matchesEconomyTabs(action: any, filterContext: any) {
+    matchesEconomyTabs(action: Action, filterContext: any): boolean {
         return this.filterManager.matchesEconomyTabs(action, filterContext);
     }
 
-    getActiveExclusionSubs(filterContext: any) {
+    getActiveExclusionSubs(filterContext: any): string[] {
         return this.filterManager.getActiveExclusionSubs(filterContext);
     }
 
-    filterSubactions(subactions: any, filterContext: any, itemLeft?: any) {
+    filterSubactions(subactions: Action[], filterContext: any, itemLeft?: any): Action[] {
         return this.filterManager.filterSubactions(subactions, filterContext, itemLeft);
     }
 
-    getTabCombinator(parentId: any) {
+    getTabCombinator(parentId: string): 'union' | 'intersection' | 'difference' {
         return this.filterManager.getTabCombinator(parentId);
     }
 
-    isExclusionTab(parentId: any) {
+    isExclusionTab(parentId: string): boolean {
         return this.filterManager.isExclusionTab(parentId);
     }
 
-    getExclusionSubTabs(parentId: any) {
+    getExclusionSubTabs(parentId: string): string[] {
         return this.filterManager.getExclusionSubTabs(parentId);
     }
 
-    isIntersectionTab(parentId: any) {
+    isIntersectionTab(parentId: string): boolean {
         return this.filterManager.isIntersectionTab(parentId);
     }
 
@@ -407,11 +422,11 @@ export class BaseSystemAdapter {
     /**
      * Modify the UI context object before template rendering.
      * Overridable by system adapters to augment context or apply custom page layouts.
-     * @param {Object} context The Handlebars render context
+     * @param {Record<string, any>} context The Handlebars render context
      * @param {ActionDisplayApp} app The UI application instance
-     * @returns {Promise<Object>|Object} The modified context
+     * @returns {Promise<Record<string, any>>|Record<string, any>} The modified context
      */
-    modifyContext(context: any, app: any) {
+    modifyContext(context: Record<string, any>, app: any): Promise<Record<string, any>> | Record<string, any> {
         const activePage = Number(app?.activePage ?? 1);
         const pageConfig = this.getPageConfig(activePage, app?.actor);
 
@@ -430,51 +445,51 @@ export class BaseSystemAdapter {
         return this.contextModifier.modifyContext(context, app) ?? context;
     }
 
-    getItemTypeSortOrder(parentId: any) {
+    getItemTypeSortOrder(parentId: string): number {
         return this.contextModifier.getItemTypeSortOrder(parentId);
     }
 
-    getItemSubTabSortOrder(parentId: any, subId: any) {
+    getItemSubTabSortOrder(parentId: string, subId: string): number {
         return this.contextModifier.getItemSubTabSortOrder(parentId, subId);
     }
 
-    getActionTypeSortOrder(parentId: any) {
+    getActionTypeSortOrder(parentId: string): number {
         return this.contextModifier.getActionTypeSortOrder(parentId);
     }
 
-    getActionSubTabSortOrder(parentId: any, subId: any) {
+    getActionSubTabSortOrder(parentId: string, subId: string): number {
         return this.contextModifier.getActionSubTabSortOrder(parentId, subId);
     }
 
-    getItemTypeLabel(parentId: any) {
+    getItemTypeLabel(parentId: string): string {
         return this.contextModifier.getItemTypeLabel(parentId);
     }
 
-    getItemTypeIcon(parentId: any) {
+    getItemTypeIcon(parentId: string): string {
         return this.contextModifier.getItemTypeIcon(parentId);
     }
 
-    getItemSubTabLabel(parentId: any, subId: any) {
+    getItemSubTabLabel(parentId: string, subId: string): string {
         return this.contextModifier.getItemSubTabLabel(parentId, subId);
     }
 
-    getActionTypeLabel(parentId: any) {
+    getActionTypeLabel(parentId: string): string {
         return this.contextModifier.getActionTypeLabel(parentId);
     }
 
-    getActionTypeIcon(parentId: any) {
+    getActionTypeIcon(parentId: string): string {
         return this.contextModifier.getActionTypeIcon(parentId);
     }
 
-    getActionSubTabLabel(subId: any) {
+    getActionSubTabLabel(subId: string): string {
         return this.contextModifier.getActionSubTabLabel(subId);
     }
 
-    getDefaultActiveLeftSubTypes(): any[] {
+    getDefaultActiveLeftSubTypes(): string[] {
         return [];
     }
 
-    getDefaultActiveSubTypes(): any[] {
+    getDefaultActiveSubTypes(): string[] {
         return [];
     }
 
@@ -484,7 +499,7 @@ export class BaseSystemAdapter {
      * @param {Actor} actor
      * @param {HUDTabColumn} [tabColumn]
      */
-    updateTabs(actor: Actor, tabColumn = null) {
+    updateTabs(actor: Actor, tabColumn: HUDTabColumn | null = null): void {
         // NOP for base system adapter
     }
 
@@ -520,7 +535,7 @@ export class BaseSystemAdapter {
      * @param {Record<string, any>} [userColors={}] User configured colors & enablement
      * @returns {boolean}
      */
-    isEconomyTypeEnabled(type: any, userColors: any = {}) {
+    isEconomyTypeEnabled(type: { id: string; defaultEnabled?: boolean }, userColors: Record<string, any> = {}): boolean {
         if (!type?.id || type.id === 'none' || type.id === 'all') return false;
 
         const disabled = userColors.disabled;
@@ -538,7 +553,7 @@ export class BaseSystemAdapter {
      * @param {Record<string, any>} [userColors={}] User configured color overrides
      * @returns {string|null} Hex color string or null if unmapped or disabled
      */
-    getEconomyColor(type: string, userColors: any = {}) {
+    getEconomyColor(type: string, userColors: Record<string, any> = {}): string | null {
         if (!type || type === 'none' || type === 'all') return null;
 
         const types = this.getEconomyTypes() ?? [];
@@ -559,18 +574,18 @@ export class BaseSystemAdapter {
      * Extract economy indicators for a given action.
      * Returns an array of fixed indicator slots for all enabled economy types in canonical sort order,
      * allowing the allocated indicator space to be divided equally among all enabled bars.
-     * @param {Object} action HUD Action object
+     * @param {Action} action HUD Action object
      * @param {Record<string, any>} [userColors={}] User configured color overrides
-     * @returns {{ type: string, label: string, active: boolean, color: string|null }[]}
+     * @returns {{ type: string, label: string, active: boolean, color: string|null, tooltip: string }[]}
      */
-    extractEconomyIndicators(action: any, userColors = {}) {
+    extractEconomyIndicators(action: Action, userColors: Record<string, any> = {}): { type: string; label: string; active: boolean; color: string | null; tooltip: string }[] {
         if (!action) return [];
 
         const systemTypes = this.getEconomyTypes() ?? [];
         const enabledTypes = systemTypes.filter(t => this.isEconomyTypeEnabled(t, userColors));
         if (!enabledTypes.length) return [];
 
-        const activeTypes = new Set();
+        const activeTypes = new Set<string>();
         if (action.subactions?.length) {
             for (const sub of action.subactions) {
                 const econRef = sub.right?.find((r: any) => r?.root === 'economy');
@@ -600,7 +615,7 @@ export class BaseSystemAdapter {
             activeTypes.add('other');
         }
 
-        const indicators: any[] = [];
+        const indicators: { type: string; label: string; active: boolean; color: string | null; tooltip: string }[] = [];
         for (const sysType of enabledTypes) {
             const isActive = activeTypes.has(sysType.id);
             const color = isActive ? this.getEconomyColor(sysType.id, userColors) : null;
@@ -622,7 +637,7 @@ export class BaseSystemAdapter {
      * @param {string|null} [color=null] Active bar color
      * @returns {string} HTML string for the tooltip
      */
-    formatEconomyTooltip(sysType: any, color = null) {
+    formatEconomyTooltip(sysType: { id?: string; label?: string; defaultColor?: string }, color: string | null = null): string {
         const econColor = color ?? sysType?.defaultColor ?? '#64748b';
         const label = sysType?.label ?? sysType?.id ?? '';
         return `<div class="bad-economy-tooltip"><div class="bad-economy-tooltip-header"><span class="bad-economy-tooltip-bar" style="background-color: ${econColor}; box-shadow: 0 0 6px ${econColor};"></span><span class="bad-economy-tooltip-label">${label}</span></div></div>`;
@@ -632,7 +647,7 @@ export class BaseSystemAdapter {
      * Get the default HUD categorization structure for this system.
      * @returns {Object[]} Array of category definition objects
      */
-    getDefaultCategories(): any[] {
+    getDefaultCategories(): Record<string, any>[] {
         return [
             {
                 id: 'cat_favorites',
@@ -669,14 +684,14 @@ export class BaseSystemAdapter {
      * Whether this system adapter supports native favoriting.
      * @returns {boolean}
      */
-    hasFavorites() {
+    hasFavorites(): boolean {
         return false;
     }
 
     /**
      * Check if an item is favorited on the actor using system-specific logic.
      *
-     * @param {Object} actor Actor document
+     * @param {Actor} actor Actor document
      * @param {Item} item Item document
      * @returns {boolean} True if the item is favorited
      */
@@ -702,14 +717,14 @@ export class BaseSystemAdapter {
 
     /**
      * Build an item summary object for rich tooltips.
-     * @param {Object} action The HUD action instance
-     * @param {Object} [item] The original item document
-     * @param {Object} [actor] The owning actor document
+     * @param {Action} action The HUD action instance
+     * @param {Item|null} [item] The original item document
+     * @param {Actor|null} [actor] The owning actor document
      * @returns {{title: string, subtitle?: string, img?: string, properties?: Array<string|{label?: string, value: string}>, description?: string}|null}
      */
-    async getItemSummary(action: any, item: any = action?.originalItem, actor: any = null) {
+    async getItemSummary(action: Action, item: Item | null = (action as any)?.originalItem, actor: Actor | null = null): Promise<ItemSummary | null> {
         if (!action && !item) return null;
-        const targetItem = item ?? action?.originalItem ?? action;
+        const targetItem = item ?? (action as any)?.originalItem ?? action;
         const title = action?.name ?? targetItem?.name ?? '';
         const img = (action?.img && action.img.length > 0) ? action.img : (targetItem?.img ?? '');
         const type = targetItem?.type ? (targetItem.type.charAt(0).toUpperCase() + targetItem.type.slice(1)) : '';
@@ -755,10 +770,10 @@ export class BaseSystemAdapter {
     /**
      * Retrieve active status effects causing automatic verbal/somatic spell component bans.
      * Legacy NOP contract: Non-5e systems return empty vocal/somatic arrays.
-     * @param {Actor} actor
+     * @param {Actor} [actor]
      * @returns {Record<'vocal'|'somatic', Array<*>>}
      */
-    getAutoBanEffectReasons(actor?: any): Record<'vocal'|'somatic', any[]> {
+    getAutoBanEffectReasons(actor?: Actor): Record<'vocal'|'somatic', any[]> {
         return { vocal: [], somatic: [] };
     }
 
@@ -766,10 +781,10 @@ export class BaseSystemAdapter {
      * Get the enriched HTML content-link for a status condition ID.
      * Legacy NOP contract: Non-5e systems return empty string.
      * @param {string} condId
-     * @param {string} [customLabel]
+     * @param {string|null} [customLabel]
      * @returns {Promise<string>}
      */
-    async enrichCondition(condId: any, customLabel = null) {
+    async enrichCondition(condId: string, customLabel: string | null = null): Promise<string> {
         return '';
     }
 
@@ -780,7 +795,7 @@ export class BaseSystemAdapter {
      * @param {Array<Object|string>|Record<string, Array<Object|string>>} reasons
      * @returns {Promise<string>}
      */
-    async formatAutoBanTooltip(comp: any, reasons: any) {
+    async formatAutoBanTooltip(comp: string, reasons: any): Promise<string> {
         return '';
     }
 

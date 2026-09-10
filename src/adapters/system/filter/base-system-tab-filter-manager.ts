@@ -44,7 +44,7 @@ export class BaseSystemTabFilterManager {
      * @param {string} parentId Parent tab ID
      * @returns {'union'|'intersection'|'difference'}
      */
-    getTabCombinator(parentId: any) {
+    getTabCombinator(parentId: string): 'union' | 'intersection' | 'difference' {
         return 'union';
     }
 
@@ -53,7 +53,7 @@ export class BaseSystemTabFilterManager {
      * @param {string} parentId Parent tab ID
      * @returns {boolean}
      */
-    isExclusionTab(parentId: any) {
+    isExclusionTab(parentId: string): boolean {
         return this.getTabCombinator(parentId) === 'difference';
     }
 
@@ -71,7 +71,7 @@ export class BaseSystemTabFilterManager {
      * @param {string} parentId Parent tab ID
      * @returns {boolean}
      */
-    isIntersectionTab(parentId: any) {
+    isIntersectionTab(parentId: string): boolean {
         return this.getTabCombinator(parentId) === 'intersection';
     }
 

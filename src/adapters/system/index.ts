@@ -10,7 +10,7 @@ import { log } from '../../lib/logger.js';
  * Registry of known system adapters.
  * Maps system IDs to their corresponding adapter classes.
  */
-export const SYSTEM_ADAPTERS: Record<string, any> = {
+export const SYSTEM_ADAPTERS: Record<string, new (foundry: BaseFoundryAdapter) => BaseSystemAdapter> = {
     'dnd5e': Dnd5eSystemAdapter,
     'pf1': Pf1SystemAdapter,
     'pf2e': Pf2eSystemAdapter
@@ -44,4 +44,5 @@ export async function initializeSystemAdapter(systemId: string = game.system?.id
 }
 
 export { BaseSystemAdapter };
+export type { ItemSummary, ItemSummaryProperty } from './base-system-adapter.js';
 

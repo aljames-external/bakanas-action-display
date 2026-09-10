@@ -1,4 +1,5 @@
 import { BaseSystemContextMenuManager } from './base-system-context-menu-manager.js';
+import type { Dnd5eSystemAdapter } from '../dnd5e-system-adapter.js';
 import { log } from '../../../lib/logger.js';
 import { MODULE_ID } from '../../../constants.js';
 import { deepFreeze } from '../../../lib/utils.js';
@@ -31,84 +32,92 @@ const EQUIPPABLE_ITEM_TYPES = new Set(['weapon', 'equipment', 'consumable', 'too
  * Manages D&D 5e-specific context menu options (Equip/Unequip, Prepare/Unprepare).
  */
 export class Dnd5eSystemContextMenuManager extends BaseSystemContextMenuManager {
+    declare adapter: Dnd5eSystemAdapter;
+
     /**
      * @param {Dnd5eSystemAdapter} adapter Owning D&D 5e adapter instance
      */
-    constructor(adapter: any) {
+    constructor(adapter: Dnd5eSystemAdapter) {
         super(adapter);
     }
 
     /**
      * Resolve the Item document if owned by the current user.
-     * @param {ApplicationV2} app Active HUD application
+     * @param {{ actor?: Actor; actions?: Array<{ id: string; originalItem?: Item | null }> }} app Active HUD application
      * @param {HTMLElement} el Clicked DOM element
      * @returns {Item|null}
      */
-    #getOwnerItem(app: any, el: any) {
+    #getOwnerItem(app: { actor?: Actor; actions?: Array<{ id: string; originalItem?: Item | null }> }, el: HTMLElement): Item | null {
         if (!app.actor?.isOwner) return null;
         return this.getContextItem(app, el);
     }
 
     /**
      * Retrieve system-specific context menu items for D&D 5e items.
-     * @param {ApplicationV2} app Active HUD application
-     * @returns {Object[]} Context menu items definition
+     * @param {{ actor?: Actor; actions?: Array<{ id: string; originalItem?: Item | null }> }} app Active HUD application
+     * @returns {unknown[]} Context menu items definition
      */
-    getContextMenuItems(app: any) {
+    override getContextMenuItems(app: { actor?: Actor; actions?: Array<{ id: string; originalItem?: Item | null }> }): unknown[] {
         return [
             {
                 name: "BAD.common.prepareSpell",
                 icon: '<i class="fas fa-book"></i>',
-                condition: (el: any) => {
+                condition: (el: HTMLElement) => {
                     const item = this.#getOwnerItem(app, el);
-                    return Boolean(item?.type === 'spell' && !INNATE_OR_PACT_METHODS.has(item.system.method) && !item.system.prepared);
+                    if (!item || (item.type as string) !== 'spell') return false;
+                    const method = (item.system as Record<string, unknown>)?.method ?? 'prepared';
+                    const prepared = Boolean((item.system as Record<string, unknown>)?.prepared);
+                    return !INNATE_OR_PACT_METHODS.has(String(method)) && !prepared;
                 },
-                callback: async (el: any) => {
+                callback: async (el: HTMLElement) => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
-                        await item.update({ "system.prepared": 1 });
+                        await (item as any).update({ "system.prepared": 1 });
                     }
                 }
             },
             {
                 name: "BAD.common.unprepareSpell",
                 icon: '<i class="fas fa-book-dead"></i>',
-                condition: (el: any) => {
+                condition: (el: HTMLElement) => {
                     const item = this.#getOwnerItem(app, el);
-                    return Boolean(item?.type === 'spell' && !INNATE_OR_PACT_METHODS.has(item.system.method) && item.system.prepared);
+                    if (!item || (item.type as string) !== 'spell') return false;
+                    const method = (item.system as Record<string, unknown>)?.method ?? 'prepared';
+                    const prepared = Boolean((item.system as Record<string, unknown>)?.prepared);
+                    return !INNATE_OR_PACT_METHODS.has(String(method)) && prepared;
                 },
-                callback: async (el: any) => {
+                callback: async (el: HTMLElement) => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
-                        await item.update({ "system.prepared": 0 });
+                        await (item as any).update({ "system.prepared": 0 });
                     }
                 }
             },
             {
                 name: "BAD.common.equipItem",
                 icon: '<i class="fas fa-shield-halved"></i>',
-                condition: (el: any) => {
+                condition: (el: HTMLElement) => {
                     const item = this.#getOwnerItem(app, el);
-                    return Boolean(item && EQUIPPABLE_ITEM_TYPES.has(item.type) && item.system?.equipped !== undefined && !this.adapter.getItemEquipped(item));
+                    return Boolean(item && EQUIPPABLE_ITEM_TYPES.has(item.type as string) && (item.system as Record<string, unknown>)?.equipped !== undefined && !this.adapter.getItemEquipped(item));
                 },
-                callback: async (el: any) => {
+                callback: async (el: HTMLElement) => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
-                        await item.update({ "system.equipped": true });
+                        await (item as any).update({ "system.equipped": true });
                     }
                 }
             },
             {
                 name: "BAD.common.unequipItem",
                 icon: '<i class="fas fa-shield-slash"></i>',
-                condition: (el: any) => {
+                condition: (el: HTMLElement) => {
                     const item = this.#getOwnerItem(app, el);
-                    return Boolean(item && EQUIPPABLE_ITEM_TYPES.has(item.type) && item.system?.equipped !== undefined && this.adapter.getItemEquipped(item));
+                    return Boolean(item && EQUIPPABLE_ITEM_TYPES.has(item.type as string) && (item.system as Record<string, unknown>)?.equipped !== undefined && this.adapter.getItemEquipped(item));
                 },
-                callback: async (el: any) => {
+                callback: async (el: HTMLElement) => {
                     const item = this.#getOwnerItem(app, el);
                     if (item) {
-                        await item.update({ "system.equipped": false });
+                        await (item as any).update({ "system.equipped": false });
                     }
                 }
             }
@@ -117,12 +126,12 @@ export class Dnd5eSystemContextMenuManager extends BaseSystemContextMenuManager 
 
     /**
      * Handle right-click on tabs to toggle showAll/showUnprepared/showUnequipped actor flags.
-     * @param {ApplicationV2} app Active HUD application
+     * @param {{ actor?: Actor }} app Active HUD application
      * @param {HTMLElement} el Clicked DOM element
-     * @param {Event} event Triggering event
+     * @param {Event | MouseEvent} [_event] Triggering event
      * @returns {boolean} True if handled
      */
-    onTabRightClick(app: any, el: any, event: any) {
+    override onTabRightClick(app: { actor?: Actor }, el: HTMLElement, _event?: Event | MouseEvent): boolean {
         return this.handleFilterTabRightClick(app, el, DND5E_TAB_FLAG_MAP, ALL_FILTER_FLAGS);
     }
 }

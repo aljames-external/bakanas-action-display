@@ -513,9 +513,9 @@ function getSettingSelector(key: string): string {
  * @param {HTMLElement|Object} html Rendered settings config DOM element or jQuery collection
  * @param {Application} [app] Application instance
  */
-export function injectSettingsHeaders(html: any, app?: any) {
-    const rawRoot = (html instanceof HTMLElement ? html : html?.[0])
-        ?? (app?.element instanceof HTMLElement ? app.element : app?.element?.[0])
+export function injectSettingsHeaders(html: HTMLElement | JQuery | unknown, app?: unknown) {
+    const rawRoot = (html instanceof HTMLElement ? html : (html as any)?.[0])
+        ?? ((app as any)?.element instanceof HTMLElement ? (app as any).element : (app as any)?.element?.[0])
         ?? document.querySelector?.('#client-settings, form.categories, .settings-list')
         ?? null;
     const root = rawRoot instanceof HTMLElement ? rawRoot : null;
@@ -579,7 +579,7 @@ export function injectSettingsHeaders(html: any, app?: any) {
     }
 }
 
-Hooks.on('renderSettingsConfig', (app: any, html: any) => {
-    injectSettingsHeaders(html, app);
+Hooks.on('renderSettingsConfig', (_app: unknown, html: HTMLElement | JQuery | unknown) => {
+    injectSettingsHeaders(html, _app);
 });
 

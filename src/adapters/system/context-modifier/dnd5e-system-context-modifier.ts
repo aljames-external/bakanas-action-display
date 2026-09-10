@@ -1,4 +1,5 @@
 import { BaseSystemContextModifier } from './base-system-context-modifier.js';
+import type { BaseSystemAdapter } from '../base-system-adapter.js';
 import { localize, deepFreeze } from '../../../lib/utils.js';
 import { MODULE_ID } from '../../../constants.js';
 
@@ -127,7 +128,7 @@ const GEAR_TYPES = deepFreeze(['weapon', 'equipment', 'consumable', 'tool', 'bac
 const GENERIC_GEAR_TYPES = deepFreeze(['consumable', 'tool', 'backpack', 'loot']);
 
 export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
-    constructor(adapter: any) {
+    constructor(adapter: BaseSystemAdapter) {
         super(adapter);
     }
 
@@ -236,7 +237,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {number}
      */
-    getItemTypeSortOrder(parentId: any) {
+    getItemTypeSortOrder(parentId: string): number {
         return (SORT_ORDERS.item_type as Record<string, number>)[parentId] ?? super.getItemTypeSortOrder(parentId);
     }
 
@@ -246,7 +247,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} subId
      * @returns {number}
      */
-    getActionSubTabSortOrder(parentId: any, subId: any) {
+    getActionSubTabSortOrder(parentId: string, subId: string): number {
         return (SORT_ORDERS.tabs as Record<string, any>)[parentId]?.[subId] ?? super.getActionSubTabSortOrder(parentId, subId);
     }
 
@@ -255,7 +256,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getItemTypeLabel(parentId: any) {
+    getItemTypeLabel(parentId: string): string {
         const config = (LABEL_KEYS.item_type as Record<string, any>)[parentId];
         return config ? localize(config.key, config.fallback) : super.getItemTypeLabel(parentId);
     }
@@ -265,7 +266,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getItemTypeIcon(parentId: any) {
+    getItemTypeIcon(parentId: string): string {
         return (ICONS.item_type as Record<string, string>)[parentId] ?? super.getItemTypeIcon(parentId);
     }
 
@@ -275,7 +276,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} subId
      * @returns {string}
      */
-    getItemSubTabLabel(parentId: any, subId: any) {
+    getItemSubTabLabel(parentId: string, subId: string): string {
         if (parentId === 'spell') {
             if (subId === 'all') {
                 return localize('BAD.common.allSpells', 'All Spells');
@@ -311,7 +312,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getActionTypeLabel(parentId: any) {
+    getActionTypeLabel(parentId: string): string {
         const config = (LABEL_KEYS.action_type as Record<string, any>)[parentId];
         return config ? localize(config.key, config.fallback) : super.getActionTypeLabel(parentId);
     }
@@ -321,7 +322,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} parentId
      * @returns {string}
      */
-    getActionTypeIcon(parentId: any) {
+    getActionTypeIcon(parentId: string): string {
         return (ICONS.action_type as Record<string, string>)[parentId] ?? super.getActionTypeIcon(parentId);
     }
 
@@ -330,7 +331,7 @@ export class Dnd5eSystemContextModifier extends BaseSystemContextModifier {
      * @param {string} subId
      * @returns {string}
      */
-    getActionSubTabLabel(subId: any) {
+    getActionSubTabLabel(subId: string): string {
         const config = (LABEL_KEYS.action_subtab as Record<string, any>)[subId];
         const fallback = config?.fallback ?? subId;
 

@@ -1,6 +1,7 @@
 import { MODULE_ID } from '../constants.js';
 import { log } from '../lib/logger.js';
 import { adapter } from '../adapters/index.js';
+import type { BaseSystemAdapter } from '../adapters/system/base-system-adapter.js';
 
 /**
  * Get the favorites map from an actor document.
@@ -18,10 +19,10 @@ export function getActorFavorites(actor: Actor): Record<string, boolean> {
  *
  * @param {Actor} actor Actor document
  * @param {Item} item Item document
- * @param {Object} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
+ * @param {BaseSystemAdapter|null} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {boolean} True if favorited
  */
-export function isActorItemFavorite(actor: Actor, item: Item, customAdapter: any = null): boolean {
+export function isActorItemFavorite(actor: Actor, item: Item, customAdapter: BaseSystemAdapter | null = null): boolean {
     if (!actor || !item?.id) return false;
 
     const favorites = getActorFavorites(actor);
@@ -37,10 +38,10 @@ export function isActorItemFavorite(actor: Actor, item: Item, customAdapter: any
  * @param {Actor} actor Actor document
  * @param {Item} item Item document
  * @param {boolean} isFavorite Target favorite state
- * @param {Object} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
+ * @param {BaseSystemAdapter|null} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {Promise<void>}
  */
-export async function setActorItemFavorite(actor: Actor, item: Item, isFavorite: boolean, customAdapter: any = null): Promise<void> {
+export async function setActorItemFavorite(actor: Actor, item: Item, isFavorite: boolean, customAdapter: BaseSystemAdapter | null = null): Promise<void> {
     if (!actor || !item?.id) return;
 
     const targetFavorite = Boolean(isFavorite);
@@ -80,10 +81,10 @@ export async function setActorItemFavorite(actor: Actor, item: Item, isFavorite:
  * Synchronize the actor's favorites flag map with the system-level favorites if the system supports favorites.
  *
  * @param {Actor} actor Actor document
- * @param {Object} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
+ * @param {BaseSystemAdapter|null} [customAdapter=null] Optional adapter override (defaults to global adapter.system)
  * @returns {Promise<void>}
  */
-export async function syncActorFavorites(actor: Actor, customAdapter: any = null): Promise<void> {
+export async function syncActorFavorites(actor: Actor, customAdapter: BaseSystemAdapter | null = null): Promise<void> {
     const sys = customAdapter ?? adapter.system;
     if (!actor || !sys?.hasFavorites?.() || !actor.isOwner) return;
 

@@ -43,20 +43,20 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
     /**
      * Safely resolve a document from UUID synchronously using standard V13+ foundry.utils.fromUuidSync.
      * @param {string} uuid Document UUID
-     * @param {Object} [options={}] Resolution options
+     * @param {Record<string, unknown>} [options={}] Resolution options
      * @returns {Document|null}
      */
-    override fromUuidSync(uuid: string, options: any = {}): any {
+    override fromUuidSync(uuid: string, options: Record<string, unknown> = {}): any {
         return (foundry.utils as any).fromUuidSync(uuid, options);
     }
 
     /**
      * Safely resolve a document from UUID asynchronously using standard V13+ foundry.utils.fromUuid.
      * @param {string} uuid Document UUID
-     * @param {Object} [options={}] Resolution options
+     * @param {Record<string, unknown>} [options={}] Resolution options
      * @returns {Promise<Document|null>}
      */
-    override async fromUuid(uuid: string, options: any = {}): Promise<any> {
+    override async fromUuid(uuid: string, options: Record<string, unknown> = {}): Promise<any> {
         return (foundry.utils as any).fromUuid(uuid, options);
     }
 
@@ -74,22 +74,23 @@ export class FoundryV13Adapter extends FoundryV12Adapter {
     /**
      * Preload Handlebars templates in Foundry V13+ using namespaced foundry.applications.handlebars.loadTemplates.
      * @override
-     * @param {string[]} paths Array of template paths
+     * @param {string|string[]} paths Array of template paths
      * @returns {Promise<Function[]>}
      */
-    override async loadTemplates(paths: string[]): Promise<any> {
-        return (foundry as any).applications?.handlebars?.loadTemplates(paths);
+    override async loadTemplates(paths: string | string[]): Promise<Function[]> {
+        const pathList = Array.isArray(paths) ? paths : [paths];
+        return (foundry as any).applications?.handlebars?.loadTemplates(pathList);
     }
 
     /**
      * Determine whether an update operation represents a teleportation in Foundry V13+.
      * Evaluates standard V13+ operation.movement properties without accessing deprecated DatabaseUpdateOperation#teleport.
      * @override
-     * @param {Object} [options={}] Operation options or DatabaseUpdateOperation
+     * @param {Record<string, unknown>} [options={}] Operation options or DatabaseUpdateOperation
      * @returns {boolean}
      */
-    override isTeleport(options: any = {}): boolean {
-        if (options.movement === false) return true;
-        return Boolean(options.movement?.teleport);
+    override isTeleport(options: Record<string, unknown> = {}): boolean {
+        if ((options as any).movement === false) return true;
+        return Boolean((options as any).movement?.teleport);
     }
 }

@@ -1,4 +1,5 @@
 import { BaseSystemContextMenuManager } from './base-system-context-menu-manager.js';
+import type { Pf2eSystemAdapter } from '../pf2e-system-adapter.js';
 import { MODULE_ID } from '../../../constants.js';
 import { deepFreeze } from '../../../lib/utils.js';
 
@@ -19,20 +20,22 @@ const PF2E_TAB_FLAG_MAP = deepFreeze({
  * Manages PF2e-specific context menu options (Equip/Unequip) and tab right-click filters.
  */
 export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
+    declare adapter: Pf2eSystemAdapter;
+
     /**
      * @param {Pf2eSystemAdapter} adapter Owning PF2e adapter instance
      */
-    constructor(adapter: any) {
+    constructor(adapter: Pf2eSystemAdapter) {
         super(adapter);
     }
 
     /**
      * Resolve the Item document if owned by the current user.
-     * @param {ApplicationV2} app Active HUD application
+     * @param {{ actor?: Actor; actions?: Array<{ id: string; originalItem?: Item | null }> }} app Active HUD application
      * @param {HTMLElement} el Clicked DOM element
      * @returns {Item|null}
      */
-    #getOwnerItem(app: any, el: any): any {
+    #getOwnerItem(app: { actor?: Actor; actions?: Array<{ id: string; originalItem?: Item | null }> }, el: HTMLElement): Item | null {
         if (!app.actor?.isOwner) return null;
         return this.getContextItem(app, el);
     }
@@ -40,42 +43,44 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
     /**
      * Check if a PF2e item has an equip/carry state that can be updated.
      * Natural attacks, unarmed strikes, and non-physical items do not have an equip state.
-     * @param {Item} item
-     * @param {ApplicationV2} [app=null]
+     * @param {Item|null} item
+     * @param {{ actor?: Actor }|null} [app=null]
      * @returns {boolean}
      */
-    #isEquippable(item: any, app: any = null): boolean {
+    #isEquippable(item: Item | null, app: { actor?: Actor } | null = null): boolean {
         if (!item?.system) return false;
         if (app?.actor?.items && item.id && !app.actor.items.has(item.id)) return false;
-        const traits = item.system.traits?.value;
-        if (traits instanceof Set ? traits.has('unarmed') : (Array.isArray(traits) ? traits.includes('unarmed') : false)) return false;
-        return Boolean(item.system.equipped?.carryType);
+        const traits = (item.system as Record<string, unknown>).traits as { value?: unknown } | undefined;
+        const traitValue = traits?.value;
+        if (traitValue instanceof Set ? traitValue.has('unarmed') : (Array.isArray(traitValue) ? traitValue.includes('unarmed') : false)) return false;
+        const equipped = (item.system as Record<string, unknown>).equipped as { carryType?: string } | undefined;
+        return Boolean(equipped?.carryType);
     }
 
     /**
      * Safely update an item's carry type ensuring it exists in the actor's embedded collection.
-     * @param {ApplicationV2} app Active HUD application
+     * @param {{ actor?: Actor }} app Active HUD application
      * @param {Item} item Target item document
-     * @param {Object} updates Update data payload
+     * @param {Record<string, unknown>} updates Update data payload
      */
-    async #safeUpdateItem(app: any, item: any, updates: any) {
+    async #safeUpdateItem(app: { actor?: Actor }, item: Item, updates: Record<string, unknown>): Promise<void> {
         if (!item) return;
         if (app?.actor?.items && item.id && !app.actor.items.has(item.id)) return;
         const targetItem = (app?.actor?.items && item.id) ? app.actor.items.get(item.id) : item;
-        await targetItem?.update?.(updates);
+        await (targetItem as any)?.update?.(updates);
     }
 
     /**
      * Retrieve system-specific context menu items for PF2e physical items (Update Equip State submenu).
-     * @param {ApplicationV2} app Active HUD application
-     * @returns {Object[]} Context menu items definition
+     * @param {{ actor?: Actor; actions?: Array<{ id: string; originalItem?: Item | null }> }} app Active HUD application
+     * @returns {unknown[]} Context menu items definition
      */
-    getContextMenuItems(app: any) {
+    override getContextMenuItems(app: { actor?: Actor; actions?: Array<{ id: string; originalItem?: Item | null }> }): unknown[] {
         return [
             {
                 name: "PF2E.Actor.Inventory.CarryType.OpenMenu",
                 icon: '<i class="fas fa-shield-halved"></i>',
-                condition: (el: any) => {
+                condition: (el: HTMLElement): boolean => {
                     const item = this.#getOwnerItem(app, el);
                     return Boolean(this.#isEquippable(item, app));
                 },
@@ -147,12 +152,12 @@ export class Pf2eSystemContextMenuManager extends BaseSystemContextMenuManager {
 
     /**
      * Handle right-click on tabs to toggle showAll/showUnequipped actor flags.
-     * @param {ApplicationV2} app Active HUD application
+     * @param {{ actor?: Actor }} app Active HUD application
      * @param {HTMLElement} el Clicked DOM element
-     * @param {Event} event Triggering event
+     * @param {Event | MouseEvent} [_event] Triggering event
      * @returns {boolean} True if handled
      */
-    onTabRightClick(app: any, el: any, event: any) {
+    override onTabRightClick(app: { actor?: Actor }, el: HTMLElement, _event?: Event | MouseEvent): boolean {
         return this.handleFilterTabRightClick(app, el, PF2E_TAB_FLAG_MAP, ALL_FILTER_FLAGS);
     }
 }

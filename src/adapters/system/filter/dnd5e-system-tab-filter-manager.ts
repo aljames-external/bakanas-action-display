@@ -111,7 +111,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @param {string} parentId Parent tab ID
      * @returns {'union'|'intersection'|'difference'}
      */
-    getTabCombinator(parentId: any) {
+    override getTabCombinator(parentId: string): 'union' | 'intersection' | 'difference' {
         return parentId === 'components' ? 'difference' : super.getTabCombinator(parentId);
     }
 
@@ -120,7 +120,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
      * @param {string} parentId Parent tab ID
      * @returns {string[]}
      */
-    getExclusionSubTabs(parentId: any) {
+    override getExclusionSubTabs(parentId: string): string[] {
         return parentId === 'components' ? [...SPELL_COMPONENTS] : super.getExclusionSubTabs(parentId);
     }
 
