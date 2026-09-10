@@ -101,7 +101,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
         }
 
         // 3. Linked spell document resolved via system adapter
-        const rootDoc = (this.adapter as Dnd5eSystemAdapter)?.resolveRootSpellDocument?.(action) as Item5e | null;
+        const rootDoc = this.adapter.resolveRootSpellDocument(action) as Item5e | null;
         if (rootDoc && (rootDoc.type === 'spell' || rootDoc.system?.properties)) {
             return rootDoc;
         }
@@ -199,7 +199,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
 
         if (!filterContext?._inFilterSubactions && activeCompSubs.length > 0) {
             const actor = filterContext?.actor ?? this.adapter?.actor ?? action.originalItem?.actor ?? null;
-            const effectReasons = (this.adapter as Dnd5eSystemAdapter)?.getAutoBanEffectReasons?.(actor) ?? {};
+            const effectReasons = this.adapter.getAutoBanEffectReasons(actor) ?? {};
 
             log.debug(`Dnd5eSystemTabFilterManager.matchesEconomyTabs | Evaluating action "${action.name}" (${action.id}) against active component ban lists: [${activeCompSubs.join(', ')}] | Effect causing reasons:`, effectReasons);
 
@@ -234,7 +234,7 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
         }
 
         const actor = filterContext?.actor ?? this.adapter?.actor ?? subactions[0]?.originalItem?.actor ?? null;
-        const effectReasons = (this.adapter as Dnd5eSystemAdapter)?.getAutoBanEffectReasons?.(actor) ?? {};
+        const effectReasons = this.adapter.getAutoBanEffectReasons(actor) ?? {};
 
         log.debug(`Dnd5eSystemTabFilterManager.filterSubactions | Current ban lists: [${activeCompSubs.join(', ')}] | Effect causing reasons:`, effectReasons);
 
