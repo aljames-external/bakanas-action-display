@@ -1,9 +1,5 @@
 import { log } from "../../../lib/logger.js";
 import { hasIntersection } from "../../../lib/utils.js";
-import type { Action } from "../../../ui/action.js";
-import type { TabRef } from "../../../ui/tab-ref.js";
-import type { HUDTab } from "../../../ui/hud-tab.js";
-import type { BaseSystemAdapter } from "../base-system-adapter.js";
 
 export interface TabSideFilterContext {
     activeParents?: Set<string>;

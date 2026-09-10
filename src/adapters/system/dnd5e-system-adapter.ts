@@ -9,7 +9,6 @@ import { Dnd5eSystemContextMenuManager } from './context-menu/dnd5e-system-conte
 import { Dnd5eSystemTabFilterManager } from './filter/dnd5e-system-tab-filter-manager.js';
 import { Dnd5eSystemContextModifier } from './context-modifier/dnd5e-system-context-modifier.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
-import type { BaseFoundryAdapter } from '../foundry/base-foundry-adapter.js';
 
 const ALLOWED_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot', 'feat', 'spell']);
 const PASSIVE_ITEM_TYPES = new Set(['equipment', 'weapon', 'consumable', 'tool', 'backpack', 'loot']);

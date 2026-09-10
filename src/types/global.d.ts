@@ -100,6 +100,20 @@ declare global {
   type Pf2eStatistic = import('./systems.js').Pf2eStatistic;
   type ActorPF2e = import('./systems.js').ActorPF2e;
   type ItemPF2e = import('./systems.js').ItemPF2e;
+
+  type Action = import('../ui/action.js').Action;
+  type TabRef = import('../ui/tab-ref.js').TabRef;
+  type HUDTab = import('../ui/hud-tab.js').HUDTab;
+  type HUDTabColumn = import('../ui/hud-tab-column.js').HUDTabColumn;
+  type BaseFoundryAdapter = import('../adapters/foundry/base-foundry-adapter.js').BaseFoundryAdapter;
+  type BaseSystemAdapter = import('../adapters/system/base-system-adapter.js').BaseSystemAdapter;
+  type Dnd5eSystemAdapter = import('../adapters/system/dnd5e-system-adapter.js').Dnd5eSystemAdapter;
+  type Pf1SystemAdapter = import('../adapters/system/pf1-system-adapter.js').Pf1SystemAdapter;
+  type Pf2eSystemAdapter = import('../adapters/system/pf2e-system-adapter.js').Pf2eSystemAdapter;
+  type ItemSummary = import('../adapters/system/base-system-adapter.js').ItemSummary;
+  type ItemSummaryProperty = import('../adapters/system/base-system-adapter.js').ItemSummaryProperty;
+  type TabSideFilterContext = import('../adapters/system/filter/base-system-tab-filter-manager.js').TabSideFilterContext;
+  type FilterContext = import('../adapters/system/filter/base-system-tab-filter-manager.js').FilterContext;
 }
 
 declare module 'fvtt-types/configuration' {

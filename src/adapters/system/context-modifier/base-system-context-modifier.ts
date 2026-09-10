@@ -1,5 +1,4 @@
 import { localize, deepFreeze } from '../../../lib/utils.js';
-import type { BaseSystemAdapter } from '../base-system-adapter.js';
 
 const ICONS = deepFreeze({
     item_type: {

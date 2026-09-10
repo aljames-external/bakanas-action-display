@@ -6,8 +6,6 @@ import { Action } from '../../ui/action.js';
 import { MODULE_ID } from '../../constants.js';
 import { Pf2eSystemContextMenuManager } from './context-menu/pf2e-system-context-menu-manager.js';
 import { CombatMovementTracker } from '../../combat/combat-movement-tracker.js';
-import type { BaseFoundryAdapter } from '../foundry/base-foundry-adapter.js';
-import type { ItemSummary, ItemSummaryProperty } from './base-system-adapter.js';
 
 const SORT_ORDERS = deepFreeze({
     tabs: {

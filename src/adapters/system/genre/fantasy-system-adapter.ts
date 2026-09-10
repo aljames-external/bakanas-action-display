@@ -1,5 +1,4 @@
 import { BaseSystemAdapter } from '../base-system-adapter.js';
-import type { BaseFoundryAdapter } from '../../foundry/base-foundry-adapter.js';
 
 const SORT_ORDERS = {
     spell_subtab: {

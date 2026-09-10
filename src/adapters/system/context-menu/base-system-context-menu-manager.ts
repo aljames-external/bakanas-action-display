@@ -1,5 +1,4 @@
 import { MODULE_ID } from '../../../constants.js';
-import type { BaseSystemAdapter } from '../base-system-adapter.js';
 
 /**
  * Base context menu manager for system adapters.

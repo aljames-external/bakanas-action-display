@@ -1,7 +1,6 @@
 import { MODULE_ID } from '../constants.js';
 import { log } from '../lib/logger.js';
 import { adapter } from '../adapters/index.js';
-import type { BaseSystemAdapter } from '../adapters/system/base-system-adapter.js';
 
 /**
  * Get the favorites map from an actor document.

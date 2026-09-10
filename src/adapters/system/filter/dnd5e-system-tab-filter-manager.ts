@@ -1,9 +1,8 @@
-import { BaseSystemTabFilterManager, type FilterContext } from './base-system-tab-filter-manager.js';
+import { BaseSystemTabFilterManager } from './base-system-tab-filter-manager.js';
 import { TabRef } from '../../../ui/tab-ref.js';
 import { Action } from '../../../ui/action.js';
 import { log } from '../../../lib/logger.js';
 import { deepFreeze } from '../../../lib/utils.js';
-import type { Dnd5eSystemAdapter } from '../dnd5e-system-adapter.js';
 
 const COMPONENT_NAMES = deepFreeze({
     'vocal': ['vocal', 'verbal'],

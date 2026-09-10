@@ -1,5 +1,3 @@
-import type { Action } from '../../ui/action.js';
-
 /**
  * Base class for all module-specific adapters.
  * Module adapters can modify the actions list after the system adapter has processed it,

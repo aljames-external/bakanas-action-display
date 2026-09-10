@@ -1,7 +1,6 @@
 import { BaseModuleAdapter } from './base-module-adapter.js';
 import { toSet } from '../../lib/utils.js';
 import { MODULE_ID } from '../../constants.js';
-import type { Action } from '../../ui/action.js';
 
 /**
  * Module adapter for 'midi-qol' (D&D5e automation).

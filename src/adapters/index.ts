@@ -1,14 +1,12 @@
 import { initializeFoundryAdapter, BaseFoundryAdapter } from './foundry/index.js';
 import { FoundryV13Adapter } from './foundry/foundry-v13-adapter.js';
 import { initializeSystemAdapter, BaseSystemAdapter } from './system/index.js';
-import type { ItemSummary, ItemSummaryProperty } from './system/index.js';
 import { initializeModuleAdapters, BaseModuleAdapter } from './module/index.js';
 import { MODULE_ID } from '../constants.js';
 import { log } from '../lib/logger.js';
 import { Action } from '../ui/action.js';
 import { TabRef } from '../ui/tab-ref.js';
 import { CombatMovementTracker } from '../combat/combat-movement-tracker.js';
-import type { HUDTabColumn } from '../ui/hud-tab-column.js';
 
 /**
  * Unified Adapter Singleton for Bakana's Action Display.
@@ -686,4 +684,3 @@ class Adapter {
 
 export const adapter = new Adapter();
 export { Adapter, BaseFoundryAdapter, BaseSystemAdapter, BaseModuleAdapter };
-export type { ItemSummary, ItemSummaryProperty };

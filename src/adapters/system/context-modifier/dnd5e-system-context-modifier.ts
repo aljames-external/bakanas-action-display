@@ -1,5 +1,4 @@
 import { BaseSystemContextModifier } from './base-system-context-modifier.js';
-import type { Dnd5eSystemAdapter } from '../dnd5e-system-adapter.js';
 import { localize, deepFreeze } from '../../../lib/utils.js';
 import { MODULE_ID } from '../../../constants.js';
 
@@ -126,8 +125,6 @@ const LEVEL_ORDINALS = deepFreeze({ '1': '1st', '2': '2nd', '3': '3rd' });
 
 const GEAR_TYPES = deepFreeze(['weapon', 'equipment', 'consumable', 'tool', 'backpack', 'loot']);
 const GENERIC_GEAR_TYPES = deepFreeze(['consumable', 'tool', 'backpack', 'loot']);
-
-import type { HUDTab } from '../../../ui/hud-tab.js';
 
 interface ContextApp {
     actor?: Actor | null;

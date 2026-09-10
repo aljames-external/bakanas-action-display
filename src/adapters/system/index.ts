@@ -44,5 +44,4 @@ export async function initializeSystemAdapter(systemId: string = game.system?.id
 }
 
 export { BaseSystemAdapter };
-export type { ItemSummary, ItemSummaryProperty } from './base-system-adapter.js';
 
