@@ -32,7 +32,7 @@ interface ReasonObject {
  * @param {string} component Component identifier ('vocal'|'somatic'|'material')
  * @returns {boolean}
  */
-function itemHasComponent(item: Item5e, component: string): boolean {
+export function itemHasComponent(item: Item5e, component: string): boolean {
     const names = (COMPONENT_NAMES as Record<string, readonly string[]>)[component] ?? [component];
     const shortKey = (COMPONENT_SHORT_KEYS as Record<string, string>)[component];
 
@@ -70,20 +70,13 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
     }
 
     /**
-     * Extract the underlying concrete spell item document from an action or item.
-     * @param {Action|Item5e|null|undefined} target Normalized caller input
+     * Extract the underlying concrete spell item document from an action.
+     * @param {Action} action HUD Action object
      * @returns {Item5e|null}
      * @private
      */
-    #extractSpellItem(target: Action | Item5e | null | undefined): Item5e | null {
-        if (!target) return null;
-
-        // If target is already a spell Item with system data, return directly
-        if ('system' in target && (target as Item5e).type === 'spell') {
-            return target as Item5e;
-        }
-
-        const action = target as Action;
+    #extractSpellItem(action: Action): Item5e | null {
+        if (!action) return null;
 
         // 1. Direct spell original item on action
         const origItem = action.originalItem as Item5e | null;
@@ -95,14 +88,14 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
         const activity = action.originalActivity as Dnd5eActivity | null;
         if (activity?.type === 'cast') {
             const spell = (activity.spell ?? activity.item) as Item5e | null;
-            if (spell?.type === 'spell' || spell?.system?.properties) {
+            if (spell?.type === 'spell' || Boolean(spell?.system?.properties)) {
                 return spell;
             }
         }
 
         // 3. Linked spell document resolved via system adapter
         const rootDoc = this.adapter.resolveRootSpellDocument(action) as Item5e | null;
-        if (rootDoc && (rootDoc.type === 'spell' || rootDoc.system?.properties)) {
+        if (rootDoc && (rootDoc.type === 'spell' || Boolean(rootDoc.system?.properties))) {
             return rootDoc;
         }
 
@@ -122,25 +115,25 @@ export class Dnd5eSystemTabFilterManager extends BaseSystemTabFilterManager {
     }
 
     /**
-     * Check if a spell, item, or activity requires a given verbal/somatic/material component.
-     * Non-spell items (weapons, equipment, feats, tools, etc.) without a cast activity or linked spell do not require spell components.
-     * @param {Action|Item5e} target Action, activity, or spell item document
+     * Check if an action requires a given verbal/somatic/material component.
+     * Non-spell actions without a cast activity or linked spell do not require spell components.
+     * @param {Action} action HUD Action object
      * @param {string} component Component identifier ('vocal'|'somatic'|'material')
      * @returns {boolean}
      */
-    requiresComponent(target: Action | Item5e, component: string): boolean {
-        const item = this.#extractSpellItem(target);
+    requiresComponent(action: Action, component: string): boolean {
+        const item = this.#extractSpellItem(action);
         if (!item) return false;
         return itemHasComponent(item, component);
     }
 
     /**
-     * Build TabRef objects for each spell component required by a document.
-     * @param {Action|Item5e} target Document, action, or activity
+     * Build TabRef objects for each spell component required by an action.
+     * @param {Action} action HUD Action object
      * @returns {TabRef[]}
      */
-    getComponentTabs(target: Action | Item5e): TabRef[] {
-        const item = this.#extractSpellItem(target);
+    getComponentTabs(action: Action): TabRef[] {
+        const item = this.#extractSpellItem(action);
         if (!item) return [];
         return SPELL_COMPONENTS
             .filter(comp => itemHasComponent(item, comp))

@@ -4,6 +4,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BaseDnd5eSystemAdapter, Dnd5eSystemAdapter_5_3, Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
 import { categorizeActions } from '../../src/categorization/categorization-manager.js';
+import { Action } from '../../src/ui/action.js';
+import { itemHasComponent } from '../../src/adapters/system/filter/dnd5e-system-tab-filter-manager.js';
 
 test('Dnd5eSystemAdapter initialization and labels', () => {
     const adapter = new Dnd5eSystemAdapter(new FoundryV12Adapter());
@@ -1724,7 +1726,13 @@ test('Dnd5eSystemTabFilterManager recognizes material components across standard
         type: 'spell',
         system: { properties: new Set(['vocal', 'material']) }
     };
-    assert.equal(filterManager.requiresComponent(spellWithMatProp, 'material'), true);
+    const actionWithMatProp = new Action({
+        id: 'spell-mat-prop',
+        name: 'Spell With Mat Prop',
+        originalItem: spellWithMatProp
+    });
+    assert.equal(filterManager.requiresComponent(actionWithMatProp, 'material'), true);
+    assert.equal(itemHasComponent(spellWithMatProp, 'material'), true);
 
     // 2. components boolean map { m: true }
     const spellWithCompMap = {
@@ -1733,7 +1741,13 @@ test('Dnd5eSystemTabFilterManager recognizes material components across standard
             components: { v: true, m: true }
         }
     };
-    assert.equal(filterManager.requiresComponent(spellWithCompMap, 'material'), true);
+    const actionWithCompMap = new Action({
+        id: 'spell-comp-map',
+        name: 'Spell With Comp Map',
+        originalItem: spellWithCompMap
+    });
+    assert.equal(filterManager.requiresComponent(actionWithCompMap, 'material'), true);
+    assert.equal(itemHasComponent(spellWithCompMap, 'material'), true);
 });
 
 test('Dnd5eSystemAdapter recordManualTabToggle handles vocal, somatic, and material toggles', () => {
