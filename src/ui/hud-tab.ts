@@ -1,21 +1,28 @@
 import { adapter } from '../adapters/index.js';
 import { MODULE_ID } from '../constants.js';
 
+export type HUDTabClickCallback = (
+    app: ActionDisplayApp,
+    tabColumn: HUDTabColumn,
+    groups: Record<string, HUDTab>,
+    event?: MouseEvent | PointerEvent | Event
+) => boolean | void;
+
 export interface HUDTabOptions {
     id: string;
     label?: string;
     icon?: string;
     level?: number;
-    combinator?: string;
+    combinator?: 'union' | 'intersection' | 'difference' | string;
     active?: boolean;
     expanded?: boolean;
     activeParent?: boolean;
     excluded?: boolean;
     showUnprepared?: boolean;
-    subTabs?: HUDTab[];
+    subTabs?: Array<HUDTab | HUDTabOptions>;
     tooltip?: string;
-    onLeftClick?: ((app: any, tabColumn: any, groups: any, event?: any) => any) | null;
-    onRightClick?: ((app: any, tabColumn: any, groups: any, event?: any) => any) | null;
+    onLeftClick?: HUDTabClickCallback | null;
+    onRightClick?: HUDTabClickCallback | null;
 }
 
 /**
@@ -36,25 +43,12 @@ export class HUDTab {
     activeParent: boolean;
     excluded: boolean;
     showUnprepared: boolean;
-    customOnLeftClick: ((app: any, tabColumn: any, groups: any, event?: any) => any) | null;
-    customOnRightClick: ((app: any, tabColumn: any, groups: any, event?: any) => any) | null;
+    customOnLeftClick: HUDTabClickCallback | null;
+    customOnRightClick: HUDTabClickCallback | null;
     subTabs: HUDTab[];
 
     /**
-     * @param {Object} options
-     * @param {string} options.id Tab identifier
-     * @param {string} [options.label] Display label
-     * @param {string} [options.icon] CSS icon class (for level 0 parent tabs)
-     * @param {number} [options.level=0] Depth level (0 = top-level parent tab, 1 = sub-tab, 2+ = nested sub-tab)
-     * @param {boolean} [options.active=false] Whether this tab filter is active
-     * @param {boolean} [options.expanded=false] Whether this tab accordion/branch is expanded
-     * @param {boolean} [options.activeParent=false] Whether this parent has active subtabs
-     * @param {string} [options.combinator='union'] Set-algebraic combinator ('union', 'intersection', 'difference')
-     * @param {boolean} [options.excluded=false] Excluded filter state (e.g. spell components)
-     * @param {boolean} [options.showUnprepared=false] Special indicator state (e.g. D&D 5e unprepared spells)
-     * @param {HUDTab[]} [options.subTabs=[]] Child sub-tab instances
-     * @param {Function} [options.onLeftClick=null] Custom left-click handler
-     * @param {Function} [options.onRightClick=null] Custom right-click handler
+     * @param {HUDTabOptions} options
      */
     constructor({
         id,
@@ -71,7 +65,7 @@ export class HUDTab {
         tooltip = '',
         onLeftClick = null,
         onRightClick = null
-    }: Partial<HUDTabOptions> & { id: string }) {
+    }: HUDTabOptions) {
         this.id = id;
         this.label = label;
         this.icon = icon;
@@ -98,11 +92,11 @@ export class HUDTab {
      * Parent HUDTab reference. Automatically updates depth level and rootParent pointers.
      * @type {HUDTab|null}
      */
-    get parent() {
+    get parent(): HUDTab | null {
         return this._parent;
     }
 
-    set parent(parentTab) {
+    set parent(parentTab: HUDTab | null) {
         this._parent = parentTab;
         const newRoot = parentTab ? (parentTab.rootParent ?? parentTab) : this;
         this._setRootParent(newRoot);
@@ -113,7 +107,7 @@ export class HUDTab {
      * @param {HUDTab} root 
      * @private
      */
-    _setRootParent(root: any) {
+    _setRootParent(root: HUDTab): void {
         this.rootParent = root;
         if (this.subTabs.length > 0) {
             for (const child of this.subTabs) {
@@ -142,17 +136,17 @@ export class HUDTab {
      * Is this a top-level parent tab (level 0)?
      * @type {boolean}
      */
-    get isTopLevel() {
+    get isTopLevel(): boolean {
         return this.level === 0;
     }
 
     /**
      * Add a child sub-tab under this tab.
      * Automatically establishes parent link and derives child depth level.
-     * @param {Object|HUDTab} subTabConfig Sub-tab configuration or instance
+     * @param {HUDTab|HUDTabOptions} subTabConfig Sub-tab configuration or instance
      * @returns {HUDTab} The created or added child HUDTab instance
      */
-    addSubTab(subTabConfig: any): HUDTab {
+    addSubTab(subTabConfig: HUDTab | HUDTabOptions): HUDTab {
         const subTab: HUDTab = subTabConfig instanceof HUDTab
             ? subTabConfig
             : new HUDTab(subTabConfig);
@@ -165,7 +159,7 @@ export class HUDTab {
      * Get the array of child sub-tab IDs in their current displayed order.
      * @returns {string[]}
      */
-    getOrder() {
+    getOrder(): string[] {
         return this.subTabs.map(t => t.id);
     }
 
@@ -173,7 +167,7 @@ export class HUDTab {
      * Update and re-order child sub-tabs using an array of ordered sub-tab IDs.
      * @param {string[]} orderArray Array of sub-tab IDs in the desired display order
      */
-    updateOrder(orderArray: any) {
+    updateOrder(orderArray: string[]): void {
         if (!Array.isArray(orderArray) || this.subTabs.length === 0) return;
         const orderMap = new Map(orderArray.map((id, index) => [id, index]));
         this.subTabs.sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999));
@@ -184,10 +178,10 @@ export class HUDTab {
      * @param {string} subId 
      * @returns {HUDTab|undefined}
      */
-    getSubTab(subId: any): any {
+    getSubTab(subId: string): HUDTab | undefined {
         for (const st of this.subTabs) {
             if (st.id === subId) return st;
-            const found: any = st.getSubTab(subId);
+            const found = st.getSubTab(subId);
             if (found) return found;
         }
         return undefined;
@@ -198,7 +192,7 @@ export class HUDTab {
      * @param {Set<string>} [ids=new Set()] Accumulator set for recursive collection
      * @returns {Set<string>} Set of all sub-tab and nested sub-tab IDs
      */
-    getAllSubTabIds(ids = new Set()) {
+    getAllSubTabIds(ids: Set<string> = new Set<string>()): Set<string> {
         for (const st of this.subTabs) {
             ids.add(st.id);
             st.getAllSubTabIds(ids);
@@ -209,21 +203,27 @@ export class HUDTab {
 
     /**
      * Handle left-click on this tab.
-     * @param {ApplicationV2} app 
+     * @param {ActionDisplayApp} app 
      * @param {HUDTabColumn} tabColumn 
-     * @param {Object} groups Tab groups dictionary
-     * @param {Event} [event] 
+     * @param {Record<string, HUDTab>} groups Tab groups dictionary
+     * @param {MouseEvent|PointerEvent|Event} [event] 
      */
-    onLeftClick(app: any, tabColumn: any, groups: any, event: any) {
+    onLeftClick(
+        app: ActionDisplayApp,
+        tabColumn: HUDTabColumn,
+        groups: Record<string, HUDTab>,
+        event?: MouseEvent | PointerEvent | Event
+    ): void {
         if (this.customOnLeftClick) {
             const handled = this.customOnLeftClick(app, tabColumn, groups, event);
             if (handled) return;
         }
-        if (event?.shiftKey || game.settings.get(MODULE_ID, 'toggleTabSelection')) {
+        const hasShift = Boolean((event as MouseEvent | undefined)?.shiftKey);
+        if (hasShift || game.settings.get(MODULE_ID, 'toggleTabSelection')) {
             if (this.isTopLevel) {
                 tabColumn.toggleParent(this.id, groups);
             } else {
-                const rootId = this.rootParent?.id ?? this.parent?.id;
+                const rootId = this.rootParent?.id ?? this.parent?.id ?? this.id;
                 const isExclusion = adapter.isExclusionTab(rootId);
                 tabColumn.toggleSub(rootId, this.id, groups, isExclusion);
             }
@@ -232,19 +232,25 @@ export class HUDTab {
         if (this.isTopLevel) {
             tabColumn.selectParent(this.id, groups);
         } else {
-            const isExclusion = adapter.isExclusionTab(this.rootParent.id);
-            tabColumn.selectSub(this.rootParent.id, this.id, groups, isExclusion);
+            const rootId = this.rootParent?.id ?? this.parent?.id ?? this.id;
+            const isExclusion = adapter.isExclusionTab(rootId);
+            tabColumn.selectSub(rootId, this.id, groups, isExclusion);
         }
     }
 
     /**
      * Handle right-click on this tab.
-     * @param {ApplicationV2} app 
+     * @param {ActionDisplayApp} app 
      * @param {HUDTabColumn} tabColumn 
-     * @param {Object} groups Tab groups dictionary
-     * @param {Event} [event] 
+     * @param {Record<string, HUDTab>} groups Tab groups dictionary
+     * @param {MouseEvent|PointerEvent|Event} [event] 
      */
-    onRightClick(app: any, tabColumn: any, groups: any, event: any) {
+    onRightClick(
+        app: ActionDisplayApp,
+        tabColumn: HUDTabColumn,
+        groups: Record<string, HUDTab>,
+        event?: MouseEvent | PointerEvent | Event
+    ): void {
         if (this.customOnRightClick) {
             const handled = this.customOnRightClick(app, tabColumn, groups, event);
             if (handled) return;
@@ -252,8 +258,9 @@ export class HUDTab {
         if (this.isTopLevel) {
             tabColumn.toggleParent(this.id, groups);
         } else {
-            const isExclusion = adapter.isExclusionTab(this.rootParent.id);
-            tabColumn.toggleSub(this.rootParent.id, this.id, groups, isExclusion);
+            const rootId = this.rootParent?.id ?? this.parent?.id ?? this.id;
+            const isExclusion = adapter.isExclusionTab(rootId);
+            tabColumn.toggleSub(rootId, this.id, groups, isExclusion);
         }
     }
 }

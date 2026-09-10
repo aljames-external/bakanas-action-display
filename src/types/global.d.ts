@@ -104,7 +104,9 @@ declare global {
   type Action = import('../ui/action.js').Action;
   type TabRef = import('../ui/tab-ref.js').TabRef;
   type HUDTab = import('../ui/hud-tab.js').HUDTab;
+  type HUDTabOptions = import('../ui/hud-tab.js').HUDTabOptions;
   type HUDTabColumn = import('../ui/hud-tab-column.js').HUDTabColumn;
+  type ActionDisplayApp = import('../ui/action-display-app.js').ActionDisplayApp;
   type BaseFoundryAdapter = import('../adapters/foundry/base-foundry-adapter.js').BaseFoundryAdapter;
   type BaseSystemAdapter = import('../adapters/system/base-system-adapter.js').BaseSystemAdapter;
   type Dnd5eSystemAdapter = import('../adapters/system/dnd5e-system-adapter.js').Dnd5eSystemAdapter;

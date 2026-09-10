@@ -60,11 +60,11 @@ export class HUDTabColumn {
     /**
      * Reset parent tabs and sub-tabs on this column to default state ('all' and default sub-types),
      * while preserving exclusion parent tabs (e.g. 'components') and their active sub-tabs (e.g. 'vocal', 'somatic').
-     * @param {Object} [groups] Tab groups dictionary
+     * @param {Record<string, HUDTab>|null} [groups] Tab groups dictionary
      */
-    resetToDefault(groups: Record<string, any> | null = null) {
+    resetToDefault(groups: Record<string, HUDTab> | null = null) {
         const exclusionParents: string[] = [];
-        const exclusionSubIds = new Set();
+        const exclusionSubIds = new Set<string>();
         for (const p of this.activeParents) {
             if (adapter.isExclusionTab(p)) {
                 exclusionParents.push(p);
@@ -104,16 +104,16 @@ export class HUDTabColumn {
      * - Left-clicking the sole active parent tab with NO active subtabs disables it and resets column to default.
      * - Left-clicking the sole active parent tab WITH active subtabs keeps it active and focuses it.
      * @param {string} parentId The parent tab ID
-     * @param {Object} groups Available tab groups
+     * @param {Record<string, HUDTab>|null} [groups] Available tab groups
      */
-    selectParent(parentId: any, groups: any) {
+    selectParent(parentId: string, groups?: Record<string, HUDTab> | null) {
         if (parentId === 'all') {
             this.resetToDefault(groups);
             return;
         }
 
         const group = groups?.[parentId];
-        const validSubIds = group?.getAllSubTabIds?.() ?? new Set();
+        const validSubIds = group?.getAllSubTabIds?.() ?? new Set<string>();
         const hasActiveSubs = hasIntersection(this.activeSubTypes, validSubIds);
 
         const isSoleActive = this.activeParents.size === 1 && this.activeParents.has(parentId);
@@ -123,7 +123,7 @@ export class HUDTabColumn {
             // Deselect other category parent tabs and clear their sub-tabs,
             // while preserving exclusion parent tabs (e.g. 'components') and their active sub-tabs
             const exclusionParents: string[] = [];
-            const exclusionSubIds = new Set();
+            const exclusionSubIds = new Set<string>();
             for (const p of this.activeParents) {
                 if (adapter.isExclusionTab(p)) {
                     exclusionParents.push(p);
@@ -162,9 +162,9 @@ export class HUDTabColumn {
     /**
      * Handle right-click toggling of a parent tab (multi-select / clearing subtabs).
      * @param {string} parentId The parent tab ID
-     * @param {Object} groups Available tab groups
+     * @param {Record<string, HUDTab>|null} [groups] Available tab groups
      */
-    toggleParent(parentId: any, groups: any) {
+    toggleParent(parentId: string, groups?: Record<string, HUDTab> | null) {
         if (parentId === 'all') {
             this.resetToDefault(groups);
             return;
@@ -173,7 +173,7 @@ export class HUDTabColumn {
         const group = groups?.[parentId];
         let hadActiveSubs = false;
         if (group) {
-            const validSubIds = group.getAllSubTabIds?.() ?? new Set();
+            const validSubIds = group.getAllSubTabIds?.() ?? new Set<string>();
             for (const subId of this.activeSubTypes) {
                 if (validSubIds.has(subId)) {
                     hadActiveSubs = true;
@@ -205,10 +205,10 @@ export class HUDTabColumn {
      * Handle left-click selection of a sub-tab.
      * @param {string} parentId Parent group ID
      * @param {string} type Sub-tab ID
-     * @param {Object} groups Available tab groups
+     * @param {Record<string, HUDTab>|null} [groups] Available tab groups
      * @param {boolean} [isExclusion=false] Whether this parent tab is an exclusion filter
      */
-    selectSub(parentId: any, type: any, groups: any, isExclusion = false) {
+    selectSub(parentId: string, type: string, groups?: Record<string, HUDTab> | null, isExclusion = false) {
         if (isExclusion) {
             this.toggleSub(parentId, type, groups, isExclusion);
             return;
@@ -224,7 +224,7 @@ export class HUDTabColumn {
         const group = groups?.[parentId];
         if (type === 'all') {
             if (group) {
-                const validSubIds = group.getAllSubTabIds?.() ?? new Set();
+                const validSubIds = group.getAllSubTabIds?.() ?? new Set<string>();
                 for (const subId of this.activeSubTypes) {
                     if (validSubIds.has(subId)) {
                         this.activeSubTypes.delete(subId);
@@ -237,11 +237,11 @@ export class HUDTabColumn {
         }
 
         const targetTab = group?.getSubTab?.(type);
-        const descendantIds = targetTab?.getAllSubTabIds?.() ?? new Set();
+        const descendantIds = targetTab?.getAllSubTabIds?.() ?? new Set<string>();
         const hasDescendants = descendantIds.size > 0;
 
         if (group) {
-            const validSubIds = group.getAllSubTabIds?.() ?? new Set();
+            const validSubIds = group.getAllSubTabIds?.() ?? new Set<string>();
             const activeSubsForParent: string[] = [];
             for (const id of this.activeSubTypes) {
                 if (validSubIds.has(id)) activeSubsForParent.push(id);
@@ -276,10 +276,10 @@ export class HUDTabColumn {
      * Handle right-click toggling of a sub-tab (for multi-select).
      * @param {string} parentId Parent group ID
      * @param {string} type Sub-tab ID
-     * @param {Object} groups Available tab groups
+     * @param {Record<string, HUDTab>|null} [groups] Available tab groups
      * @param {boolean} [isExclusion=false] Whether this parent tab is an exclusion filter
      */
-    toggleSub(parentId: any, type: any, groups: any, isExclusion = false) {
+    toggleSub(parentId: string, type: string, groups?: Record<string, HUDTab> | null, isExclusion = false) {
         if (parentId) {
             this.activeParents.add(parentId);
             if (!isExclusion) {
@@ -291,7 +291,7 @@ export class HUDTabColumn {
         const group = groups?.[parentId];
         if (type === 'all') {
             if (group) {
-                const validSubIds = group.getAllSubTabIds?.() ?? new Set();
+                const validSubIds = group.getAllSubTabIds?.() ?? new Set<string>();
                 for (const subId of this.activeSubTypes) {
                     if (validSubIds.has(subId)) {
                         this.activeSubTypes.delete(subId);
@@ -304,7 +304,7 @@ export class HUDTabColumn {
         }
 
         const targetTab = group?.getSubTab?.(type);
-        const descendantIds = targetTab?.getAllSubTabIds?.() ?? new Set();
+        const descendantIds = targetTab?.getAllSubTabIds?.() ?? new Set<string>();
         const hasDescendants = descendantIds.size > 0;
 
         if (hasDescendants) {
@@ -341,8 +341,8 @@ export class HUDTabColumn {
                 this.activeSubTypes.add(type);
                 // If all siblings under ancestor category are now active, collapse them into the ancestor category
                 if (ancestorCategory && ancestorCategory.subTabs.length > 0) {
-                    const nonAllSiblings = ancestorCategory.subTabs.filter((s: any) => s.id !== 'all');
-                    const allSiblingsActive = nonAllSiblings.every((s: any) => this.activeSubTypes.has(s.id));
+                    const nonAllSiblings = ancestorCategory.subTabs.filter(s => s.id !== 'all');
+                    const allSiblingsActive = nonAllSiblings.every(s => this.activeSubTypes.has(s.id));
                     if (allSiblingsActive) {
                         for (const s of nonAllSiblings) {
                             this.activeSubTypes.delete(s.id);
@@ -354,7 +354,7 @@ export class HUDTabColumn {
         }
 
         if (isExclusion && group) {
-            const validSubIds = group.getAllSubTabIds?.() ?? new Set();
+            const validSubIds = group.getAllSubTabIds?.() ?? new Set<string>();
             const hasRemainingSubs = hasIntersection(this.activeSubTypes, validSubIds);
             if (!hasRemainingSubs) {
                 this.activeParents.delete(parentId);
@@ -364,16 +364,16 @@ export class HUDTabColumn {
 
     /**
      * Prune sub-types that are no longer available in any active parent.
-     * @param {Object} groups Available tab groups
+     * @param {Record<string, HUDTab>} groups Available tab groups
      * @param {Function} [isExclusionFn] Function returning true if a parentId is an exclusion filter
      */
-    prune(groups: Record<string, any>, isExclusionFn: (parentId: string) => boolean = () => false) {
-        const allAvailableSubs = new Set();
+    prune(groups: Record<string, HUDTab>, isExclusionFn: (parentId: string) => boolean = () => false) {
+        const allAvailableSubs = new Set<string>();
         for (const parentId in groups) {
             if (isExclusionFn(parentId) || this.activeParents.has(parentId)) {
                 const group = groups[parentId];
                 if (group) {
-                    const subIds = group.getAllSubTabIds?.() ?? new Set();
+                    const subIds = group.getAllSubTabIds?.() ?? new Set<string>();
                     for (const id of subIds) {
                         allAvailableSubs.add(id);
                     }
@@ -389,9 +389,9 @@ export class HUDTabColumn {
 
     /**
      * Serialize tab state for caching per actor.
-     * @returns {Object}
+     * @returns {{ parents: string[]; focusedParent: string; subTypes: string[] }}
      */
-    serialize() {
+    serialize(): { parents: string[]; focusedParent: string; subTypes: string[] } {
         return {
             parents: Array.from(this.activeParents),
             focusedParent: this.focusedParent,
