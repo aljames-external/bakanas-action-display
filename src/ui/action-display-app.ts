@@ -3,7 +3,7 @@ import { actionDisplay } from '../action-display.js';
 import { log } from '../lib/logger.js';
 import { MODULE_ID } from '../constants.js';
 import { hasIntersection, localize } from '../lib/utils.js';
-import { HUDTabColumn } from './hud-tab-column.js';
+import { HUDTabColumn, SerializedTabColumn } from './hud-tab-column.js';
 import { HUDTab } from './hud-tab.js';
 import { createActionContextMenu } from './app/context-menu-manager.js';
 import { showActivityDropdown, dropdownSubactionMap } from './app/dropdown-manager.js';
@@ -14,16 +14,19 @@ import { setExplicitlyClosedTokenId } from '../module.js';
 
 export interface ActiveTabState {
     activePage: number;
-    left?: any;
-    right?: any;
-    pages?: Record<string, any>;
+    left?: SerializedTabColumn;
+    right?: SerializedTabColumn;
+    pages?: Record<string, SerializedTabColumn>;
 }
 
 // Cache to persist tab states per actor across HUD rebuilds
-const activeTabCache = new Map<string | null | undefined, ActiveTabState>();
+const activeTabCache = new Map<string, ActiveTabState>();
 let lastActiveTabState: ActiveTabState | null = null;
 
-const formatSummaryTag = (tag: any) => (tag?.label ? `${tag.label}: ${tag.value}` : (tag?.value ?? tag));
+const formatSummaryTag = (tag: string | ItemSummaryProperty): string => {
+    if (typeof tag === 'string') return tag;
+    return tag?.label ? `${tag.label}: ${tag.value}` : (tag?.value ?? '');
+};
 
 /**
  * Modern ApplicationV2-based HUD overlay for Bakana's Action Display.
@@ -38,7 +41,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * Active HUD application instances.
      * @type {Set<ActionDisplayApp>}
      */
-    static instances = new Set();
+    static instances: Set<ActionDisplayApp> = new Set();
 
     /**
      * Default page for newly opened HUDs (internal module setting, resets on reload).
@@ -80,11 +83,10 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
 
         // 3. Update any active/open HUD instances
         for (const instance of ActionDisplayApp.instances) {
-            const inst = instance as any;
-            const maxPage = inst.totalPages ?? page;
-            inst.activePage = Math.min(Math.max(1, page), maxPage);
-            if (inst !== callerInstance && inst.rendered) {
-                inst.render();
+            const maxPage = instance.totalPages ?? page;
+            instance.activePage = Math.min(Math.max(1, page), maxPage);
+            if (instance !== callerInstance && instance.rendered) {
+                instance.render();
             }
         }
 
@@ -99,10 +101,10 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
         if (persistEnabled) {
             try {
                 const rawStates = game.settings.get(MODULE_ID, 'hudTabStates');
-                const allStates = rawStates ? adapter.foundry.duplicate(rawStates) : {};
-                for (const state of Object.values(allStates as Record<string, any>)) {
+                const allStates = (rawStates ? adapter.foundry.duplicate(rawStates) : {}) as Record<string, ActiveTabState>;
+                for (const state of Object.values(allStates)) {
                     if (state) {
-                        (state as any).activePage = page;
+                        state.activePage = page;
                     }
                 }
                 game.settings.set(MODULE_ID, 'hudTabStates', allStates);
@@ -131,11 +133,11 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     }
 
     token: Token;
-    actor: any;
+    actor: Actor | null;
     actions: Action[];
     totalPages: number;
     activePage: number;
-    private _cachedPages: Record<string, any>;
+    private _cachedPages: Record<string, SerializedTabColumn>;
     private _tabColumns: Record<string, HUDTabColumn>;
     isAttached: boolean;
     private _dragData: { startX: number; startY: number; startLeft: number; startTop: number } | null;
@@ -143,40 +145,42 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     private _isSearching: boolean;
     private _searchSelectionStart: number | null;
     private _searchSelectionEnd: number | null;
-    private _boundOnPointerDownCapture: any = null;
-    private _boundOnContextMenuCapture: any = null;
+    private _boundOnPointerDownCapture: (event: PointerEvent) => void;
+    private _boundOnContextMenuCapture: (event: MouseEvent) => void | Promise<void>;
     private _hoveredActionItem: HTMLElement | null = null;
     private _isQuestionMarkHeld: boolean;
-    private _activeSummaryTooltip: { element: HTMLElement; actionId?: string; summary?: any; html?: string; targetWidth?: number | null } | null = null;
-    private _boundOnPointerOver: any = null;
-    private _boundOnPointerOut: any = null;
-    private _boundOnKeyDown: any = null;
-    private _boundOnKeyUp: any = null;
-    private _boundOnWindowBlur: any = null;
-    private _boundOnWheel: any = null;
-    private _boundOnWindowWheel: any = null;
-    private _boundOnAutobanPointerOverCapture: any = null;
+    private _activeSummaryTooltip: { element: HTMLElement; actionId?: string; summary?: ItemSummary | null; html?: string; targetWidth?: number | null } | null = null;
+    private _boundOnPointerOver: (event: PointerEvent) => void;
+    private _boundOnPointerOut: (event: PointerEvent) => void;
+    private _boundOnKeyDown: (event: KeyboardEvent) => void;
+    private _boundOnKeyUp: (event: KeyboardEvent) => void;
+    private _boundOnWindowBlur: () => void;
+    private _boundOnWheel: (event: WheelEvent) => void;
+    private _boundOnWindowWheel: (event: WheelEvent) => void;
+    private _boundOnAutobanPointerOverCapture: (event: PointerEvent) => void;
     private _lockedTooltipTarget: HTMLElement | null = null;
-    private _boundOnMiddleClickCapture: any = null;
-    private _boundOnAuxClickCapture: any = null;
+    private _boundOnMiddleClickCapture: (event: MouseEvent) => void;
+    private _boundOnAuxClickCapture: (event: MouseEvent) => void;
+    private _boundOutsidePointerDown: ((event: PointerEvent) => void) | null = null;
+    private _boundWindowStackPointerDown: ((event: PointerEvent) => void) | null = null;
 
-    constructor(token: Token, options: Record<string, any> = {}) {
+    constructor(token: Token, options: Record<string, unknown> = {}) {
         super(options);
         ActionDisplayApp.instances.add(this);
         this.token = token;
-        this.actor = token?.actor;
+        this.actor = token?.actor ?? null;
         this.actions = [];
         this.totalPages = 1;
 
         const actorKey = this.actor?.uuid ?? this.actor?.id;
-        const hasActorCache = Boolean(activeTabCache.has(actorKey) || (actorKey && game.settings.get(MODULE_ID, 'persistTabState') && game.settings.get(MODULE_ID, 'hudTabStates')?.[actorKey]));
+        const hasActorCache = Boolean(actorKey && (activeTabCache.has(actorKey) || (game.settings.get(MODULE_ID, 'persistTabState') && game.settings.get(MODULE_ID, 'hudTabStates')?.[actorKey])));
         const cached = this.retrieveActorTabCache(actorKey);
         const parsedPage = Number((hasActorCache ? cached?.activePage : null) ?? ActionDisplayApp.defaultPage);
         this.activePage = (Number.isFinite(parsedPage) && parsedPage > 0) ? parsedPage : Number(ActionDisplayApp.defaultPage);
-        this._cachedPages = cached?.pages ?? {
-            '1-left': cached?.left,
-            '1-right': cached?.right
-        };
+        this._cachedPages = cached?.pages ?? (cached?.left && cached?.right ? {
+            '1-left': cached.left,
+            '1-right': cached.right
+        } : {});
         this._tabColumns = {};
 
         // HUD Attachment State (true = attached to token, false = detached floating)
@@ -280,12 +284,16 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @returns {Combatant|null}
      * @private
      */
-    _getCombatant(combat = game.combat) {
+    _getCombatant(combat: Combat | null = game.combat): Combatant | null {
         if (!combat) return null;
-        return adapter.foundry.getCombatantByToken(combat, this.token)
-            ?? (this.actor ? combat.combatants?.find?.(c => c.actorId === this.actor.id) : null)
-            ?? this.actor?.combatant
-            ?? null;
+        const combatantFromToken = adapter.foundry.getCombatantByToken(combat, this.token);
+        if (combatantFromToken) return combatantFromToken;
+        const actorId = this.actor?.id;
+        if (actorId) {
+            const combatantFromActor = combat.combatants?.find?.(c => c.actorId === actorId);
+            if (combatantFromActor) return combatantFromActor;
+        }
+        return (this.actor as unknown as { combatant?: Combatant | null })?.combatant ?? null;
     }
 
     /**
@@ -470,7 +478,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     /**
      * Close the application, logging the transition.
      */
-    async close(options: Record<string, any> = {}): Promise<void> {
+    async close(options: Record<string, unknown> = {}): Promise<void> {
         // Hide the element instantly to prevent any default close animations/transitions
         // from causing visual glitches (like shifting and covering the token).
         if (this.element) {
@@ -800,7 +808,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
                     const isSubActive = this.rightTabs.activeSubTypes.has(subId);
                     const isExcluded = isActive && isSubActive;
 
-                    const subReasons = (autoBanReasons as Record<string, any[]>)[subId] ?? [];
+                    const subReasons = (autoBanReasons as Record<string, unknown[]>)[subId] ?? [];
                     const subTooltip = (isExcluded && subReasons.length > 0)
                         ? (await adapter.formatAutoBanTooltip?.(subId, subReasons)) ?? ''
                         : '';
@@ -819,10 +827,10 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
                 }
 
                 if (parent.id === 'components') {
-                    const activeAutoBans: Record<string, any[]> = {};
+                    const activeAutoBans: Record<string, unknown[]> = {};
                     for (const [comp, reasons] of Object.entries(autoBanReasons)) {
-                        if (this.rightTabs.activeSubTypes.has(comp) && reasons?.length > 0) {
-                            activeAutoBans[comp] = reasons;
+                        if (this.rightTabs.activeSubTypes.has(comp) && (reasons as unknown[])?.length > 0) {
+                            activeAutoBans[comp] = reasons as unknown[];
                         }
                     }
                     if (Object.keys(activeAutoBans).length > 0) {

@@ -278,8 +278,7 @@ export class ContextMenuManager {
      * Open and position a submenu popup to the right of the triggering menu item.
      * @param {HTMLElement} parentLi Triggering context menu item element
      * @param {HTMLElement} target Target action item element
-     * @param {Item} item Resolved Foundry Item document
-     * @param {Object[]} submenuItems Submenu item specifications
+     * @param {Item|null} item Resolved Foundry Item document
      * @param {ContextSubmenuItem[]} submenuItems Submenu item specifications
      * @private
      */
