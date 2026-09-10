@@ -89,7 +89,7 @@ export class BaseFoundryAdapter {
      * @param {Record<string, unknown>} [options={}] Browse options
      * @returns {Promise<{ target: string, files: string[], dirs: string[] }>}
      */
-    async browseDirectory(source: string, target: string, options: Record<string, unknown> = {}): Promise<any> {
+    async browseDirectory(source: string, target: string, options: Record<string, unknown> = {}): Promise<{ target: string; files: string[]; dirs: string[] }> {
         return this.FilePicker.browse(source, target, options);
     }
 
