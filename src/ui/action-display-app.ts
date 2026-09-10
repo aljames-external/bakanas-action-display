@@ -147,8 +147,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     private _searchSelectionEnd: number | null;
     private _boundOnPointerDownCapture: (event: PointerEvent) => void;
     private _boundOnContextMenuCapture: (event: MouseEvent) => void | Promise<void>;
-    private _hoveredActionItem: HTMLElement | null = null;
-    private _isQuestionMarkHeld: boolean;
+    _hoveredActionItem: HTMLElement | null = null;
+    _isQuestionMarkHeld: boolean;
     private _activeSummaryTooltip: { element: HTMLElement; actionId?: string; summary?: ItemSummary | null; html?: string; targetWidth?: number | null } | null = null;
     private _boundOnPointerOver: (event: PointerEvent) => void;
     private _boundOnPointerOut: (event: PointerEvent) => void;

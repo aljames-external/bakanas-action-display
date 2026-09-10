@@ -77,7 +77,7 @@ export function toggleHUD(explicitToken: Token | null = null) {
     const currentApp = actionDisplay.activeApp;
     const isCurrentAppOpen = Boolean(currentApp?.rendered);
 
-    if (isCurrentAppOpen) {
+    if (currentApp && isCurrentAppOpen) {
         // If a different token is now controlled, switch the HUD to the new token
         const controlledToken = canvas?.tokens?.controlled?.[0];
         if (controlledToken && currentApp.token && currentApp.token !== controlledToken && currentApp.token.id !== controlledToken.id) {

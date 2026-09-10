@@ -9,6 +9,13 @@ import { ECONOMY_COLOR_PRESETS } from './economy-presets.js';
  * Modern ApplicationV2 configuration menu for Action Economy indicator colors.
  */
 export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicationMixin(adapter.foundry.ApplicationV2) {
+    colors: Record<string, string>;
+    disabled: Record<string, boolean>;
+    enabledTypes: Record<string, boolean>;
+    enabled: boolean;
+    selectedPreset: string;
+    private _listenersAttached = false;
+
     /** @override */
     static DEFAULT_OPTIONS = {
         id: 'bad-economy-colors-config-app',
@@ -41,21 +48,22 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
         };
     }
 
-    constructor(options = {}) {
+    constructor(options: Record<string, unknown> = {}) {
         super(options);
-        const stored = game.settings.get(MODULE_ID, 'economyColors') ?? {};
-        this.colors = adapter.foundry.duplicate(stored);
-        this.disabled = adapter.foundry.duplicate(this.colors.disabled ?? {});
-        this.enabledTypes = adapter.foundry.duplicate(this.colors.enabled ?? {});
-        delete this.colors.disabled;
-        delete this.colors.enabled;
+        const stored = (game.settings.get(MODULE_ID, 'economyColors') ?? {}) as Record<string, unknown>;
+        const rawColors = adapter.foundry.duplicate(stored);
+        this.disabled = adapter.foundry.duplicate((rawColors.disabled ?? {}) as Record<string, boolean>);
+        this.enabledTypes = adapter.foundry.duplicate((rawColors.enabled ?? {}) as Record<string, boolean>);
+        delete rawColors.disabled;
+        delete rawColors.enabled;
+        this.colors = rawColors as Record<string, string>;
         this.enabled = Boolean(game.settings.get(MODULE_ID, 'enableEconomyIndicators'));
         this.selectedPreset = '';
     }
 
     /** @override */
-    async _prepareContext(options: any) {
-        const context = await super._prepareContext(options);
+    async _prepareContext(options: Record<string, unknown> = {}) {
+        const context = (await super._prepareContext(options)) as Record<string, unknown>;
         const systemTypes = adapter.getEconomyTypes() ?? [];
         const userColorsConfig = {
             ...this.colors,
@@ -88,7 +96,7 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
     }
 
     /** @override */
-    _onRender(context: any, options: any) {
+    _onRender(context: unknown, options: unknown) {
         super._onRender?.(context, options);
         this._attachInputListeners();
     }
@@ -139,31 +147,34 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
      * @private
      */
     _attachInputListeners() {
-        if (!this.element || this._listenersAttached) return;
+        const el = this.element as HTMLElement | null;
+        if (!el || this._listenersAttached) return;
         this._listenersAttached = true;
 
         // Delegated change listener for toggles and presets
-        this.element.addEventListener('change', (event: any) => {
-            const enableToggle = event.target.closest('.bad-economy-enable-toggle');
+        el.addEventListener('change', (event: Event) => {
+            const target = event.target as HTMLElement | null;
+            if (!target) return;
+            const enableToggle = target.closest<HTMLInputElement>('.bad-economy-enable-toggle');
             if (enableToggle) {
                 this.enabled = Boolean(enableToggle.checked);
                 return;
             }
 
-            const presetSelect = event.target.closest('.bad-economy-preset-select');
+            const presetSelect = target.closest<HTMLSelectElement>('.bad-economy-preset-select');
             if (presetSelect) {
                 this.applyPreset(presetSelect.value);
                 return;
             }
 
-            const typeToggle = event.target.closest('.bad-economy-type-toggle');
+            const typeToggle = target.closest<HTMLInputElement>('.bad-economy-type-toggle');
             if (typeToggle) {
                 const typeId = typeToggle.dataset.typeId;
                 if (!typeId) return;
                 const isEnabled = Boolean(typeToggle.checked);
                 this._setTypeEnabled(typeId, isEnabled);
 
-                const row = this.element.querySelector(`.bad-economy-color-row[data-type-id="${typeId}"]`);
+                const row = el.querySelector(`.bad-economy-color-row[data-type-id="${typeId}"]`);
                 if (row) {
                     row.classList.toggle('bad-row-inactive', !isEnabled);
                 }
@@ -171,24 +182,26 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
         });
 
         // Delegated input listener for color pickers & text inputs (auto-enables category)
-        this.element.addEventListener('input', (event: any) => {
-            const picker = event.target.closest('.bad-economy-color-picker');
+        el.addEventListener('input', (event: Event) => {
+            const target = event.target as HTMLElement | null;
+            if (!target) return;
+            const picker = target.closest<HTMLInputElement>('.bad-economy-color-picker');
             if (picker) {
                 const typeId = picker.dataset.typeId;
                 const value = picker.value;
                 if (typeId && value) {
-                    const row = this.element.querySelector(`.bad-economy-color-row[data-type-id="${typeId}"]`);
+                    const row = el.querySelector<HTMLElement>(`.bad-economy-color-row[data-type-id="${typeId}"]`);
                     this._syncRowColor(row, typeId, value);
                 }
                 return;
             }
 
-            const input = event.target.closest('.bad-economy-color-input');
+            const input = target.closest<HTMLInputElement>('.bad-economy-color-input');
             if (input) {
                 const typeId = input.dataset.typeId;
                 const value = input.value?.trim();
                 if (typeId && /^#[0-9A-Fa-f]{6}$/.test(value)) {
-                    const row = this.element.querySelector(`.bad-economy-color-row[data-type-id="${typeId}"]`);
+                    const row = el.querySelector<HTMLElement>(`.bad-economy-color-row[data-type-id="${typeId}"]`);
                     this._syncRowColor(row, typeId, value);
                 }
             }
@@ -215,12 +228,13 @@ export class EconomyColorsConfigApp extends adapter.foundry.HandlebarsApplicatio
      */
     applyPreset(presetId: string) {
         this.selectedPreset = presetId;
-        const preset = (ECONOMY_COLOR_PRESETS as Record<string, any>)[presetId];
+        const presets = ECONOMY_COLOR_PRESETS as Record<string, { id: string; label: string; colors: Record<string, string> }>;
+        const preset = presets[presetId];
         if (preset?.colors) {
             const systemTypes = adapter.getEconomyTypes() ?? [];
             for (const type of systemTypes) {
-                if ((preset.colors as Record<string, string>)[type.id]) {
-                    this.colors[type.id] = (preset.colors as Record<string, string>)[type.id];
+                if (preset.colors[type.id]) {
+                    this.colors[type.id] = preset.colors[type.id];
                 }
             }
         }

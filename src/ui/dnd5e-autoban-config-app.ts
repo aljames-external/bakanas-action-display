@@ -14,7 +14,6 @@ export interface Dnd5eAutoBanConfig {
     enabled: boolean;
     vocal: string[];
     somatic: string[];
-    [key: string]: any;
 }
 
 /**
@@ -58,11 +57,11 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
         };
     }
 
-    constructor(options = {}) {
+    constructor(options: Record<string, unknown> = {}) {
         super(options);
-        const stored = game.settings.get(MODULE_ID, 'dnd5eAutoBanConditions') ?? {};
+        const stored = (game.settings.get(MODULE_ID, 'dnd5eAutoBanConditions') ?? {}) as Record<string, unknown>;
         this.config = {
-            enabled: stored.enabled ?? DEFAULT_DND5E_AUTOBAN_CONFIG.enabled,
+            enabled: (stored.enabled as boolean | undefined) ?? DEFAULT_DND5E_AUTOBAN_CONFIG.enabled,
             vocal: Array.isArray(stored.vocal) ? [...stored.vocal] : [...DEFAULT_DND5E_AUTOBAN_CONFIG.vocal],
             somatic: Array.isArray(stored.somatic) ? [...stored.somatic] : [...DEFAULT_DND5E_AUTOBAN_CONFIG.somatic]
         };
@@ -70,12 +69,13 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
 
     /** @override */
     async _prepareContext(options: Record<string, unknown>) {
-        const context = await super._prepareContext(options);
+        const context = (await super._prepareContext(options)) as Record<string, unknown>;
         context.config = this.config;
 
-        const availableStatuses = (CONFIG.statusEffects ?? []).map((s: any) => ({
-            id: s.id,
-            name: localize(s.name ?? s.label ?? s.id, s.id),
+        const rawStatuses = (CONFIG.statusEffects ?? []) as Array<{ id?: string; name?: string; label?: string; img?: string; icon?: string }>;
+        const availableStatuses = rawStatuses.map((s) => ({
+            id: s.id ?? '',
+            name: localize(s.name ?? s.label ?? s.id ?? '', s.id ?? ''),
             img: s.img ?? s.icon ?? ''
         }));
         availableStatuses.sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
@@ -114,8 +114,8 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      */
     _onAddCondition(event: Event, target: HTMLElement) {
         event.preventDefault();
-        const type = target?.dataset?.type;
-        if (!type || !this.config[type]) return;
+        const type = target?.dataset?.type as 'vocal' | 'somatic' | undefined;
+        if (type !== 'vocal' && type !== 'somatic') return;
 
         const select = this.element?.querySelector?.(`#bad-${type}-select`) as HTMLSelectElement | null;
         const statusId = select?.value;
@@ -132,9 +132,9 @@ export class Dnd5eAutoBanConfigApp extends adapter.foundry.HandlebarsApplication
      */
     _onRemoveCondition(event: Event, target: HTMLElement) {
         event.preventDefault();
-        const type = target.dataset.type;
+        const type = target.dataset.type as 'vocal' | 'somatic' | undefined;
         const id = target.dataset.id;
-        if (!type || !id || !this.config[type]) return;
+        if ((type !== 'vocal' && type !== 'somatic') || !id) return;
 
         this.config[type] = this.config[type].filter((item: string) => item !== id);
         this.render();

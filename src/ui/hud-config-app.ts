@@ -13,11 +13,20 @@ export const DEFAULT_HUD_CONFIG = deepFreeze({
     hudGridOffsetHorizontal: 0.5
 });
 
+export interface HUDConfig {
+    hudOpacity: number;
+    hudScale: number;
+    fontSize: number;
+    hudAnchorSide: string;
+    hudGridOffset: number;
+    hudGridOffsetHorizontal: number;
+}
+
 /**
  * Modern ApplicationV2 configuration menu for Action Display HUD appearance, sizing, and positioning.
  */
 export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(adapter.foundry.ApplicationV2) {
-    config: Record<string, any>;
+    config: HUDConfig;
 
     /** @override */
     static DEFAULT_OPTIONS = {
@@ -51,7 +60,7 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
         };
     }
 
-    constructor(options: Record<string, any> = {}) {
+    constructor(options: Record<string, unknown> = {}) {
         super(options);
         this.config = {
             hudOpacity: Number(game.settings.get(MODULE_ID, 'hudOpacity') ?? DEFAULT_HUD_CONFIG.hudOpacity),
@@ -64,8 +73,8 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
     }
 
     /** @override */
-    async _prepareContext(options: any) {
-        const context = await super._prepareContext(options);
+    async _prepareContext(options: Record<string, unknown> = {}) {
+        const context = (await super._prepareContext(options)) as Record<string, unknown>;
         context.config = { ...this.config };
         context.anchorSideChoices = [
             {
@@ -83,7 +92,7 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
     }
 
     /** @override */
-    _onRender(context: any, options: any) {
+    _onRender(context: unknown, options: unknown) {
         super._onRender?.(context, options);
         this._attachInputListeners();
     }
@@ -93,14 +102,16 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
      * @private
      */
     _attachInputListeners() {
-        if (!this.element) return;
-        const sliders = this.element.querySelectorAll('input[type="range"]');
+        const el = this.element as HTMLElement | null;
+        if (!el) return;
+        const sliders = el.querySelectorAll<HTMLInputElement>('input[type="range"]');
         for (const slider of sliders) {
-            const output = this.element.querySelector(`.bad-range-value[data-for="${slider.name}"]`);
-            slider.addEventListener('input',(event: any) => {
-                if (output) {
+            const output = el.querySelector<HTMLElement>(`.bad-range-value[data-for="${slider.name}"]`);
+            slider.addEventListener('input', (event: Event) => {
+                const target = event.target as HTMLInputElement | null;
+                if (output && target) {
                     const unit = slider.dataset?.unit ?? '';
-                    output.textContent = `${event.target.value}${unit}`;
+                    output.textContent = `${target.value}${unit}`;
                 }
             });
         }
@@ -113,13 +124,14 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
      */
     _onResetDefaults(event: Event, target: HTMLElement) {
         event?.preventDefault?.();
-        if (!this.element) return;
+        const el = this.element as HTMLElement | null;
+        if (!el) return;
 
         for (const [key, val] of Object.entries(DEFAULT_HUD_CONFIG)) {
-            const input = this.element.querySelector(`[name="${key}"]`) as HTMLInputElement | null;
+            const input = el.querySelector<HTMLInputElement>(`[name="${key}"]`);
             if (input) {
-                input.value = val as any;
-                const output = this.element.querySelector(`.bad-range-value[data-for="${key}"]`);
+                input.value = val as unknown as string;
+                const output = el.querySelector<HTMLElement>(`.bad-range-value[data-for="${key}"]`);
                 if (output) {
                     const unit = input.dataset?.unit ?? '';
                     output.textContent = `${val}${unit}`;
@@ -135,13 +147,14 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
      */
     async _onSaveConfig(event: Event, target: HTMLElement) {
         event?.preventDefault?.();
-        const form = this.element?.querySelector('form') ?? this.element;
+        const el = this.element as HTMLElement | null;
+        const form = el?.querySelector('form') ?? el;
         if (!form) return;
 
         const getVal = (name: string, parser: (val: string) => number, fallback: number): number => {
-            const el = form.querySelector(`[name="${name}"]`) as HTMLInputElement | null;
-            if (!el) return fallback;
-            const parsed = parser(el.value);
+            const field = form.querySelector(`[name="${name}"]`) as HTMLInputElement | null;
+            if (!field) return fallback;
+            const parsed = parser(field.value);
             return Number.isFinite(parsed) ? parsed : fallback;
         };
 
@@ -168,8 +181,8 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
         await game.settings.set(MODULE_ID, 'hudGridOffset', hudGridOffset);
         await game.settings.set(MODULE_ID, 'hudGridOffsetHorizontal', hudGridOffsetHorizontal);
 
-        document.documentElement?.style?.setProperty?.('--bad-hud-opacity', hudOpacity as any);
-        document.documentElement?.style?.setProperty?.('--bad-hud-scale', hudScale as any);
+        document.documentElement?.style?.setProperty?.('--bad-hud-opacity', hudOpacity as unknown as string);
+        document.documentElement?.style?.setProperty?.('--bad-hud-scale', hudScale as unknown as string);
         document.documentElement?.style?.setProperty?.('--bad-hud-font-size', `${fontSize}px`);
 
         if (actionDisplay.activeApp?.rendered) {

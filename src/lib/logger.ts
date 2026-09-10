@@ -24,7 +24,7 @@ export const NOTIFICATION_LABELS = deepFreeze({
 interface GroupEntry {
     message: string;
     level: string;
-    groupArgs: any[];
+    groupArgs: unknown[];
     forceCollapse: boolean | null;
     started: boolean;
     enabled: boolean;
@@ -39,7 +39,7 @@ export class Logger {
     private _cachedVerbosity: number | null;
     private _groupStack: GroupEntry[];
     private _queues: Record<string, string[]>;
-    private _flushTimeout: any;
+    private _flushTimeout: ReturnType<typeof setTimeout> | number | null;
     private _batchWindowMs: number;
     notify: {
         info: (message: string) => void;
@@ -87,7 +87,7 @@ export class Logger {
         try {
             if (game?.settings) {
                 const setting = game.settings.get(MODULE_ID, "logVerbosity") as string;
-                this._cachedVerbosity = (VERBOSITY_LEVELS as any)[setting] ?? VERBOSITY_LEVELS.warn;
+                this._cachedVerbosity = (VERBOSITY_LEVELS as Record<string, number>)[setting] ?? VERBOSITY_LEVELS.warn;
                 return this._cachedVerbosity ?? VERBOSITY_LEVELS.warn;
             }
         } catch (e) {
@@ -103,7 +103,7 @@ export class Logger {
      * @returns {void}
      */
     setVerbosity(level: string) {
-        this._cachedVerbosity = (VERBOSITY_LEVELS as any)[level] ?? VERBOSITY_LEVELS.warn;
+        this._cachedVerbosity = (VERBOSITY_LEVELS as Record<string, number>)[level] ?? VERBOSITY_LEVELS.warn;
     }
 
     /**
@@ -133,10 +133,10 @@ export class Logger {
      * @param {...*} args Optional verbosity level as first argument, followed by group payload
      * @private
      */
-    _createGroup(forceCollapse: any, message: any, ...args: any[]) {
+    _createGroup(forceCollapse: boolean | null, message: string, ...args: unknown[]) {
         let level = "info";
         let groupArgs = args;
-        if (args.length > 0 && (VERBOSITY_LEVELS as Record<string, number>)[args[0]] !== undefined) {
+        if (args.length > 0 && typeof args[0] === 'string' && (VERBOSITY_LEVELS as Record<string, number>)[args[0]] !== undefined) {
             level = args[0];
             groupArgs = args.slice(1);
         }
@@ -157,7 +157,7 @@ export class Logger {
      * @param {...*} args - Additional arguments to pass to console.error.
      * @returns {void}
      */
-    error(message: any, ...args: any[]) {
+    error(message: unknown, ...args: unknown[]) {
         if (this.getVerbosityLevel() >= VERBOSITY_LEVELS.error) {
             this._ensureGroupsStarted();
             console.error(`${MODULE_TLA} | ${message}`, ...args);
@@ -170,7 +170,7 @@ export class Logger {
      * @param {...*} args - Additional arguments to pass to console.warn.
      * @returns {void}
      */
-    warn(message: any, ...args: any[]) {
+    warn(message: unknown, ...args: unknown[]) {
         if (this.getVerbosityLevel() >= VERBOSITY_LEVELS.warn) {
             this._ensureGroupsStarted();
             console.warn(`${MODULE_TLA} | ${message}`, ...args);
@@ -183,7 +183,7 @@ export class Logger {
      * @param {...*} args - Additional arguments to pass to console.log.
      * @returns {void}
      */
-    info(message: any, ...args: any[]) {
+    info(message: unknown, ...args: unknown[]) {
         if (this.getVerbosityLevel() >= VERBOSITY_LEVELS.info) {
             this._ensureGroupsStarted();
             console.log(`${MODULE_TLA} | ${message}`, ...args);
@@ -196,7 +196,7 @@ export class Logger {
      * @param {...*} args - Additional arguments to inspect or trace.
      * @returns {void}
      */
-    debug(message: any, ...args: any[]) {
+    debug(message: unknown, ...args: unknown[]) {
         if (this.getVerbosityLevel() >= VERBOSITY_LEVELS.debug) {
             this._ensureGroupsStarted();
             const timestamp = game?.time?.serverTime ?? "Unknown";
@@ -212,7 +212,7 @@ export class Logger {
      * @param {...*} args - Optional verbosity level ('error'|'warn'|'info'|'debug') and additional arguments for console.group.
      * @returns {void}
      */
-    group(message: any, ...args: any[]) {
+    group(message: string, ...args: unknown[]) {
         this._createGroup(null, message, ...args);
     }
 
@@ -223,7 +223,7 @@ export class Logger {
      * @param {...*} args - Optional verbosity level and additional arguments.
      * @returns {void}
      */
-    groupCollapsed(message: any, ...args: any[]) {
+    groupCollapsed(message: string, ...args: unknown[]) {
         this._createGroup(true, message, ...args);
     }
 
@@ -234,7 +234,7 @@ export class Logger {
      * @param {...*} args - Optional verbosity level and additional arguments.
      * @returns {void}
      */
-    groupExpanded(message: any, ...args: any[]) {
+    groupExpanded(message: string, ...args: unknown[]) {
         this._createGroup(false, message, ...args);
     }
 
@@ -289,7 +289,7 @@ export class Logger {
                 : `${MODULE_NAME}${(NOTIFICATION_LABELS as Record<string, string>)[level] ?? ""} (${messages.length}):\n` +
                   messages.map((m) => `• ${m}`).join("\n");
 
-            (ui.notifications as any)[level](text);
+            (ui.notifications[level as 'info' | 'warn' | 'error'])(text);
         }
     }
 
@@ -300,7 +300,7 @@ export class Logger {
      * @private
      * @returns {void}
      */
-    _enqueueNotification(level: any, message: any) {
+    _enqueueNotification(level: 'info' | 'warn' | 'error', message: string | unknown) {
         const trimmed = String(message ?? "").trim();
         if (!trimmed) return;
         const queue = this._queues[level];

@@ -152,7 +152,7 @@ function isMatchingActor(
     // Check parent document match (for embedded items/activities)
     if (docParent) {
         if ((docParent.id && docParent.id === activeActor.id) || (docParent.uuid && docParent.uuid === activeActor.uuid)) return true;
-        if (activeToken && ((docParent.token?.id && docParent.token.id === activeToken.id) || (docParent.token?.uuid && docParent.token.uuid === activeToken.uuid))) return true;
+        if (activeToken && ((docParent.token?.id && docParent.token.id === activeToken.id) || (docParent.token?.uuid && docParent.token.uuid === activeToken.document.uuid))) return true;
     }
 
     return false;

@@ -76,7 +76,7 @@ class ActionDisplay {
      * Active HUD application instance.
      * @type {ActionDisplayApp|null}
      */
-    activeApp: any = null;
+    activeApp: ActionDisplayApp | null = null;
 
     /**
      * Default page number for newly opened HUDs (internal module setting, resets on reload).
