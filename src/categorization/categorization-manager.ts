@@ -1,29 +1,37 @@
 import { log } from '../lib/logger.js';
 import { deepFreeze } from '../lib/utils.js';
 
-const sortByName = (a: any, b: any) => (a.name ?? '').localeCompare(b.name ?? '');
+const sortByName = (a: { name?: string | null }, b: { name?: string | null }) => (a.name ?? '').localeCompare(b.name ?? '');
 
-/**
- * @typedef {Object} SubCategory
- * @property {string} id Unique identifier for the subcategory
- * @property {string} name Display name
- * @property {string} expression Boolean test expression string
- */
+export interface SubCategory {
+    id: string;
+    name: string;
+    expression: string;
+}
 
-/**
- * @typedef {Object} Category
- * @property {string} id Unique identifier for the category
- * @property {string} name Display name
- * @property {string} expression Boolean test expression string
- * @property {boolean} [fallthrough=false] Canonical boolean flag indicating whether matching actions fall through to subsequent categories
- * @property {SubCategory[]} subcategories Array of child subcategories
- */
+export interface Category {
+    id: string;
+    name: string;
+    expression: string;
+    fallthrough?: boolean;
+    subcategories: SubCategory[];
+}
 
-/**
- * @typedef {Object} CategorizationConfig
- * @property {boolean} enabled Canonical boolean flag indicating whether categorization is active
- * @property {Category[]} categories List of category definitions
- */
+export interface CategorizationConfig {
+    enabled: boolean;
+    categories: Category[];
+}
+
+export interface CategorizedSubsection {
+    name: string;
+    items: any[];
+}
+
+export interface CategorizedSection {
+    name: string;
+    items: any[];
+    subsections: CategorizedSubsection[];
+}
 
 /**
  * Normalizes raw or partial categorization configuration into a strict contract object.
@@ -31,18 +39,18 @@ const sortByName = (a: any, b: any) => (a.name ?? '').localeCompare(b.name ?? ''
  * @param {Object} [raw] Raw configuration object from settings or user input
  * @returns {CategorizationConfig} Strict normalized configuration
  */
-export function normalizeCategorizationConfig(raw: any) {
+export function normalizeCategorizationConfig(raw: any): CategorizationConfig {
     const enabled = Boolean(raw?.enabled);
     const rawCategories = raw?.categories ?? [];
 
-    const categories = rawCategories.map((cat: any, catIndex: any) => {
+    const categories: Category[] = rawCategories.map((cat: any, catIndex: number) => {
         const catId = cat?.id ?? `cat_${Date.now()}_${catIndex}`;
         const name = cat?.name ?? '';
         const expression = cat?.expression ?? '';
         const fallthrough = Boolean(cat?.fallthrough);
         const rawSubs = cat?.subcategories ?? [];
 
-        const subcategories = rawSubs.map((sub: any, subIndex: any) => {
+        const subcategories: SubCategory[] = rawSubs.map((sub: any, subIndex: number) => {
             const subId = sub?.id ?? `sub_${Date.now()}_${subIndex}`;
             const subName = sub?.name ?? '';
             const subExpr = sub?.expression ?? '';
@@ -68,14 +76,14 @@ export function normalizeCategorizationConfig(raw: any) {
     };
 }
 
-const expressionCache = new Map();
+const expressionCache = new Map<string, Function>();
 
 /**
  * Retrieve or compile a reusable evaluator function for a boolean expression.
  * @param {string} expr Trimmed boolean expression string
  * @returns {Function}
  */
-function getCompiledExpression(expr: any) {
+function getCompiledExpression(expr: string): Function {
     let fn = expressionCache.get(expr);
     if (!fn) {
         fn = new Function(
@@ -93,7 +101,7 @@ function getCompiledExpression(expr: any) {
  * @param {string} expression JS boolean expression
  * @returns {{ valid: boolean, error: string|null }} Validation result
  */
-export function validateExpression(expression: any) {
+export function validateExpression(expression: string | null | undefined): { valid: boolean; error: string | null } {
     const expr = typeof expression === 'string' ? expression.trim() : '';
     if (!expr) {
         return { valid: false, error: 'Expression cannot be empty.' };
@@ -114,7 +122,7 @@ export function validateExpression(expression: any) {
  * @param {Object} [context={}] Additional context such as actor, token, or user documents
  * @returns {boolean} True if expression evaluates to truthy
  */
-export function evaluateBooleanExpression(expression: string, action: any, context: any = {}) {
+export function evaluateBooleanExpression(expression: string, action: any, context: Record<string, any> = {}): boolean {
     const expr = typeof expression === 'string' ? expression.trim() : '';
     if (!expr) return false;
 
@@ -141,7 +149,7 @@ export function evaluateBooleanExpression(expression: string, action: any, conte
  * @param {Object} [context={}] Additional evaluation context { actor, token, user }
  * @returns {CategorizedSection[]|null} Grouped category sections or null if disabled
  */
-export function categorizeActions(actions: any, config: any, catchAllLabel: any, context: any = {}) {
+export function categorizeActions(actions: any, config: any, catchAllLabel: any, context: Record<string, any> = {}): CategorizedSection[] | null {
     const normalizedConfig = normalizeCategorizationConfig(config);
     if (!normalizedConfig.enabled || normalizedConfig.categories.length === 0) {
         return null;
@@ -294,6 +302,6 @@ export const DEFAULT_CATEGORIES = deepFreeze([
  * @param {Object} [customAdapter=null] Optional adapter override
  * @returns {Category[]} Default category list
  */
-export function getDefaultCategories(customAdapter: any = null) {
+export function getDefaultCategories(customAdapter: any = null): Category[] {
     return customAdapter?.getDefaultCategories?.() ?? DEFAULT_CATEGORIES;
 }

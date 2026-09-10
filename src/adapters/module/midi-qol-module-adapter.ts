@@ -29,7 +29,7 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
             const activities = item.subactions;
             if (activities?.length > 0) {
                 // Filter out D&D 5e Activities that are marked as automationOnly by Midi-QOL
-                const filteredActivities = activities.filter((activity: any) => !this.isAutomationOnly(activity));
+                const filteredActivities = activities.filter((activity: Action) => !this.isAutomationOnly(activity));
 
                 // If all D&D 5e Activities on the item are automation-only, hide the entire item card!
                 if (filteredActivities.length === 0) {
@@ -42,12 +42,12 @@ export class MidiQolModuleAdapter extends BaseModuleAdapter {
 
                     // Identify root tab categories controlled by D&D 5e activities (e.g. 'economy')
                     const activityRootCategories = toSet(
-                        activities.flatMap((act: any) => act.right ?? []),
+                        activities.flatMap((act: Action) => act.right ?? []),
                         tab => tab.root
                     );
 
                     // Preserve non-activity tabs from other categories (e.g. spell components under 'components')
-                    const preservedTabs = (item.right ?? []).filter((tab: any) => !activityRootCategories.has(tab.root));
+                    const preservedTabs = (item.right ?? []).filter((tab: TabRef) => !activityRootCategories.has(tab.root));
 
                     // Recalculate unique activity tabs using only the remaining non-removed activities
                     const uniqueTabsMap = new Map();

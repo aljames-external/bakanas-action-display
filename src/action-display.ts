@@ -24,7 +24,7 @@ class ActionDisplay {
         return adapter.system;
     }
 
-    set activeSystemAdapter(sys) {
+    set activeSystemAdapter(sys: BaseSystemAdapter) {
         adapter.system = sys;
     }
 
@@ -32,7 +32,7 @@ class ActionDisplay {
      * Active module adapters map delegate.
      * @type {Map<string, BaseModuleAdapter>}
      */
-    get moduleAdapters() {
+    get moduleAdapters(): Map<string, BaseModuleAdapter> {
         return adapter.modules;
     }
 
@@ -52,7 +52,7 @@ class ActionDisplay {
      * Register and activate a system adapter.
      * @param {BaseSystemAdapter} sysAdapter
      */
-    registerSystemAdapter(sysAdapter: any) {
+    registerSystemAdapter(sysAdapter: BaseSystemAdapter) {
         if (!(sysAdapter instanceof BaseSystemAdapter)) {
             throw new Error("System adapter must be an instance of BaseSystemAdapter");
         }
@@ -64,7 +64,7 @@ class ActionDisplay {
      * Register a module adapter.
      * @param {BaseModuleAdapter} modAdapter
      */
-    registerModuleAdapter(modAdapter: any) {
+    registerModuleAdapter(modAdapter: BaseModuleAdapter) {
         if (!(modAdapter instanceof BaseModuleAdapter)) {
             throw new Error("Module adapter must be an instance of BaseModuleAdapter");
         }
@@ -96,14 +96,14 @@ class ActionDisplay {
      * Handler delegate for HUD toggling.
      * @type {Function|null}
      */
-    toggleHandler: ((explicitToken?: any) => boolean) | null = null;
+    toggleHandler: ((explicitToken?: Token | null) => boolean) | null = null;
 
     /**
      * Run the pipeline to get actions for a given actor via the unified adapter.
      * @param {Actor} actor The actor to extract actions for
      * @returns {Promise<Action[]>} The processed actions
      */
-    async getActions(actor: any) {
+    async getActions(actor: Actor | null): Promise<Action[]> {
         if (!actor) return [];
         return adapter.getActions(actor);
     }
@@ -113,7 +113,7 @@ class ActionDisplay {
      * @param {Token} [explicitToken=null] Optional token to toggle HUD for
      * @returns {boolean} True if toggled, false otherwise
      */
-    toggle(explicitToken = null) {
+    toggle(explicitToken: Token | null = null): boolean {
         return this.toggleHandler?.(explicitToken) ?? false;
     }
 }

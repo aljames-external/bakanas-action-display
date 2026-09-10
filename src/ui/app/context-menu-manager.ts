@@ -44,12 +44,12 @@ export class ContextMenuManager {
             {
                 name: "SIDEBAR.Edit",
                 icon: '<i class="fas fa-edit"></i>',
-                condition: (el: any) => {
+                condition: (el: HTMLElement) => {
                     if (!this.app.actor?.isOwner) return false;
                     const { item } = this._resolveActionAndItem(el);
                     return Boolean(item?.sheet?.render);
                 },
-                callback: (el: any) => {
+                callback: (el: HTMLElement) => {
                     const { action, item } = this._resolveActionAndItem(el);
                     if (action) {
                         adapter.openEditSheet(action);
@@ -61,12 +61,12 @@ export class ContextMenuManager {
             {
                 name: "BAD.actionMenu.addFavorite",
                 icon: '<i class="fas fa-star"></i>',
-                condition: (el: any) => {
+                condition: (el: HTMLElement) => {
                     if (!this.app.actor?.isOwner) return false;
                     const { item } = this._resolveActionAndItem(el);
                     return Boolean(item && !isActorItemFavorite(this.app.actor, item));
                 },
-                callback: async (el: any) => {
+                callback: async (el: HTMLElement) => {
                     const { item } = this._resolveActionAndItem(el);
                     if (item) {
                         await setActorItemFavorite(this.app.actor, item, true);
@@ -77,12 +77,12 @@ export class ContextMenuManager {
             {
                 name: "BAD.actionMenu.removeFavorite",
                 icon: '<i class="far fa-star"></i>',
-                condition: (el: any) => {
+                condition: (el: HTMLElement) => {
                     if (!this.app.actor?.isOwner) return false;
                     const { item } = this._resolveActionAndItem(el);
                     return Boolean(item && isActorItemFavorite(this.app.actor, item));
                 },
-                callback: async (el: any) => {
+                callback: async (el: HTMLElement) => {
                     const { item } = this._resolveActionAndItem(el);
                     if (item) {
                         await setActorItemFavorite(this.app.actor, item, false);
@@ -93,24 +93,24 @@ export class ContextMenuManager {
             {
                 name: "BAD.core.hideAction",
                 icon: '<i class="fas fa-eye-slash"></i>',
-                condition: (el: any) => {
+                condition: (el: HTMLElement) => {
                     if (!this.app.actor?.isOwner) return false;
                     const { action } = this._resolveActionAndItem(el);
                     return Boolean(action && !action.isHidden);
                 },
-                callback: (el: any) => {
+                callback: (el: HTMLElement) => {
                     this.app._toggleActionHidden(el.dataset.actionId, true);
                 }
             },
             {
                 name: "BAD.core.unhideAction",
                 icon: '<i class="fas fa-eye"></i>',
-                condition: (el: any) => {
+                condition: (el: HTMLElement) => {
                     if (!this.app.actor?.isOwner) return false;
                     const { action } = this._resolveActionAndItem(el);
                     return Boolean(action && action.isHidden);
                 },
-                callback: (el: any) => {
+                callback: (el: HTMLElement) => {
                     this.app._toggleActionHidden(el.dataset.actionId, false);
                 }
             }
@@ -264,7 +264,7 @@ export class ContextMenuManager {
      * @param {Object[]} submenuItems Submenu item specifications
      * @private
      */
-    _openSubmenu(parentLi: any, target: any, item: any, submenuItems: any) {
+    _openSubmenu(parentLi: HTMLElement, target: HTMLElement, item: any, submenuItems: any[]) {
         this.closeSubmenu();
 
         const qualifying = submenuItems.filter((sub: any) => {
@@ -365,7 +365,7 @@ export class ContextMenuManager {
  * @param {HTMLElement} element Root application DOM element
  * @returns {ContextMenu} The created ContextMenu instance
  */
-export function createActionContextMenu(app: any, element: any) {
+export function createActionContextMenu(app: ActionDisplayApp, element: HTMLElement) {
     const manager = new ContextMenuManager(app, element);
     return manager.createActionContextMenu();
 }

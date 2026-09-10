@@ -125,7 +125,7 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
 
     token: Token;
     actor: any;
-    actions: any[];
+    actions: Action[];
     totalPages: number;
     activePage: number;
     private _cachedPages: any;
@@ -136,22 +136,22 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
     private _isSearching: boolean;
     private _searchSelectionStart: number | null;
     private _searchSelectionEnd: number | null;
-    private _boundOnPointerDownCapture: any;
-    private _boundOnContextMenuCapture: any;
-    private _hoveredActionItem: any;
+    private _boundOnPointerDownCapture: any = null;
+    private _boundOnContextMenuCapture: any = null;
+    private _hoveredActionItem: HTMLElement | null = null;
     private _isQuestionMarkHeld: boolean;
-    private _activeSummaryTooltip: any;
-    private _boundOnPointerOver: any;
-    private _boundOnPointerOut: any;
-    private _boundOnKeyDown: any;
-    private _boundOnKeyUp: any;
-    private _boundOnWindowBlur: any;
-    private _boundOnWheel: any;
-    private _boundOnWindowWheel: any;
-    private _boundOnAutobanPointerOverCapture: any;
-    private _lockedTooltipTarget: any;
-    private _boundOnMiddleClickCapture: any;
-    private _boundOnAuxClickCapture: any;
+    private _activeSummaryTooltip: { element: HTMLElement; actionId?: string; summary?: any; html?: string; targetWidth?: number | null } | null = null;
+    private _boundOnPointerOver: any = null;
+    private _boundOnPointerOut: any = null;
+    private _boundOnKeyDown: any = null;
+    private _boundOnKeyUp: any = null;
+    private _boundOnWindowBlur: any = null;
+    private _boundOnWheel: any = null;
+    private _boundOnWindowWheel: any = null;
+    private _boundOnAutobanPointerOverCapture: any = null;
+    private _lockedTooltipTarget: HTMLElement | null = null;
+    private _boundOnMiddleClickCapture: any = null;
+    private _boundOnAuxClickCapture: any = null;
 
     constructor(token: Token, options: Record<string, any> = {}) {
         super(options);

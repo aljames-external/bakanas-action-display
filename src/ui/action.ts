@@ -8,7 +8,7 @@ export interface ActionOptions {
     page?: number;
     right?: TabRef[];
     left?: string[];
-    itemCategories?: any[] | null;
+    itemCategories?: string[][] | null;
     hidden?: boolean;
     isHidden?: boolean;
     available?: boolean;
@@ -37,7 +37,7 @@ export class Action {
     page: number;
     left: string[];
     right: TabRef[];
-    itemCategories: any[] | null;
+    itemCategories: string[][] | null;
     hidden: boolean;
     isHidden: boolean;
     available: boolean;
