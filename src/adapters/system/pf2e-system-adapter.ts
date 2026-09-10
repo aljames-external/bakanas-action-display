@@ -112,13 +112,13 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
         if (item.isPhysical === false) return true;
         if (item.category === 'unarmed' || item.system.category?.value === 'unarmed') return true;
 
-        const traits = item.system.traits?.value;
-        const hasTrait = (trait: any) => Boolean(traits?.has?.(trait) ?? traits?.includes?.(trait));
-        if (hasTrait('unarmed') || hasTrait('natural')) {
+        const itemPF2e = item as ItemPF2e;
+        const traits = itemPF2e.system.traits?.value;
+        if (traits?.includes('unarmed') || traits?.includes('natural')) {
             return true;
         }
 
-        const carryType = item.system.equipped?.carryType;
+        const carryType = typeof itemPF2e.system.equipped === 'object' ? itemPF2e.system.equipped?.carryType : undefined;
         if (carryType) {
             return carryType === 'held' || carryType === 'worn';
         }
@@ -1113,7 +1113,7 @@ export class BasePf2eSystemAdapter extends FantasySystemAdapter {
             const rangeStr = (system.range?.value != null || system.range?.unit != null) ? `${system.range.value ?? ''} ${system.range.unit ?? ''}`.trim() : String(system.range);
             if (rangeStr) properties.push({ label: 'Range', value: rangeStr });
         }
-        if (system.traits?.value && Array.isArray(system.traits.value)) {
+        if (Array.isArray(system.traits?.value)) {
             for (const trait of system.traits.value) {
                 properties.push({ value: trait });
             }
