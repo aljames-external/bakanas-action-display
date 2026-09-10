@@ -15,6 +15,11 @@ let renderDebounceTimer: ReturnType<typeof setTimeout> | number | null = null;
 const wrappedHUDClasses = new WeakSet<object>();
 const closingTokens = new WeakMap<object, Token>();
 
+interface DocumentModificationOptions {
+    badInternal?: boolean;
+    [key: string]: unknown;
+}
+
 export function setExplicitlyClosedTokenId(tokenId: string | null): void {
     explicitlyClosedTokenId = tokenId;
 }
@@ -235,7 +240,7 @@ Hooks.on('controlToken', ((token: Token, controlled: boolean) => {
 }) as any);
 
 // Hook into Token HUD rendering to update attached overlay position if open
-Hooks.on('renderTokenHUD', ((tokenHUD: any, html: any, data: any) => {
+Hooks.on('renderTokenHUD', ((tokenHUD: TokenHUD | { object?: Token }, html: HTMLElement | JQuery, data: unknown) => {
     const token = tokenHUD?.object;
     if (!token) return;
     const currentApp = actionDisplay.activeApp;
@@ -247,7 +252,7 @@ Hooks.on('renderTokenHUD', ((tokenHUD: any, html: any, data: any) => {
 }) as any);
 
 // Hook into Token HUD closing to close our overlay if tracked or closed via token click
-Hooks.on('closeTokenHUD', ((tokenHUD: any, html: any) => {
+Hooks.on('closeTokenHUD', ((tokenHUD: TokenHUD | { object?: Token }, html: HTMLElement | JQuery) => {
     explicitlyClosedTokenId = null;
     const currentApp = actionDisplay.activeApp;
     if (!currentApp) return;
@@ -317,7 +322,7 @@ function isOnlyModuleFlagChanges(changes: Record<string, unknown> | null | undef
     return nonMetaKeys.length > 0 && nonMetaKeys.every(key => {
         if (key.startsWith(MODULE_FLAG_PREFIX) || key.startsWith(ACTOR_DATA_FLAG_PREFIX) || key.startsWith(DELTA_FLAG_PREFIX)) return true;
         if (key === 'flags') {
-            const flagKeys = Object.keys((changes as any)?.flags ?? {});
+            const flagKeys = Object.keys((changes as { flags?: Record<string, unknown> })?.flags ?? {});
             return flagKeys.length === 1 && flagKeys[0] === MODULE_ID;
         }
         return false;
@@ -325,7 +330,7 @@ function isOnlyModuleFlagChanges(changes: Record<string, unknown> | null | undef
 }
 
 // Hook into Actor updates (spell slots, resources, hp, flags, status conditions)
-Hooks.on('updateActor', ((actor: any, changes: any, options: any, userId: any) => {
+Hooks.on('updateActor', ((actor: Actor, changes: Record<string, unknown>, options: DocumentModificationOptions, userId: string) => {
     if (!actor) return;
     if (options?.badInternal) return;
 
@@ -344,9 +349,9 @@ Hooks.on('updateActor', ((actor: any, changes: any, options: any, userId: any) =
 }) as any);
 
 // Hook into ActiveEffect updates (status conditions gained/lost) on actors
-function handleActiveEffectChange(effect: { parent?: { documentName?: string; actor?: Actor | null; [key: string]: unknown } } | null | undefined): void {
+function handleActiveEffectChange(effect: ActiveEffect | { parent?: { documentName?: string; actor?: Actor | null; [key: string]: unknown } } | null | undefined): void {
     const parent = effect?.parent;
-    const actor = parent?.documentName === 'Actor' ? (parent as unknown as Actor) : (parent?.actor ?? null);
+    const actor = parent?.documentName === 'Actor' ? (parent as unknown as Actor) : ((parent as { actor?: Actor | null })?.actor ?? null);
     if (!actor) return;
     const currentApp = actionDisplay.activeApp;
     const isCurrent = isMatchingActor(actor, null);
@@ -356,15 +361,15 @@ function handleActiveEffectChange(effect: { parent?: { documentName?: string; ac
     }
 }
 
-Hooks.on('createActiveEffect', ((effect: any, options: any, userId: any) => {
+Hooks.on('createActiveEffect', ((effect: ActiveEffect, options: DocumentModificationOptions, userId: string) => {
     handleActiveEffectChange(effect);
 }) as any);
 
-Hooks.on('updateActiveEffect', ((effect: any, changes: any, options: any, userId: any) => {
+Hooks.on('updateActiveEffect', ((effect: ActiveEffect, changes: Record<string, unknown>, options: DocumentModificationOptions, userId: string) => {
     handleActiveEffectChange(effect);
 }) as any);
 
-Hooks.on('deleteActiveEffect', ((effect: any, options: any, userId: any) => {
+Hooks.on('deleteActiveEffect', ((effect: ActiveEffect, options: DocumentModificationOptions, userId: string) => {
     handleActiveEffectChange(effect);
 }) as any);
 
@@ -454,14 +459,14 @@ export function handleCombatTurnChange(combat: Combat): void {
 }
 
 // Hook into Combat updates and turn advancements to update End Turn button visibility and auto-track
-Hooks.on('updateCombat', ((combat: Combat, changes: any, options: any, userId: any) => {
+Hooks.on('updateCombat', ((combat: Combat, changes: Record<string, unknown>, options: DocumentModificationOptions, userId: string) => {
     handleCombatTurnChange(combat);
 }) as any);
 
-Hooks.on('deleteCombat', ((combat: Combat, options: any, userId: any) => {
+Hooks.on('deleteCombat', ((combat: Combat, options: DocumentModificationOptions, userId: string) => {
     CombatMovementTracker.clear();
-    const isFeatureEnabled = Boolean((game?.settings as any)?.get(MODULE_ID, 'enableCombatAutoTrackButton'));
-    const isAutoToggleActive = isFeatureEnabled && Boolean((game?.settings as any)?.get(MODULE_ID, 'autoToggleCombat'));
+    const isFeatureEnabled = Boolean(game?.settings?.get(MODULE_ID, 'enableCombatAutoTrackButton'));
+    const isAutoToggleActive = isFeatureEnabled && Boolean(game?.settings?.get(MODULE_ID, 'autoToggleCombat'));
     if (isAutoToggleActive) {
         const currentApp = actionDisplay.activeApp;
         if (currentApp?.rendered) {
@@ -496,13 +501,13 @@ Hooks.on('updateCombatant', () => {
 });
 
 // Hook into token position changes before database persistence to record movement
-Hooks.on('preUpdateToken', ((tokenDoc: any, changes: any, options: any, userId: any) => {
+Hooks.on('preUpdateToken', ((tokenDoc: TokenDocument, changes: Record<string, unknown>, options: DocumentModificationOptions, userId: string) => {
     CombatMovementTracker.recordTokenMovement(tokenDoc, changes, options);
 }) as any);
 
 // Hook into synthetic Token document updates (actor delta mutations, position updates)
-Hooks.on('updateToken', ((tokenDoc: any, changes: any, options: any, userId: any) => {
-    if ((options as any)?.badInternal) return;
+Hooks.on('updateToken', ((tokenDoc: TokenDocument, changes: Record<string, unknown>, options: DocumentModificationOptions, userId: string) => {
+    if (options?.badInternal) return;
     CombatMovementTracker.recordTokenMovement(tokenDoc, changes, options);
     if (isOnlyModuleFlagChanges(changes)) return;
 
@@ -513,11 +518,13 @@ Hooks.on('updateToken', ((tokenDoc: any, changes: any, options: any, userId: any
 }) as any);
 
 // Hook into Application rendering to ensure newly opened sheets/windows sit above the HUD
-Hooks.on('renderApplication', ((app: any, html: any) => {
+Hooks.on('renderApplication', ((app: Application | { element?: HTMLElement | ArrayLike<HTMLElement> }, html: HTMLElement | ArrayLike<HTMLElement>) => {
     const currentHUD = actionDisplay?.activeApp;
     if (!currentHUD?.element) return;
     const hudEl = currentHUD.element;
-    const appEl = app?.element?.[0] ?? app?.element ?? html?.[0] ?? html;
+    const rawAppEl = (app as { element?: HTMLElement | ArrayLike<HTMLElement> })?.element;
+    const appEl = (rawAppEl instanceof HTMLElement ? rawAppEl : rawAppEl?.[0])
+        ?? (html instanceof HTMLElement ? html : (html as ArrayLike<HTMLElement>)?.[0]);
     if (!appEl || appEl === hudEl || hudEl.contains?.(appEl)) return;
     if (appEl.closest?.('#context-menu, .context-menu, .bad-item-summary-tooltip')) return;
 
