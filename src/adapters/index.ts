@@ -165,10 +165,10 @@ class Adapter {
 
     /**
      * Open the sheet for an item or activity.
-     * @param {Action|Record<string, any>} action
+     * @param {Action} action
      * @returns {void}
      */
-    openEditSheet(action: Action | Record<string, any>): void {
+    openEditSheet(action: Action): void {
         return this.system?.openEditSheet?.(action);
     }
 

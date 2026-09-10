@@ -292,9 +292,9 @@ export class BaseSystemAdapter {
 
     /**
      * Open the sheet or edit dialog for an action or its underlying item/activity.
-     * @param {Action|Record<string, any>} action The Action instance to edit
+     * @param {Action} action The Action instance to edit
      */
-    openEditSheet(action: Action | Record<string, any>): void {
+    openEditSheet(action: Action): void {
         const entity = (action as any)?.originalActivity ?? (action as any)?.originalItem;
         if (entity?.sheet?.render) {
             entity.sheet.render(true);
@@ -310,13 +310,12 @@ export class BaseSystemAdapter {
      * Overridable by system adapters to specify whether a page defaults to flat, categorized, or info showcase.
      * By default, returns a flat layout for all pages.
      *
-     * @param {number|string} [page=1] Page number (1-indexed)
+     * @param {number} [page=1] Page number (1-indexed)
      * @param {Actor|null} [actor=null] Target actor document
      * @returns {{ page: number, defaultLayout: string, categories: Object[]|null }}
      */
-    getPageConfig(page: number | string = 1, actor: Actor | null = null): { page: number; defaultLayout: string; categories: Record<string, any>[] | null } {
-        const parsed = Number(page);
-        const pageNum = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+    getPageConfig(page: number = 1, actor: Actor | null = null): { page: number; defaultLayout: string; categories: Record<string, any>[] | null } {
+        const pageNum = Number.isFinite(page) && page > 0 ? page : 1;
         return {
             page: pageNum,
             defaultLayout: 'flat',

@@ -1665,9 +1665,9 @@ export class BaseDnd5eSystemAdapter extends FantasySystemAdapter {
     /**
      * Open the sheet or edit dialog for a DnD5e action, activity, or item.
      * Handles opening the DnD5e Activity configuration sheet directly for activities.
-     * @param {Object} action
+     * @param {Action} action
      */
-    openEditSheet(action: any) {
+    override openEditSheet(action: Action): void {
         const activity = action?.originalActivity;
         if (activity) {
             if (activity.sheet?.render) {

@@ -102,13 +102,12 @@ export class FantasySystemAdapter extends BaseSystemAdapter {
      * Get the page definition configuration for a given page number in fantasy-based systems.
      * Page 1 is flat, Page 2 is categorized (abilities / saves / skills / tools), and Page 3 is tokenInfo.
      *
-     * @param {number|string} [page=1] Page number (1-indexed)
+     * @param {number} [page=1] Page number (1-indexed)
      * @param {Actor|null} [actor=null] Target actor document
      * @returns {{ page: number, defaultLayout: string, categories: Object[]|null }}
      */
-    override getPageConfig(page: number | string = 1, actor: Actor | null = null) {
-        const parsed = Number(page);
-        const pageNum = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+    override getPageConfig(page: number = 1, actor: Actor | null = null) {
+        const pageNum = Number.isFinite(page) && page > 0 ? page : 1;
         switch (pageNum) {
             case 1:
                 return {

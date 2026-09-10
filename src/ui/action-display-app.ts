@@ -52,9 +52,8 @@ export class ActionDisplayApp extends adapter.foundry.HandlebarsApplicationMixin
      * @param {number} targetPage Target page number
      * @param {ActionDisplayApp|null} [callerInstance=null] The instance initiating the change
      */
-    static setAllCachedHUDsPage(targetPage: number | string, callerInstance: any = null) {
-        const parsed = typeof targetPage === 'number' ? targetPage : Number.parseInt(targetPage, 10);
-        const page = (Number.isFinite(parsed) && parsed > 0) ? parsed : 1;
+    static setAllCachedHUDsPage(targetPage: number, callerInstance: ActionDisplayApp | null = null) {
+        const page = (Number.isFinite(targetPage) && targetPage > 0) ? targetPage : 1;
 
         // 0. Update internal defaultPage module setting for newly opened HUDs
         ActionDisplayApp.defaultPage = page;

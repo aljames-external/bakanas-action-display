@@ -88,9 +88,8 @@ class ActionDisplay {
         return this._defaultPage;
     }
 
-    set defaultPage(val: string | number) {
-        const parsed = typeof val === 'number' ? val : Number.parseInt(val, 10);
-        this._defaultPage = (Number.isFinite(parsed) && parsed > 0) ? parsed : 1;
+    set defaultPage(val: number) {
+        this._defaultPage = (Number.isFinite(val) && val > 0) ? val : 1;
     }
 
     /**
