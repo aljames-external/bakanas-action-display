@@ -54,7 +54,7 @@ export function format(key: string, data: Record<string, unknown> = {}, fallback
 export function toSet<T = any, R = T>(input: Iterable<T> | null | undefined, mapFn: ((item: T) => R) | null = null): Set<R> {
     if (!input) return new Set();
     if (!mapFn) {
-        return input instanceof Set ? (input as unknown as Set<R>) : new Set(input as unknown as Iterable<R>);
+        return (input instanceof Set ? input : new Set(input)) as Set<R>;
     }
     const set = new Set<R>();
     for (const item of input) {

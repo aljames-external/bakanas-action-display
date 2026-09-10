@@ -9,14 +9,14 @@ export class FoundryV12Adapter extends BaseFoundryAdapter {
      * The active ContextMenu constructor in v12.
      */
     override get ContextMenu(): ContextMenuConstructor {
-        return ContextMenu as unknown as ContextMenuConstructor;
+        return ContextMenu as any;
     }
 
     /**
      * The active KeyboardManager constructor in v12.
      */
     override get KeyboardManager(): KeyboardManagerClass {
-        return KeyboardManager as unknown as KeyboardManagerClass;
+        return KeyboardManager as KeyboardManagerClass;
     }
 
     /**

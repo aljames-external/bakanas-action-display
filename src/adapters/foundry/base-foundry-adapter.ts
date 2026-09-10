@@ -25,7 +25,7 @@ export interface ContextMenuItemConfig {
 }
 
 export interface ContextMenuInstance {
-    bind: () => void;
+    bind?: () => void;
     close: (options?: { force?: boolean; [key: string]: unknown }) => Promise<void>;
     render: (target: unknown) => Promise<void>;
     menu?: HTMLElement | JQuery | null;

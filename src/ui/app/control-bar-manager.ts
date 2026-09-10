@@ -166,10 +166,9 @@ export class ControlBarManager {
             const actionName = contextTarget.dataset.contextAction;
             if (!actionName) return true;
             const appConstructor = app.constructor as { DEFAULT_OPTIONS?: { contextActions?: Record<string, (event: Event, target: HTMLElement) => Promise<unknown> | unknown> } } | undefined;
-            const appMethods = app as unknown as Record<string, ((event: Event, target: HTMLElement) => Promise<unknown> | unknown) | undefined>;
-            const handler = appConstructor?.DEFAULT_OPTIONS?.contextActions?.[actionName] ?? appMethods[actionName];
+            const handler = appConstructor?.DEFAULT_OPTIONS?.contextActions?.[actionName] ?? (app as any)[actionName];
 
-            if (handler) {
+            if (typeof handler === 'function') {
                 try {
                     await handler.call(app, event, contextTarget);
                 } catch (err) {
@@ -184,9 +183,8 @@ export class ControlBarManager {
         // Fallback for elements/tests querying legacy class selectors without data-context-action
         for (const { selector, method } of LEGACY_FALLBACKS) {
             const btn = target?.closest?.<HTMLElement>(selector);
-            const appMethods = app as unknown as Record<string, ((event: Event, target: HTMLElement) => Promise<unknown> | unknown) | undefined>;
-            const fallbackHandler = appMethods[method];
-            if (btn && fallbackHandler) {
+            const fallbackHandler = (app as any)[method];
+            if (btn && typeof fallbackHandler === 'function') {
                 event.preventDefault?.();
                 event.stopPropagation?.();
                 event.stopImmediatePropagation?.();

@@ -130,7 +130,7 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
         for (const [key, val] of Object.entries(DEFAULT_HUD_CONFIG)) {
             const input = el.querySelector<HTMLInputElement>(`[name="${key}"]`);
             if (input) {
-                input.value = val as unknown as string;
+                input.value = val as any;
                 const output = el.querySelector<HTMLElement>(`.bad-range-value[data-for="${key}"]`);
                 if (output) {
                     const unit = input.dataset?.unit ?? '';
@@ -181,8 +181,8 @@ export class HUDConfigApp extends adapter.foundry.HandlebarsApplicationMixin(ada
         await game.settings.set(MODULE_ID, 'hudGridOffset', hudGridOffset);
         await game.settings.set(MODULE_ID, 'hudGridOffsetHorizontal', hudGridOffsetHorizontal);
 
-        document.documentElement?.style?.setProperty?.('--bad-hud-opacity', hudOpacity as unknown as string);
-        document.documentElement?.style?.setProperty?.('--bad-hud-scale', hudScale as unknown as string);
+        document.documentElement?.style?.setProperty?.('--bad-hud-opacity', hudOpacity as any);
+        document.documentElement?.style?.setProperty?.('--bad-hud-scale', hudScale as any);
         document.documentElement?.style?.setProperty?.('--bad-hud-font-size', `${fontSize}px`);
 
         if (actionDisplay.activeApp?.rendered) {
