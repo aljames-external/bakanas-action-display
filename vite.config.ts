@@ -10,5 +10,6 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     emptyOutDir: true,
+    minify: false,
   },
 });
