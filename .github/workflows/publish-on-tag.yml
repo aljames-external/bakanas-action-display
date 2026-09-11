@@ -75,6 +75,15 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+          IS_PRERELEASE="false"
+          MAKE_LATEST="true"
+          if [[ "$TAG" =~ -(alpha|beta|rc).*$ ]] || [[ "${{ github.event.release.prerelease }}" == "true" ]]; then
+            IS_PRERELEASE="true"
+            MAKE_LATEST="false"
+          fi
+          echo "prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "make_latest=$MAKE_LATEST" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -149,7 +158,8 @@ jobs:
           allowUpdates: true
           name: ${{ github.event.release.name || steps.get_version.outputs.tag }}
           draft: ${{ github.event.release.unpublished || false }}
-          prerelease: ${{ github.event.release.prerelease || false }}
+          prerelease: ${{ steps.get_version.outputs.prerelease }}
+          makeLatest: ${{ steps.get_version.outputs.make_latest }}
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: './module.json, ./module.zip'
           tag: ${{ steps.get_version.outputs.tag }}
