@@ -82,10 +82,10 @@ export interface Dnd5eSensesData {
 export interface Dnd5eAbility {
     value?: number;
     mod?: number;
-    save?: number | { value?: number; total?: number; proficient?: boolean };
+    save?: number | { value?: number; total?: number; proficient?: boolean; prof?: number | boolean; bonus?: string | number };
     proficient?: boolean;
     checkProf?: { hasProficiency?: boolean };
-    check?: { proficient?: boolean };
+    check?: { proficient?: boolean; prof?: number | boolean; bonus?: string | number };
     saveProf?: { hasProficiency?: boolean };
     [key: string]: unknown;
 }

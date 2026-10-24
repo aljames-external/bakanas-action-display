@@ -1,5 +1,5 @@
 import { BaseSystemAdapter } from './base-system-adapter.js';
-import { Dnd5eSystemAdapter } from './dnd5e-system-adapter.js';
+import { Dnd5eSystemAdapter, initializeDnd5eAdapter } from './dnd5e/index.js';
 import { Pf1SystemAdapter } from './pf1-system-adapter.js';
 import { Pf2eSystemAdapter } from './pf2e-system-adapter.js';
 import { BaseFoundryAdapter } from '../foundry/base-foundry-adapter.js';
@@ -29,6 +29,10 @@ export async function initializeSystemAdapter(systemId: string = game.system?.id
     }
     if (!systemId) {
         return new BaseSystemAdapter('unknown', false, foundryAdapter);
+    }
+
+    if (systemId === 'dnd5e') {
+        return initializeDnd5eAdapter(foundryAdapter);
     }
 
     const AdapterClass = SYSTEM_ADAPTERS[systemId];

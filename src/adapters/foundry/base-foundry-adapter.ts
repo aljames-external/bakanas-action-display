@@ -163,6 +163,21 @@ export class BaseFoundryAdapter {
     }
 
     /**
+     * Build relative UUID from a document to an ancestor document.
+     * Uses modern foundry.utils.buildRelativeUuid if available, falling back to doc.getRelativeUUID.
+     * @param {any} doc Target document
+     * @param {any} relativeTo Parent/ancestor document
+     * @returns {string|null}
+     */
+    getRelativeUUID(doc: any, relativeTo: any): string | null {
+        if (!doc || !relativeTo) return null;
+        if (typeof (foundry as any)?.utils?.buildRelativeUuid === 'function') {
+            return (foundry as any).utils.buildRelativeUuid(doc, relativeTo);
+        }
+        return doc.getRelativeUUID?.(relativeTo) ?? null;
+    }
+
+    /**
      * Determine whether an update operation represents a teleportation.
      * Must be implemented by version-specific adapter subclasses.
      * @param {Record<string, unknown>} [options={}] Operation options or DatabaseUpdateOperation

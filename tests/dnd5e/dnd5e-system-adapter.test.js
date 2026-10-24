@@ -2,7 +2,7 @@ import { FoundryV12Adapter } from "../../src/adapters/foundry/foundry-v12-adapte
 import '../setup.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BaseDnd5eSystemAdapter, Dnd5eSystemAdapter_5_3, Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { BaseDnd5eSystemAdapter, Dnd5eSystemAdapter_5_3, Dnd5eSystemAdapter, Dnd5eV4Adapter, Dnd5eV5Adapter, Dnd5eV6Adapter, initializeDnd5eAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
 import { categorizeActions } from '../../src/categorization/categorization-manager.js';
 import { Action } from '../../src/ui/action.js';
 import { itemHasComponent } from '../../src/adapters/system/filter/dnd5e-system-tab-filter-manager.js';
@@ -1959,5 +1959,170 @@ test('Dnd5eSystemAdapter getTokenInfo extracts inspiration and showInspiration p
     assert.equal(npcInfo.inspiration, false);
     assert.equal(npcInfo.showInspiration, false);
 });
+
+test('initializeDnd5eAdapter and Dnd5eSystemAdapter versioned dispatch across v4, v5, and v6', () => {
+    const foundry = new FoundryV12Adapter();
+
+    // 1. D&D 5e v4 baseline (< 5.3)
+    game.system = { id: 'dnd5e', version: '4.2.0' };
+    const v4Direct = initializeDnd5eAdapter(foundry);
+    assert.ok(v4Direct instanceof Dnd5eV4Adapter);
+    assert.ok(v4Direct instanceof BaseDnd5eSystemAdapter);
+    assert.equal(v4Direct.generation, 4);
+
+    const v4ViaClass = new Dnd5eSystemAdapter(foundry);
+    assert.ok(v4ViaClass instanceof Dnd5eV4Adapter);
+    assert.equal(v4ViaClass.generation, 4);
+
+    // 2. D&D 5e v5.3+ (senses ranges)
+    game.system = { id: 'dnd5e', version: '5.3.0' };
+    const v5Direct = initializeDnd5eAdapter(foundry);
+    assert.ok(v5Direct instanceof Dnd5eV5Adapter);
+    assert.ok(v5Direct instanceof Dnd5eV4Adapter);
+    assert.equal(v5Direct.generation, 5);
+
+    const v5ViaClass = new Dnd5eSystemAdapter(foundry);
+    assert.ok(v5ViaClass instanceof Dnd5eV5Adapter);
+    assert.equal(v5ViaClass.generation, 5);
+
+    // 3. D&D 5e v6.0+ (check.prof / save.prof)
+    game.system = { id: 'dnd5e', version: '6.1.0' };
+    const v6Direct = initializeDnd5eAdapter(foundry);
+    assert.ok(v6Direct instanceof Dnd5eV6Adapter);
+    assert.ok(v6Direct instanceof Dnd5eV5Adapter);
+    assert.ok(v6Direct instanceof BaseDnd5eSystemAdapter);
+    assert.equal(v6Direct.generation, 6);
+
+    const v6ViaClass = new Dnd5eSystemAdapter(foundry);
+    assert.ok(v6ViaClass instanceof Dnd5eV6Adapter);
+    assert.equal(v6ViaClass.generation, 6);
+});
+
+test('Dnd5eV6Adapter getItemSummary extracts ability check and save proficiency from modern check.prof / save.prof with zero legacy checkProf / saveProf access', async () => {
+    game.system = { id: 'dnd5e', version: '6.0.0' };
+    const foundry = new FoundryV12Adapter();
+    const adapter = initializeDnd5eAdapter(foundry);
+    assert.ok(adapter instanceof Dnd5eV6Adapter);
+
+    // Mock actor with throwing getters on deprecated checkProf and saveProf
+    const v6Actor = {
+        id: 'actor-v6-deprecations',
+        name: 'Modern Cleric',
+        system: {
+            abilities: {
+                wis: {
+                    mod: 4,
+                    value: 18,
+                    check: {
+                        prof: 1,
+                        bonus: ''
+                    },
+                    save: {
+                        prof: 1,
+                        bonus: '',
+                        value: 7
+                    },
+                    get checkProf() {
+                        throw new Error('Deprecated since DnD5e 6.0: checkProf has moved to check.prof');
+                    },
+                    get saveProf() {
+                        throw new Error('Deprecated since DnD5e 6.0: saveProf has moved to save.prof');
+                    }
+                },
+                str: {
+                    mod: 1,
+                    value: 12,
+                    check: {
+                        prof: 0,
+                        bonus: ''
+                    },
+                    save: {
+                        prof: 0,
+                        bonus: '',
+                        value: 1
+                    },
+                    get checkProf() {
+                        throw new Error('Deprecated since DnD5e 6.0: checkProf has moved to check.prof');
+                    },
+                    get saveProf() {
+                        throw new Error('Deprecated since DnD5e 6.0: saveProf has moved to save.prof');
+                    }
+                }
+            }
+        }
+    };
+
+    // 1. Ability check summary for proficient ability (Wisdom)
+    const wisAction = new Action({ id: 'ability-wis', name: 'Wisdom Check', type: 'ability', page: 2, extra: { ability: 'wis' } });
+    const wisSummary = await adapter.getItemSummary(wisAction, null, v6Actor);
+    assert.ok(wisSummary);
+    assert.equal(wisSummary.subtitle, 'Ability Check / Saving Throw');
+
+    // Both Check and Save rows should contain "Proficient"
+    const checkRow = wisSummary.properties.find(p => Array.isArray(p) && p[0] === 'Check:');
+    assert.ok(checkRow);
+    assert.ok(checkRow.some(item => typeof item === 'object' && item.value === 'Proficient'));
+
+    const saveRow = wisSummary.properties.find(p => Array.isArray(p) && p[0] === 'Save:');
+    assert.ok(saveRow);
+    assert.ok(saveRow.some(item => typeof item === 'object' && item.value === 'Proficient'));
+
+    // 2. Saving throw summary for proficient ability
+    const wisSaveAction = new Action({ id: 'save-wis', name: 'Wisdom Save', type: 'save', page: 2, extra: { ability: 'wis' } });
+    const wisSaveSummary = await adapter.getItemSummary(wisSaveAction, null, v6Actor);
+    assert.ok(wisSaveSummary.properties.some(p => typeof p === 'object' && p.value === 'Proficient'));
+
+    // 3. Ability check summary for non-proficient ability (Strength)
+    const strAction = new Action({ id: 'ability-str', name: 'Strength Check', type: 'ability', page: 2, extra: { ability: 'str' } });
+    const strSummary = await adapter.getItemSummary(strAction, null, v6Actor);
+    const strCheckRow = strSummary.properties.find(p => Array.isArray(p) && p[0] === 'Check:');
+    assert.ok(strCheckRow);
+    assert.equal(strCheckRow.some(item => typeof item === 'object' && item.value === 'Proficient'), false);
+
+    const strSaveRow = strSummary.properties.find(p => Array.isArray(p) && p[0] === 'Save:');
+    assert.ok(strSaveRow);
+    assert.equal(strSaveRow.some(item => typeof item === 'object' && item.value === 'Proficient'), false);
+});
+
+test('BaseFoundryAdapter.getRelativeUUID and Dnd5eSystemAdapter isFavorite/setFavorite with relative UUID', async () => {
+    const foundry = new FoundryV12Adapter();
+    const mockActor = { id: 'act-1', uuid: 'Actor.act-1', system: { favorites: [] } };
+    const mockItem = {
+        id: 'item-1',
+        uuid: 'Actor.act-1.Item.item-1',
+        getRelativeUUID(target) {
+            return `Item.${this.id}`;
+        }
+    };
+
+    // 1. Fallback to doc.getRelativeUUID when foundry.utils.buildRelativeUuid is not defined
+    const origBuild = globalThis.foundry?.utils?.buildRelativeUuid;
+    delete globalThis.foundry.utils.buildRelativeUuid;
+    assert.equal(foundry.getRelativeUUID(mockItem, mockActor), 'Item.item-1');
+
+    // 2. Uses foundry.utils.buildRelativeUuid when available (Foundry v14+)
+    let buildCalled = false;
+    globalThis.foundry.utils.buildRelativeUuid = (doc, relativeTo) => {
+        buildCalled = true;
+        return `Built.${doc.id}`;
+    };
+    assert.equal(foundry.getRelativeUUID(mockItem, mockActor), 'Built.item-1');
+    assert.equal(buildCalled, true);
+
+    // Restore
+    if (origBuild) {
+        globalThis.foundry.utils.buildRelativeUuid = origBuild;
+    } else {
+        delete globalThis.foundry.utils.buildRelativeUuid;
+    }
+
+    // 3. isFavorite checks item in favorites array
+    const adapter = new Dnd5eSystemAdapter(foundry);
+    assert.equal(adapter.isFavorite(mockActor, mockItem), false);
+
+    mockActor.system.favorites = [{ id: 'Item.item-1', type: 'item' }];
+    assert.equal(adapter.isFavorite(mockActor, mockItem), true);
+});
+
 
 
