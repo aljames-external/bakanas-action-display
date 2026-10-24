@@ -317,7 +317,7 @@ globalThis.foundry = {
                         if (target && target.includes('src/adapters/system')) {
                             return {
                                 files: [
-                                    'modules/bakana-action-display/src/adapters/system/dnd5e-system-adapter.js',
+                                    'modules/bakana-action-display/src/adapters/system/dnd5e/index.js',
                                     'modules/bakana-action-display/src/adapters/system/pf1-system-adapter.js',
                                     'modules/bakana-action-display/src/adapters/system/pf2e-system-adapter.js'
                                 ]

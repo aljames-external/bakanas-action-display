@@ -55,7 +55,12 @@ The module is built using a clean **pipes-and-filters / adapter** architecture, 
         ```text
         src/adapters/system/
         ├── base-system-adapter.js
-        ├── dnd5e-system-adapter.js
+        ├── dnd5e/
+        │   ├── base-dnd5e-system-adapter.js
+        │   ├── dnd5e-v4-adapter.js
+        │   ├── dnd5e-v5-adapter.js
+        │   ├── dnd5e-v6-adapter.js
+        │   └── index.js
         ├── pf1-system-adapter.js
         ├── pf2e-system-adapter.js
         ├── context-menu/

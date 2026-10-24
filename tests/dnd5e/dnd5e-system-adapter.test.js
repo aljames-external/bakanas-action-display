@@ -2,7 +2,7 @@ import { FoundryV12Adapter } from "../../src/adapters/foundry/foundry-v12-adapte
 import '../setup.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BaseDnd5eSystemAdapter, Dnd5eSystemAdapter_5_3, Dnd5eSystemAdapter, Dnd5eV4Adapter, Dnd5eV5Adapter, Dnd5eV6Adapter, initializeDnd5eAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { BaseDnd5eSystemAdapter, Dnd5eSystemAdapter_5_3, Dnd5eSystemAdapter, Dnd5eV4Adapter, Dnd5eV5Adapter, Dnd5eV6Adapter, initializeDnd5eAdapter } from '../../src/adapters/system/dnd5e/index.js';
 import { categorizeActions } from '../../src/categorization/categorization-manager.js';
 import { Action } from '../../src/ui/action.js';
 import { itemHasComponent } from '../../src/adapters/system/filter/dnd5e-system-tab-filter-manager.js';

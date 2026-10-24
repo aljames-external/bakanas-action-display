@@ -6,7 +6,7 @@ import { ActionDisplayApp } from '../../src/ui/action-display-app.js';
 import { actionDisplay } from '../../src/action-display.js';
 import { HUDTab } from '../../src/ui/hud-tab.js';
 import { adapter } from '../../src/adapters/index.js';
-import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e/index.js';
 import { MODULE_ID } from '../../src/constants.js';
 
 test('ActionDisplayApp previousPage and nextPage cycle through pages without cyclePage or all-tab triggers', async () => {

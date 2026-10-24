@@ -325,11 +325,11 @@ flowchart TD
 - [**`filterSubactions(subactions, filterContext)`**](../src/adapters/system/base-system-adapter.js#L157-L159): Delegates dropdown subaction filtering to `filterManager`.
 - [**`modifyContext(context, app)`**](../src/adapters/system/base-system-adapter.js#L175-L177): Delegates tab layout customization to `contextModifier`.
 
-### [`src/adapters/system/dnd5e-system-adapter.js`](../src/adapters/system/dnd5e-system-adapter.js) — D&D 5e System Adapter (`Dnd5eSystemAdapter`)
-- [**`shouldExtractItem(item)`**](../src/adapters/system/dnd5e-system-adapter.js#L35-L48): Filters out unallowed item types, helper items, and unequipped tools/consumables.
-- [**`calculateUses(item)`**](../src/adapters/system/dnd5e-system-adapter.js#L327-L329): Public wrapper calculating available and maximum uses for items, activities, and spell slots.
-- [**`modifyActions(actions, actor)`**](../src/adapters/system/dnd5e-system-adapter.js#L57-L200): Processes D&D 5e activities, spell preparation, equipment states, and subcategory itemTypes.
-- [**`resolveRootSpellDocument(sub, parentItem)`**](../src/adapters/system/dnd5e-system-adapter.js#L236-L279): Recursively resolves the original root spell document for activities and suboptions.
+### [`src/adapters/system/dnd5e/`](../src/adapters/system/dnd5e/index.js) — D&D 5e System Adapter (`Dnd5eSystemAdapter`, `initializeDnd5eAdapter`)
+- [**`shouldExtractItem(item)`**](../src/adapters/system/dnd5e/base-dnd5e-system-adapter.js): Filters out unallowed item types, helper items, and unequipped tools/consumables.
+- [**`calculateUses(item)`**](../src/adapters/system/dnd5e/base-dnd5e-system-adapter.js): Public wrapper calculating available and maximum uses for items, activities, and spell slots.
+- [**`modifyActions(actions, actor)`**](../src/adapters/system/dnd5e/base-dnd5e-system-adapter.js): Processes D&D 5e activities, spell preparation, equipment states, and subcategory itemTypes.
+- [**`resolveRootSpellDocument(sub, parentItem)`**](../src/adapters/system/dnd5e/base-dnd5e-system-adapter.js): Recursively resolves the original root spell document for activities and suboptions.
 
 ### System Manager Sub-Modules
 - [**`BaseSystemContextMenuManager`**](../src/adapters/system/context-menu/base-system-context-menu-manager.js) / [**`Dnd5eSystemContextMenuManager`**](../src/adapters/system/context-menu/dnd5e-system-context-menu-manager.js): Encapsulates action card right-click options (`Prepare`/`Unprepare`, `Equip`/`Unequip`) and sub-tab right-click shortcuts.

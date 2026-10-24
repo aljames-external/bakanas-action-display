@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import '../setup.js';
 import { MODULE_ID } from '../../src/constants.js';
 import { BaseSystemAdapter } from '../../src/adapters/system/base-system-adapter.js';
-import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e/index.js';
 import { Pf1SystemAdapter } from '../../src/adapters/system/pf1-system-adapter.js';
 import { Pf2eSystemAdapter } from '../../src/adapters/system/pf2e-system-adapter.js';
 import { adapter } from '../../src/adapters/index.js';

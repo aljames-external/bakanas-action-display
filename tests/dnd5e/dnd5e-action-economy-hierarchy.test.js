@@ -2,7 +2,7 @@ import { FoundryV12Adapter } from "../../src/adapters/foundry/foundry-v12-adapte
 import '../setup.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e/index.js';
 import { Action } from '../../src/ui/action.js';
 import { TabRef } from '../../src/ui/tab-ref.js';
 import { ActionDisplayApp } from '../../src/ui/action-display-app.js';

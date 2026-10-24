@@ -3,7 +3,7 @@ import '../setup.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Adapter, BaseSystemAdapter } from '../../src/adapters/index.js';
-import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e/index.js';
 import { MODULE_ID } from '../../src/constants.js';
 import { log } from '../../src/lib/logger.js';
 

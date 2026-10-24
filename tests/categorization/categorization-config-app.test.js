@@ -4,7 +4,7 @@ import '../setup.js';
 import { CategorizationConfigApp } from '../../src/categorization/categorization-config-app.js';
 import { MODULE_ID } from '../../src/constants.js';
 import { adapter } from '../../src/adapters/index.js';
-import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e/index.js';
 
 test('CategorizationConfigApp initializes with stored settings', async () => {
     game.settings.set(MODULE_ID, 'categorizationConfig', {

@@ -5,7 +5,7 @@ import '../setup.js';
 import { ContextMenuManager, createActionContextMenu } from '../../src/ui/app/context-menu-manager.js';
 import { openActivitySubContextMenu, showActivityDropdown } from '../../src/ui/app/dropdown-manager.js';
 import { ActionDisplayApp } from '../../src/ui/action-display-app.js';
-import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e/index.js';
 
 test('createActionContextMenu includes Edit Item option that renders originalItem sheet', () => {
     let sheetRendered = false;

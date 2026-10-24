@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import '../setup.js';
 import { MODULE_ID } from '../../src/constants.js';
 import { adapter } from '../../src/adapters/index.js';
-import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e/index.js';
 import { Dnd5eAutoBanConfigApp, DEFAULT_DND5E_AUTOBAN_CONFIG } from '../../src/ui/dnd5e-autoban-config-app.js';
 import { ActionDisplayApp } from '../../src/ui/action-display-app.js';
 import { HUDTabColumn } from '../../src/ui/hud-tab-column.js';

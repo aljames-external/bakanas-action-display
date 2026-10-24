@@ -3,7 +3,7 @@ import '../setup.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CombatMovementTracker } from '../../src/combat/combat-movement-tracker.js';
-import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e/index.js';
 import { BaseSystemAdapter } from '../../src/adapters/system/base-system-adapter.js';
 import { Pf1SystemAdapter } from '../../src/adapters/system/pf1-system-adapter.js';
 import { Pf2eSystemAdapter } from '../../src/adapters/system/pf2e-system-adapter.js';

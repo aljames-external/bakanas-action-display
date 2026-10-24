@@ -6,7 +6,7 @@ import { Action } from '../../src/ui/action.js';
 import { ActionDisplayApp } from '../../src/ui/action-display-app.js';
 import { showActivityDropdown, dropdownSubactionMap } from '../../src/ui/app/dropdown-manager.js';
 import { BaseSystemAdapter } from '../../src/adapters/system/base-system-adapter.js';
-import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e-system-adapter.js';
+import { Dnd5eSystemAdapter } from '../../src/adapters/system/dnd5e/index.js';
 import { Pf1SystemAdapter } from '../../src/adapters/system/pf1-system-adapter.js';
 import { Pf2eSystemAdapter } from '../../src/adapters/system/pf2e-system-adapter.js';
 import { adapter } from '../../src/adapters/index.js';
